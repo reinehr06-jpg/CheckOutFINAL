@@ -386,7 +386,59 @@
                 NZ:{amount:59.90,currency:'NZD',symbol:'NZ$',lang:'en',showDoc:false,docPlaceholder:'',docMax:0}
             };
             this.localeData = {defaults,featureDefaults,priceTable};
+            this.detectBrowserLanguage();
             this.buildConfig();
+            document.documentElement.lang = this.cfg.locale;
+        },
+        switchCountry(code) {
+            this.country = code;
+            this.buildConfig();
+            document.documentElement.lang = this.cfg.locale;
+        },
+        detectBrowserLanguage() {
+            try {
+                const lang = navigator.language || navigator.userLanguage || 'pt-BR';
+                const langCode = lang.split('-')[0].toLowerCase();
+                const countryCode = (lang.split('-')[1] || '').toUpperCase();
+                const langToCountry = {
+                    pt: ['BR','PT','AO','MZ'],
+                    en: ['US','GB','CA','AU','NZ','SG','PH'],
+                    es: ['ES','MX','AR','CL','CO','PE','EC','PY','UY','BO','VE'],
+                    fr: ['FR','BE'],
+                    de: ['DE','AT','CH'],
+                    it: ['IT'],
+                    ja: ['JP'],
+                    ko: ['KR'],
+                    zh: ['CN'],
+                    nl: ['NL'],
+                    sv: ['SE'],
+                    nb: ['NO'],
+                    da: ['DK'],
+                    fi: ['FI'],
+                    pl: ['PL'],
+                    cs: ['CZ'],
+                    hu: ['HU'],
+                    ro: ['RO'],
+                    el: ['GR'],
+                    tr: ['TR'],
+                    ru: ['RU'],
+                    uk: ['UA'],
+                    he: ['IL'],
+                    ar: ['SA','AE','EG'],
+                    th: ['TH'],
+                    vi: ['VN'],
+                    id: ['ID'],
+                    hi: ['IN'],
+                    sw: ['KE','TZ','RW'],
+                };
+                if (countryCode && this.countries.find(c => c.code === countryCode)) {
+                    this.country = countryCode;
+                } else if (langToCountry[langCode] && langToCountry[langCode][0]) {
+                    this.country = langToCountry[langCode][0];
+                }
+            } catch(e) {
+                this.country = 'BR';
+            }
         },
         buildConfig() {
             const p = this.localeData.priceTable[this.country] || this.localeData.priceTable.BR;
@@ -424,10 +476,6 @@
         getLocale(code, lang) {
             const map = {BR:'pt-BR',US:'en-US',PT:'pt-PT',ES:'es-ES',GB:'en-GB',FR:'fr-FR',DE:'de-DE',IT:'it-IT',MX:'es-MX',AR:'es-AR',CL:'es-CL',CO:'es-CO',PE:'es-PE',EC:'es-EC',PY:'es-PY',UY:'es-UY',BO:'es-BO',VE:'es-VE',CA:'en-CA',AU:'en-AU',JP:'ja-JP',CN:'zh-CN',KR:'ko-KR',IN:'en-IN',ZA:'en-ZA',NG:'en-NG',KE:'en-KE',GH:'en-GH',AO:'pt-AO',MZ:'pt-MZ',RW:'en-RW',TZ:'en-TZ',NL:'nl-NL',BE:'fr-BE',CH:'de-CH',AT:'de-AT',SE:'sv-SE',NO:'nb-NO',DK:'da-DK',FI:'fi-FI',PL:'pl-PL',CZ:'cs-CZ',HU:'hu-HU',RO:'ro-RO',GR:'el-GR',TR:'tr-TR',RU:'ru-RU',UA:'uk-UA',IL:'he-IL',SA:'ar-SA',AE:'ar-AE',EG:'ar-EG',TH:'th-TH',VN:'vi-VN',PH:'en-PH',ID:'id-ID',MY:'en-MY',SG:'en-SG',NZ:'en-NZ'};
             return map[code] || 'en-US';
-        },
-        switchCountry(code) {
-            this.country = code;
-            this.buildConfig();
         },
         fmt() {
             try { return new Intl.NumberFormat(this.cfg.locale, {style:'currency',currency:this.cfg.currency}).format(this.cfg.amount); }
