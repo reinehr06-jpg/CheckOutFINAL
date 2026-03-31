@@ -16,6 +16,10 @@ use App\Http\Controllers\Public\EventCheckoutController;
 use App\Http\Middleware\RateLimitCheckout;
 use App\Http\Middleware\CheckTransactionAccess;
 
+Route::get('/', function () {
+    return redirect('/login');
+});
+
 // Public event checkout pages
 Route::get('/evento/{slug}', [EventCheckoutController::class, 'show'])->name('evento.show');
 Route::post('/evento/{slug}/pay', [EventCheckoutController::class, 'process'])->name('evento.process');
