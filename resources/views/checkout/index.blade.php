@@ -4,181 +4,221 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Pagamento - Checkout</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/lib/tailwind.min.css" rel="stylesheet">
+    <title>{{ $transaction->description ?? 'Pagamento' }} - Basileia</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md" x-data="{ 
-        @if($paymentMethod) method: '{{ $paymentMethod }}' @else method: 'pix' @endif 
-    }">
-
-        <!-- Transaction Summary -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4">
-            <h1 class="text-lg font-semibold text-gray-800 mb-4">Resumo do Pedido</h1>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-gray-500">Descrição</span>
-                    <span class="text-gray-900">{{ $transaction->description ?? 'Compra' }}</span>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="max-w-md mx-auto bg-white min-h-screen" 
+         x-data="{ 
+             method: '{{ $paymentMethod }}' || 'pix',
+             locale: 'pt-BR',
+             currency: 'BRL',
+             country: 'Brasil',
+             termsAccepted: false,
+             countries: {
+                 'Brasil': { locale: 'pt-BR', currency: 'BRL', symbol: 'R$' },
+                 'United States': { locale: 'en-US', currency: 'USD', symbol: '$' },
+                 'España': { locale: 'es-ES', currency: 'EUR', symbol: '€' },
+                 'Portugal': { locale: 'pt-PT', currency: 'EUR', symbol: '€' }
+             },
+             translations: {
+                 'pt-BR': { summary: 'Resumo do Pedido', total: 'Total', paymentMethod: 'Forma de Pagamento', cardNumber: 'Número do Cartão', fullName: 'Nome Completo', expiry: 'Validade', pay: 'Pagar', terms: 'Aceito os termos de serviço', poweredBy: 'Powered by' },
+                 'en-US': { summary: 'Order Summary', total: 'Total', paymentMethod: 'Payment Method', cardNumber: 'Card Number', fullName: 'Full Name', expiry: 'Expiry', pay: 'Pay', terms: 'I accept the terms of service', poweredBy: 'Powered by' },
+                 'es-ES': { summary: 'Resumen del Pedido', total: 'Total', paymentMethod: 'Forma de Pago', cardNumber: 'Número de Tarjeta', fullName: 'Nombre Completo', expiry: 'Vencimiento', pay: 'Pagar', terms: 'Acepto los términos de servicio', poweredBy: 'Desarrollado por' },
+                 'pt-PT': { summary: 'Resumo do Pedido', total: 'Total', paymentMethod: 'Método de Pagamento', cardNumber: 'Número do Cartão', fullName: 'Nome Completo', expiry: 'Validade', pay: 'Pagar', terms: 'Aceito os termos de serviço', poweredBy: 'Desenvolvido por' }
+             },
+             t(key) { return this.translations[this.locale]?.[key] || key; },
+             formatCurrency(amount) {
+                 const symbol = this.countries[this.country]?.symbol || 'R$';
+                 return symbol + ' ' + amount.toFixed(2).replace('.', ',');
+             },
+             updateCountry() {
+                 const c = this.countries[this.country];
+                 this.locale = c.locale;
+                 this.currency = c.currency;
+             }
+         }">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-700 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">B</span>
                 </div>
-                <div class="flex justify-between pt-2 border-t border-gray-100">
-                    <span class="text-gray-700 font-medium">
-                        @if($installments > 1)
-                            {{ $installments }}x de
-                        @else
-                            Total
-                        @endif
-                    </span>
-                    <span class="text-xl font-bold text-gray-900">
-                        R$ {{ number_format($transaction->amount / $installments, 2, ',', '.') }}
-                        @if($installments > 1)
-                            <span class="text-xs font-normal text-gray-500">(total: R$ {{ number_format($transaction->amount, 2, ',', '.') }})</span>
-                        @endif
-                    </span>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-900">Basiléia</h1>
+                    <p class="text-xs text-gray-500 -mt-1">Portal de Payments</p>
+                </div>
+            </div>
+            <div>
+                <select x-model="country" @change="updateCountry()" 
+                        class="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <template x-for="c in Object.keys(countries)" :key="c">
+                        <option :value="c" x-text="c" :selected="c === country"></option>
+                    </template>
+                </select>
+            </div>
+        </div>
+
+        <!-- Resumo do Pedido -->
+        <div class="px-4 pt-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h2 class="text-sm font-semibold text-gray-900 mb-3" x-text="t('summary')"></h2>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-medium text-gray-900">{{ $transaction->description ?? 'Plano Premium Annual' }}</p>
+                        <p class="text-sm text-gray-500">{{ $transaction->customer_name ?? 'igreja Teste' }}</p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
+                    <span class="text-sm font-medium text-gray-700" x-text="t('total')"></span>
+                    <span class="text-xl font-bold text-gray-900" x-text="formatCurrency({{ $transaction->amount }})"></span>
                 </div>
             </div>
         </div>
 
-        <!-- Payment Method Tabs - Only show if NOT restricted -->
-        @if(!$paymentMethod)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="flex border-b border-gray-100">
-                <button @click="method = 'pix'" :class="method === 'pix' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'" class="flex-1 py-3 text-sm font-medium transition">
-                    PIX
-                </button>
-                <button @click="method = 'boleto'" :class="method === 'boleto' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'" class="flex-1 py-3 text-sm font-medium transition">
-                    Boleto
-                </button>
-                <button @click="method = 'card'" :class="method === 'card' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'" class="flex-1 py-3 text-sm font-medium transition">
-                    Cartão
-                </button>
-            </div>
-        @endif
-
-            <div class="p-6">
+        <!-- Forma de Pagamento -->
+        <div class="px-4 pt-4">
+            <h2 class="text-sm font-semibold text-gray-900 mb-3" x-text="t('paymentMethod')"></h2>
+            <div class="space-y-2">
                 <!-- PIX -->
-                <div x-show="method === 'pix'" x-cloak>
-                    @if($transaction->pix_qr_code ?? false)
-                        <div class="text-center mb-4">
-                            <div class="bg-gray-50 border rounded-lg p-4 inline-block mb-3">
-                                <img src="data:image/png;base64,{{ $transaction->pix_qr_code_image ?? '' }}" alt="QR Code PIX" class="w-48 h-48 mx-auto">
-                            </div>
-                            <p class="text-xs text-gray-500 mb-2">Escaneie o QR Code ou copie o código abaixo</p>
-                            <div class="bg-gray-50 border rounded-lg p-3">
-                                <code class="text-xs break-all text-gray-700 select-all">{{ $transaction->pix_copy_paste ?? '' }}</code>
-                            </div>
-                            <button onclick="navigator.clipboard.writeText('{{ $transaction->pix_copy_paste ?? '' }}')" class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                Copiar código
-                            </button>
-                        </div>
-                    @else
-                        <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
-                            @csrf
-                            <input type="hidden" name="payment_method" value="pix">
-                            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-green-700 transition">
-                                Gerar QR Code PIX
-                            </button>
-                        </form>
-                    @endif
-                </div>
+                <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                    <input type="radio" name="method" value="pix" x-model="method" class="w-4 h-4 text-blue-600">
+                    <span class="text-sm font-medium text-gray-900">PIX</span>
+                </label>
 
                 <!-- Boleto -->
-                <div x-show="method === 'boleto'" x-cloak>
-                    @if($transaction->boleto_url ?? false)
-                        <div class="text-center">
-                            <a href="{{ $transaction->boleto_url }}" target="_blank" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                                Visualizar Boleto
-                            </a>
-                            @if($transaction->boleto_expiration)
-                                <p class="text-xs text-gray-500 mt-3">Vencimento: {{ $transaction->boleto_expiration }}</p>
-                            @endif
+                <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                    <input type="radio" name="method" value="boleto" x-model="method" class="w-4 h-4 text-blue-600">
+                    <span class="text-sm font-medium text-gray-900">Boleto Bancário</span>
+                </label>
+
+                <!-- Cartão de Crédito -->
+                <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                    <input type="radio" name="method" value="credit_card" x-model="method" class="w-4 h-4 text-blue-600">
+                    <span class="text-sm font-medium text-gray-900">Cartão de Crédito</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Credit Card Form -->
+        <div x-show="method === 'credit_card'" x-cloak class="px-4 pt-4">
+            <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
+                @csrf
+                <input type="hidden" name="payment_method" value="credit_card">
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1" x-text="t('cardNumber')"></label>
+                        <input type="text" name="card_number" required maxlength="19" placeholder="0000 0000 0000 0000"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1" x-text="t('fullName')"></label>
+                        <input type="text" name="card_holder_name" required placeholder="NOME COMO ESTÁ NO CARTÃO"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 placeholder-gray-400 uppercase focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1" x-text="t('expiry') + ' (MM/AA)'"></label>
+                            <input type="text" name="card_expiry" required maxlength="5" placeholder="MM/AA"
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
-                    @else
-                        <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
-                            @csrf
-                            <input type="hidden" name="payment_method" value="boleto">
-                            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
-                                Gerar Boleto
-                            </button>
-                        </form>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">CVV</label>
+                            <input type="text" name="card_cvv" required maxlength="4" placeholder="123"
+                                   class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2 pt-1">
+                        <input type="checkbox" x-model="termsAccepted" id="terms" class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="terms" class="text-xs text-gray-600" x-text="t('terms')"></label>
+                    </div>
+                </div>
+
+                <button type="submit" 
+                        class="w-full mt-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <span x-text="t('pay') + ' ' + formatCurrency({{ $transaction->amount }})"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- PIX Content -->
+        <div x-show="method === 'pix'" x-cloak class="px-4 pt-4">
+            @if($transaction->pix_qr_code ?? false)
+                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                    <div class="bg-white border border-gray-200 rounded-lg p-3 inline-block mb-3">
+                        <img src="data:image/png;base64,{{ $transaction->pix_qr_code_image ?? '' }}" alt="QR Code PIX" class="w-44 h-44 mx-auto">
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">Escaneie o QR Code ou copie o código abaixo</p>
+                    <div class="bg-white border border-gray-200 rounded-lg p-3 mb-3">
+                        <code class="text-xs break-all text-gray-600 select-all">{{ $transaction->pix_copy_paste ?? '' }}</code>
+                    </div>
+                    <button onclick="navigator.clipboard.writeText('{{ $transaction->pix_copy_paste ?? '' }}')" 
+                            class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        Copiar código
+                    </button>
+                </div>
+            @else
+                <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
+                    @csrf
+                    <input type="hidden" name="payment_method" value="pix">
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                        Gerar QR Code PIX
+                    </button>
+                </form>
+            @endif
+        </div>
+
+        <!-- Boleto Content -->
+        <div x-show="method === 'boleto'" x-cloak class="px-4 pt-4">
+            @if($transaction->boleto_url ?? false)
+                <div class="bg-gray-50 rounded-lg p-4 text-center">
+                    <a href="{{ $transaction->boleto_url }}" target="_blank" 
+                       class="inline-flex items-center gap-2 py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Visualizar Boleto
+                    </a>
+                    @if($transaction->boleto_expiration)
+                        <p class="text-xs text-gray-500 mt-3">Vencimento: {{ $transaction->boleto_expiration }}</p>
                     @endif
                 </div>
-
-                <!-- Credit Card -->
-                <div x-show="method === 'card'" x-cloak>
-                    <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}" id="card-form">
-                        @csrf
-                        <input type="hidden" name="payment_method" value="credit_card">
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Número do Cartão</label>
-                                <input type="text" name="card_number" required maxlength="19" placeholder="0000 0000 0000 0000"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nome no Cartão</label>
-                                <input type="text" name="card_holder_name" required placeholder="NOME COMO ESTÁ NO CARTÃO"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm uppercase focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Validade</label>
-                                    <input type="text" name="card_expiry" required maxlength="5" placeholder="MM/AA"
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                                    <input type="password" name="card_cvv" required maxlength="4" placeholder="123"
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Parcelas</label>
-                                @if($installments > 1)
-                                    <input type="hidden" name="installments" value="{{ $installments }}">
-                                    <div class="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-gray-50 text-gray-600">
-                                        {{ $installments }}x de R$ {{ number_format($transaction->amount / $installments, 2, ',', '.') }} (sem juros)
-                                    </div>
-                                @else
-                                    <select name="installments" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        @for($i = 1; $i <= ($transaction->max_installments ?? 12); $i++)
-                                            <option value="{{ $i }}" {{ $i == 1 ? 'selected' : '' }}>
-                                                {{ $i }}x de R$ {{ number_format(($transaction->amount ?? 0) / $i, 2, ',', '.') }}
-                                                @if($i > 1) (sem juros) @endif
-                                            </option>
-                                        @endfor
-                                    </select>
-                                @endif
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
-                            @if($installments > 1)
-                                Pagar {{ $installments }}x de R$ {{ number_format($transaction->amount / $installments, 2, ',', '.') }}
-                            @else
-                                Pagar R$ {{ number_format($transaction->amount ?? 0, 2, ',', '.') }}
-                            @endif
-                        </button>
-                    </form>
-                </div>
-            </div>
-        @if(!$paymentMethod)
-        </div>
-        @endif
-
-        <!-- Trust Badges -->
-        <div class="flex items-center justify-center gap-6 mt-6 text-gray-400">
-            <div class="flex items-center gap-1.5 text-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                Pagamento Seguro
-            </div>
-            <div class="flex items-center gap-1.5 text-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                SSL Criptografado
-            </div>
+            @else
+                <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
+                    @csrf
+                    <input type="hidden" name="payment_method" value="boleto">
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition">
+                        Gerar Boleto
+                    </button>
+                </form>
+            @endif
         </div>
 
-        <p class="text-center text-xs text-gray-400 mt-4">Powered by Checkout</p>
+        <!-- Footer -->
+        <div class="px-4 py-6 mt-6 border-t border-gray-100 text-center">
+            <p class="text-xs text-gray-400" x-text="t('poweredBy')"></p>
+            <p class="text-sm font-bold text-gray-600 mt-0.5">asaas</p>
+        </div>
     </div>
 </body>
 </html>
