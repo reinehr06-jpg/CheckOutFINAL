@@ -38,12 +38,18 @@ class Transaction extends Model
         'customer_name',
         'customer_email',
         'customer_document',
+        'customer_phone',
+        'customer_address',
         'fraud_score',
         'fraud_risk_level',
         'fraud_flags',
         'fraud_recommendation',
         'refunded_amount',
         'status_changed_at',
+        'asaas_payment_id',
+        'source',
+        'callback_url',
+        'asaas_customer_id',
     ];
 
     protected $casts = [

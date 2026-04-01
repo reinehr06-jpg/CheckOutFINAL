@@ -13,6 +13,9 @@ use App\Http\Controllers\Dashboard\CompanyController;
 use App\Http\Controllers\Dashboard\ReportController;
 use App\Http\Controllers\Dashboard\EventController;
 use App\Http\Controllers\Public\EventCheckoutController;
+use App\Http\Controllers\AsaasCheckoutController;
+use App\Http\Controllers\Dashboard\SourceConfigController;
+use App\Http\Controllers\Dashboard\PasswordController;
 use App\Http\Middleware\RateLimitCheckout;
 use App\Http\Middleware\CheckTransactionAccess;
 
@@ -24,6 +27,14 @@ Route::get('/', function () {
 Route::get('/evento/{slug}', [EventCheckoutController::class, 'show'])->name('evento.show');
 Route::post('/evento/{slug}/pay', [EventCheckoutController::class, 'process'])->name('evento.process');
 Route::get('/evento/{slug}/success', [EventCheckoutController::class, 'success'])->name('evento.success');
+
+// Asaas Checkout (novo fluxo - viaasaas_payment_id)
+Route::get('/pay/asaas/{asaasPaymentId}', [AsaasCheckoutController::class, 'show'])
+    ->name('checkout.asaas.show');
+Route::post('/pay/asaas/{asaasPaymentId}/process', [AsaasCheckoutController::class, 'process'])
+    ->name('checkout.asaas.process');
+Route::get('/pay/asaas/{uuid}/success', [AsaasCheckoutController::class, 'success'])
+    ->name('checkout.asaas.success');
 
 // Public checkout pages - com segurança
 // Suporta tanto /pay/{uuid} quanto /checkout/{uuid}
@@ -53,6 +64,10 @@ Route::middleware([RateLimitCheckout::class])->group(function () {
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password
+Route::get('/password/change', [PasswordController::class, 'showChangeForm'])->name('password.change')->middleware('auth');
+Route::post('/password/change', [PasswordController::class, 'changePassword'])->middleware('auth');
 
 // Dashboard (authenticated)
 Route::prefix('/dashboard')->middleware(['auth'])->group(function () {
@@ -91,4 +106,11 @@ Route::prefix('/dashboard')->middleware(['auth'])->group(function () {
     Route::post('/events', [EventController::class, 'store'])->name('dashboard.events.store');
     Route::post('/events/{event}/toggle', [EventController::class, 'toggle'])->name('dashboard.events.toggle');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('dashboard.events.destroy');
+
+    // Source Configs (Sistemas de Origem)
+    Route::get('/sources', [SourceConfigController::class, 'index'])->name('dashboard.sources.index');
+    Route::post('/sources', [SourceConfigController::class, 'store'])->name('dashboard.sources.store');
+    Route::put('/sources/{source}', [SourceConfigController::class, 'update'])->name('dashboard.sources.update');
+    Route::patch('/sources/{source}/toggle', [SourceConfigController::class, 'toggle'])->name('dashboard.sources.toggle');
+    Route::delete('/sources/{source}', [SourceConfigController::class, 'destroy'])->name('dashboard.sources.destroy');
 });

@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             CompanySeeder::class,
             DefaultAdminSeeder::class,
             GatewaySeeder::class,
+            SourceConfigSeeder::class,
         ]);
     }
 }

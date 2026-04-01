@@ -9,10 +9,15 @@ use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\CheckoutWebhookController;
 use App\Http\Controllers\Api\V1\WebhookController;
+use App\Http\Controllers\AsaasWebhookController;
 
 Route::prefix('v1')->group(function () {
     // Webhook do Asaas (recebe do gateway)
     Route::post('webhooks/asaas', [WebhookController::class, 'asaas']);
+    
+    // Webhook do Asaas (novo - viaasaas_payment_id)
+    Route::post('webhook/asaas', [AsaasWebhookController::class, 'handle'])
+        ->name('webhook.asaas');
     
     // Webhook do Checkout (envia para sistemas externos como Basileia Vendas)
     Route::post('webhooks/checkout', [CheckoutWebhookController::class, 'handle']);

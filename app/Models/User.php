@@ -19,6 +19,10 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'must_change_password',
+        'password_changed_at',
+        'failed_login_attempts',
+        'locked_until',
     ];
 
     protected $hidden = [
