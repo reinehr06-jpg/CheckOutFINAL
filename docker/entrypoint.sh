@@ -48,5 +48,20 @@ php artisan migrate --force --no-interaction 2>&1 || {
     echo "WARNING: Migration failed - check DB_HOST=$REAL_DB_HOST"
 }
 
+echo "Creating default admin user..."
+php artisan tinker --execute="
+    \$user = \App\Models\User::firstOrCreate(
+        ['email' => 'admin@checkout.com'],
+        [
+            'name' => 'Admin',
+            'password' => bcrypt('Admin@123'),
+            'role' => 'super_admin',
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]
+    );
+    echo 'Admin user: ' . \$user->email . PHP_EOL;
+" 2>&1 || echo "WARNING: Could not create admin user"
+
 echo "Starting Laravel on port 8000..."
 exec "$@"
