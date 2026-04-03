@@ -2,6 +2,10 @@
 set -e
 
 echo "=== Basileia Checkout Starting ==="
+echo "DB_HOST=${DB_HOST:-postgres}"
+echo "DB_PORT=${DB_PORT:-5432}"
+echo "DB_DATABASE=${DB_DATABASE:-checkout}"
+echo "DB_USERNAME=${DB_USERNAME:-postgres}"
 
 # Generate .env from environment variables
 cat > .env << ENVEOF
@@ -22,18 +26,9 @@ QUEUE_CONNECTION=sync
 DEFAULT_GATEWAY=asaas
 ENVEOF
 
-echo "Generated .env file:"
-cat .env | grep -v PASSWORD | grep -v KEY
-
-echo "Clearing caches..."
-rm -rf bootstrap/cache/*.php 2>/dev/null || true
-rm -rf storage/framework/cache/data 2>/dev/null || true
-rm -rf storage/framework/sessions/* 2>/dev/null || true
-rm -rf storage/framework/views/* 2>/dev/null || true
-
 echo "Running migrations..."
 php artisan migrate --force --no-interaction 2>&1 || {
-    echo "WARNING: Migration failed"
+    echo "WARNING: Migration failed - check DB_HOST above"
 }
 
 echo "Starting Laravel on port 8000..."
