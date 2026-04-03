@@ -23,6 +23,10 @@ RUN php artisan key:generate \
     && php artisan view:cache \
     && chmod -R 755 storage bootstrap/cache
 
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 EXPOSE 8000
 
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD php artisan serve --host=0.0.0.0 --port=8000
