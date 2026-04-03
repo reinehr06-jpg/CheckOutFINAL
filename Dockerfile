@@ -18,7 +18,9 @@ RUN composer install --optimize-autoloader --no-interaction --no-scripts
 COPY . .
 
 RUN php artisan key:generate \
-    && php artisan optimize:clear \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache \
     && chmod -R 755 storage bootstrap/cache
 
 EXPOSE 8000
