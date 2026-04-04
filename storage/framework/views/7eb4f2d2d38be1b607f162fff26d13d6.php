@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $transaction->description ?? 'Pagamento' }} - Basileia</title>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo e($transaction->description ?? 'Pagamento'); ?> - Basileia</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -716,8 +716,8 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
-                @csrf
+            <form method="POST" action="<?php echo e(route('checkout.process', $transaction->uuid)); ?>">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="payment_method" value="credit_card">
                 <div class="form-group">
                     <label class="form-label" x-text="cfg.emailLabel"></label>
@@ -769,3 +769,4 @@
     </section>
 </body>
 </html>
+<?php /**PATH /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/resources/views/checkout/index.blade.php ENDPATH**/ ?>

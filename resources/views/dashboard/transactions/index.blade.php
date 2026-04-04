@@ -36,28 +36,6 @@
                 <label>Buscar</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="UUID, cliente...">
             </div>
-            <div class="filter-group">
-                <label>Origem</label>
-                <select name="source">
-                    <option value="">Todas</option>
-                    <option value="basileia_vendas" {{ request('source') == 'basileia_vendas' ? 'selected' : '' }}>Basileia Vendas</option>
-                    <option value="eventos" {{ request('source') == 'eventos' ? 'selected' : '' }}>Eventos</option>
-                    <option value="cursos" {{ request('source') == 'cursos' ? 'selected' : '' }}>Cursos</option>
-                    <option value="site_contratacao" {{ request('source') == 'site_contratacao' ? 'selected' : '' }}>Site Contratação</option>
-                    <option value="lancamento" {{ request('source') == 'lancamento' ? 'selected' : '' }}>Lançamento</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Tipo Produto</label>
-                <select name="product_type">
-                    <option value="">Todos</option>
-                    <option value="saas" {{ request('product_type') == 'saas' ? 'selected' : '' }}>SaaS</option>
-                    <option value="evento" {{ request('product_type') == 'evento' ? 'selected' : '' }}>Evento</option>
-                    <option value="curso" {{ request('product_type') == 'curso' ? 'selected' : '' }}>Curso</option>
-                    <option value="lancamento" {{ request('product_type') == 'lancamento' ? 'selected' : '' }}>Lançamento</option>
-                    <option value="outro" {{ request('product_type') == 'outro' ? 'selected' : '' }}>Outro</option>
-                </select>
-            </div>
             <div class="filter-actions">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
                 <a href="{{ route('dashboard.transactions') }}" class="btn btn-secondary">Limpar</a>
@@ -74,8 +52,6 @@
                     <th>UUID</th>
                     <th>Cliente</th>
                     <th>Valor</th>
-                    <th>Origem</th>
-                    <th>Tipo</th>
                     <th>Método</th>
                     <th>Status</th>
                     <th>Data</th>
@@ -91,20 +67,6 @@
                         </td>
                         <td>{{ $tx->customer_name ?? ($tx->customer?->name ?? '-') }}</td>
                         <td style="font-weight: 700;">R$ {{ number_format($tx->amount, 2, ',', '.') }}</td>
-                        <td>{{ $tx->source ?? '-' }}</td>
-                        <td>
-                            @php
-                                $typeMap = [
-                                    'saas' => 'SaaS',
-                                    'evento' => 'Evento',
-                                    'curso' => 'Curso',
-                                    'lancamento' => 'Lançamento',
-                                    'outro' => 'Outro',
-                                ];
-                                $t = $typeMap[$tx->product_type] ?? ($tx->product_type ?? '-');
-                            @endphp
-                            {{ $t }}
-                        </td>
                         <td>{{ ucfirst(str_replace('_', ' ', $tx->payment_method ?? '-')) }}</td>
                         <td>
                             @php

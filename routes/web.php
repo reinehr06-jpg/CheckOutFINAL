@@ -18,40 +18,15 @@ use App\Http\Controllers\Dashboard\SourceConfigController;
 use App\Http\Controllers\Dashboard\PasswordController;
 use App\Http\Middleware\RateLimitCheckout;
 use App\Http\Middleware\CheckTransactionAccess;
-use App\Http\Controllers\BasileiaCheckoutController;
 
-Route::get('/', function () {
+Route::get('/', function (Illuminate\Http\Request $request) {
+    if ($request->has('asaas_payment_id')) {
+        return redirect()->route('checkout.asaas.show', [
+            'asaasPaymentId' => $request->get('asaas_payment_id')
+        ] + $request->all());
+    }
     return redirect('/login');
 });
-
-// Rota de teste para visualizar o checkout
-Route::get('/test-checkout', function () {
-    $transaction = new stdClass();
-    $transaction->uuid = 'test-checkout-uuid-12345';
-    $transaction->asaas_payment_id = 'pay_test123';
-    $transaction->description = 'Plano Profissional Mensal - Basileia';
-    $transaction->customer_email = 'cliente@exemplo.com';
-    $transaction->amount = 197.99;
-    $transaction->customer_name = 'Cliente Teste';
-    $transaction->currency = 'BRL';
-    $transaction->status = 'pending';
-    
-    return view('checkout.basileia', [
-        'transaction' => $transaction,
-        'asaasPayment' => [],
-        'customerData' => ['name' => 'Cliente Teste', 'email' => 'cliente@exemplo.com'],
-        'plano' => 'Professional',
-        'ciclo' => 'mensal',
-    ]);
-});
-
-// Basileia Checkout (novo fluxo - deve ser a última rota pública)
-Route::get('/{asaasPaymentId}', [BasileiaCheckoutController::class, 'handle'])
-    ->name('basileia.checkout');
-Route::post('/{asaasPaymentId}/process', [BasileiaCheckoutController::class, 'process'])
-    ->name('basileia.checkout.process');
-Route::get('/success/{uuid}', [BasileiaCheckoutController::class, 'success'])
-    ->name('basileia.checkout.success');
 
 // Public event checkout pages
 Route::get('/evento/{slug}', [EventCheckoutController::class, 'show'])->name('evento.show');

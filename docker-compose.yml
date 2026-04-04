@@ -1,30 +1,36 @@
 services:
-  app:
+  postgres:
+    image: postgres:15-alpine
+    container_name: checkout_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: checkout
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5434:5432"
+    volumes:
+      - checkout_pgdata:/var/lib/postgresql/data
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: checkout_backend
     restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - .:/var/www/html
     environment:
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - DB_CONNECTION=${DB_CONNECTION:-pgsql}
-      - DB_HOST=${DB_HOST:-postgres}
-      - DB_PORT=${DB_PORT:-5432}
-      - DB_DATABASE=${DB_DATABASE:-checkout}
-      - DB_USERNAME=${DB_USERNAME:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=checkout
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=secret
     depends_on:
       - postgres
 
-  postgres:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_DATABASE:-checkout}
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
 volumes:
-  pgdata:
+  checkout_pgdata:

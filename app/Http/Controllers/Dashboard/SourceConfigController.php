@@ -19,21 +19,16 @@ class SourceConfigController extends Controller
     {
         $request->validate([
             'source_name' => 'required|string|max:255|unique:source_configs,source_name',
-            'description' => 'sometimes|string|max:500',
             'callback_url' => 'required|url',
             'webhook_secret' => 'required|string|min:16',
-            'product_types' => 'sometimes|array',
-            'product_types.*' => 'in:saas,evento,curso,lancamento,outro',
         ]);
 
         $webhookSecret = $request->input('webhook_secret');
         
         SourceConfig::create([
             'source_name' => $request->input('source_name'),
-            'description' => $request->input('description'),
             'callback_url' => $request->input('callback_url'),
             'webhook_secret' => $webhookSecret,
-            'product_types' => $request->input('product_types', []),
             'active' => $request->boolean('active', true),
         ]);
 
@@ -45,19 +40,14 @@ class SourceConfigController extends Controller
     {
         $request->validate([
             'source_name' => 'required|string|max:255|unique:source_configs,source_name,' . $source->id,
-            'description' => 'sometimes|string|max:500',
             'callback_url' => 'required|url',
             'webhook_secret' => 'required|string|min:16',
-            'product_types' => 'sometimes|array',
-            'product_types.*' => 'in:saas,evento,curso,lancamento,outro',
         ]);
 
         $source->update([
             'source_name' => $request->input('source_name'),
-            'description' => $request->input('description'),
             'callback_url' => $request->input('callback_url'),
             'webhook_secret' => $request->input('webhook_secret'),
-            'product_types' => $request->input('product_types', []),
             'active' => $request->boolean('active', true),
         ]);
 

@@ -10,12 +10,6 @@
     </div>
 </div>
 
-<div class="alert alert-info mb-4">
-    <i class="fas fa-info-circle"></i>
-    <strong>Para que serve:</strong> Cada sistema de origem (Basileia Vendas, Eventos, Cursos, etc) que chama seu checkout deve ser cadastrado aqui. 
-    O Checkout usará o <code>callback_url</code> para enviar notificações de pagamento para o sistema correto.
-</div>
-
 @if(session('success'))
 <div class="alert alert-success alert-dismissible fade show" role="alert">
     {{ session('success') }}
@@ -25,35 +19,20 @@
 
 <div class="table-responsive">
     <table class="table table-striped table-hover">
-            <thead>
+        <thead>
             <tr>
                 <th>Sistema</th>
-                <th>Descrição</th>
-                <th>Tipos de Produto</th>
                 <th>Callback URL</th>
                 <th>Status</th>
                 <th>Criado em</th>
                 <th>Ações</th>
             </tr>
-            </thead>
+        </thead>
         <tbody>
             @forelse($sources as $source)
             <tr>
                 <td>
                     <strong>{{ $source->source_name }}</strong>
-                </td>
-                <td>{{ $source->description ?? '-' }}</td>
-                <td>
-                    @if($source->product_types)
-                        @foreach($source->product_types as $type)
-                            @php
-                                $typeMap = ['saas' => 'SaaS', 'evento' => 'Evento', 'curso' => 'Curso', 'lancamento' => 'Lançamento', 'outro' => 'Outro'];
-                            @endphp
-                            <span class="badge bg-info">{{ $typeMap[$type] ?? $type }}</span>
-                        @endforeach
-                    @else
-                        <span class="text-muted">-</span>
-                    @endif
                 </td>
                 <td>
                     <code class="d-inline-block text-truncate" style="max-width: 300px;" title="{{ $source->callback_url }}">
@@ -114,12 +93,7 @@
                     <div class="mb-3">
                         <label class="form-label">Nome do Sistema</label>
                         <input type="text" name="source_name" class="form-control" placeholder="basileia_vendas" required>
-                        <small class="text-muted">Identificador único do sistema (use underscore)</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descrição</label>
-                        <input type="text" name="description" class="form-control" placeholder="Sistema de vendas de SaaS">
-                        <small class="text-muted">Descrição opcional para identificar o sistema</small>
+                        <small class="text-muted">Identificador único do sistema</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Callback URL</label>
@@ -129,30 +103,7 @@
                     <div class="mb-3">
                         <label class="form-label">Webhook Secret</label>
                         <input type="text" name="webhook_secret" class="form-control" placeholder="Secret gerado pelo sistema de origem" required minlength="16">
-                        <small class="text-muted">Secret para assinar as requisições (mínimo 16 caracteres)</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tipos de Produto</label>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="pt_saas" value="saas">
-                            <label class="form-check-label" for="pt_saas">SaaS (Software)</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="pt_evento" value="evento">
-                            <label class="form-check-label" for="pt_evento">Evento/Ingressos</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="pt_curso" value="curso">
-                            <label class="form-check-label" for="pt_curso">Curso</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="pt_lancamento" value="lancamento">
-                            <label class="form-check-label" for="pt_lancamento">Lançamento</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="pt_outro" value="outro">
-                            <label class="form-check-label" for="pt_outro">Outro</label>
-                        </div>
+                        <small class="text-muted">Secret para assinar as requisições</small>
                     </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" name="active" class="form-check-input" id="activeCheck" checked>
@@ -186,42 +137,12 @@
                         <input type="text" name="source_name" class="form-control" value="{{ $source->source_name }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Descrição</label>
-                        <input type="text" name="description" class="form-control" value="{{ $source->description }}" placeholder="Descrição opcional">
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">Callback URL</label>
                         <input type="url" name="callback_url" class="form-control" value="{{ $source->callback_url }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Webhook Secret</label>
                         <input type="text" name="webhook_secret" class="form-control" value="{{ $source->webhook_secret }}" required minlength="16">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tipos de Produto</label>
-                        @php
-                            $currentTypes = $source->product_types ?? [];
-                        @endphp
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="edit_pt_saas{{ $source->id }}" value="saas" {{ in_array('saas', $currentTypes) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="edit_pt_saas{{ $source->id }}">SaaS (Software)</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="edit_pt_evento{{ $source->id }}" value="evento" {{ in_array('evento', $currentTypes) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="edit_pt_evento{{ $source->id }}">Evento/Ingressos</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="edit_pt_curso{{ $source->id }}" value="curso" {{ in_array('curso', $currentTypes) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="edit_pt_curso{{ $source->id }}">Curso</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="edit_pt_lancamento{{ $source->id }}" value="lancamento" {{ in_array('lancamento', $currentTypes) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="edit_pt_lancamento{{ $source->id }}">Lançamento</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="checkbox" name="product_types[]" class="form-check-input" id="edit_pt_outro{{ $source->id }}" value="outro" {{ in_array('outro', $currentTypes) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="edit_pt_outro{{ $source->id }}">Outro</label>
-                        </div>
                     </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" name="active" class="form-check-input" id="editActiveCheck{{ $source->id }}" {{ $source->active ? 'checked' : '' }}>
