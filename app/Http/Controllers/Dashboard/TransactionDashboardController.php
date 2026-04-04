@@ -21,6 +21,8 @@ class TransactionDashboardController extends Controller
             'gateway' => 'sometimes|string',
             'integration_id' => 'sometimes|integer|exists:integrations,id',
             'search' => 'sometimes|string|max:255',
+            'source' => 'sometimes|string|max:100',
+            'product_type' => 'sometimes|in:saas,evento,curso,lancamento,outro',
         ]);
 
         $query = Transaction::where('company_id', $companyId)
@@ -58,9 +60,17 @@ class TransactionDashboardController extends Controller
             });
         }
 
+        if ($request->filled('source')) {
+            $query->where('source', $request->input('source'));
+        }
+
+        if ($request->filled('product_type')) {
+            $query->where('product_type', $request->input('product_type'));
+        }
+
         $transactions = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        $filters = $request->only(['status', 'date_from', 'date_to', 'gateway', 'integration_id', 'search']);
+        $filters = $request->only(['status', 'date_from', 'date_to', 'gateway', 'integration_id', 'search', 'source', 'product_type']);
 
         return view('dashboard.transactions.index', compact('transactions', 'filters'));
     }

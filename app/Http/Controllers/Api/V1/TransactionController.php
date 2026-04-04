@@ -54,6 +54,8 @@ class TransactionController extends Controller
             'metadata' => 'sometimes|array',
             'callback_url' => 'sometimes|url',
             'expires_in' => 'sometimes|integer|min:1|max:720',
+            'source' => 'sometimes|string|max:100',
+            'product_type' => 'sometimes|in:saas,evento,curso,lancamento,outro',
         ]);
 
         $integration = $request->attributes->get('integration');

@@ -50,6 +50,7 @@ class Transaction extends Model
         'source',
         'callback_url',
         'asaas_customer_id',
+        'product_type',
     ];
 
     protected $casts = [

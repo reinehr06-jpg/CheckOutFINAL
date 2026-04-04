@@ -35,16 +35,15 @@
                 <div class="sidebar-section-title">Operação</div>
                 <ul class="sidebar-nav">
                     <li><a href="{{ route('dashboard.transactions') }}" class="{{ request()->routeIs('dashboard.transactions*') ? 'active' : '' }}"><i class="fas fa-money-bill-trend-up"></i> Transações</a></li>
-                    <li><a href="{{ route('dashboard.webhooks') }}" class="{{ request()->routeIs('dashboard.webhooks*') ? 'active' : '' }}"><i class="fas fa-bolt"></i> Webhooks</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Integrações</div>
                 <ul class="sidebar-nav">
-                    <li><a href="{{ route('dashboard.integrations.index') }}" class="{{ request()->routeIs('dashboard.integrations*') ? 'active' : '' }}"><i class="fas fa-store"></i> Basileia Vendas</a></li>
-                    <li><a href="{{ route('dashboard.integrations.index') }}" class="{{ request()->routeIs('dashboard.integrations*') ? 'active' : '' }}"><i class="fas fa-globe"></i> Site Contratação</a></li>
-                    <li><a href="{{ route('dashboard.events.index') }}" class="{{ request()->routeIs('dashboard.events*') ? 'active' : '' }}"><i class="fas fa-link"></i> Eventos / Links</a></li>
-                    <li><a href="{{ route('dashboard.sources.index') }}" class="{{ request()->routeIs('dashboard.sources*') ? 'active' : '' }}"><i class="fas fa-network-wired"></i> Sistemas Origem</a></li>
+                    <li><a href="{{ route('dashboard.sources.index') }}" class="{{ request()->routeIs('dashboard.sources*') ? 'active' : '' }}"><i class="fas fa-network-wired"></i> Sistemas de Origem</a></li>
+                    <li><a href="{{ route('dashboard.integrations.index') }}" class="{{ request()->routeIs('dashboard.integrations*') ? 'active' : '' }}"><i class="fas fa-key"></i> API Keys</a></li>
+                    <li><a href="{{ route('dashboard.events.index') }}" class="{{ request()->routeIs('dashboard.events*') ? 'active' : '' }}"><i class="fas fa-link"></i> Links de Pagamento</a></li>
+                    <li><a href="{{ route('dashboard.webhooks') }}" class="{{ request()->routeIs('dashboard.webhooks*') ? 'active' : '' }}"><i class="fas fa-bolt"></i> Webhooks Enviados</a></li>
                 </ul>
             </div>
             <div class="sidebar-section">

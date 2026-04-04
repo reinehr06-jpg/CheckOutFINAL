@@ -50,6 +50,7 @@ class AsaasCheckoutController extends Controller
                 'uuid' => Str::uuid(),
                 'asaas_payment_id' => $asaasPaymentId,
                 'source' => $request->get('source', 'basileia_vendas'),
+                'product_type' => $request->get('product_type', 'saas'),
                 'external_id' => $request->get('venda_id', ''),
                 'callback_url' => $request->get('callback_url', ''),
                 'amount' => $asaasPayment['value'] ?? $request->get('valor', 0),

@@ -23,6 +23,19 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+// Rota de teste para visualizar o checkout
+Route::get('/test-checkout', function () {
+    $transaction = new stdClass();
+    $transaction->uuid = 'test-checkout-uuid-12345';
+    $transaction->description = 'Plano Profissional Mensal - Basileia';
+    $transaction->customer_email = 'cliente@exemplo.com';
+    $transaction->amount = 197.99;
+    $transaction->currency = 'BRL';
+    $transaction->status = 'pending';
+    
+    return view('checkout.index', compact('transaction'));
+});
+
 // Public event checkout pages
 Route::get('/evento/{slug}', [EventCheckoutController::class, 'show'])->name('evento.show');
 Route::post('/evento/{slug}/pay', [EventCheckoutController::class, 'process'])->name('evento.process');

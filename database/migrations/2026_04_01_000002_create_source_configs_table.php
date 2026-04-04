@@ -11,8 +11,10 @@ return new class extends Migration
         Schema::create('source_configs', function (Blueprint $table) {
             $table->id();
             $table->string('source_name')->unique();
+            $table->string('description')->nullable();
             $table->string('callback_url');
             $table->string('webhook_secret');
+            $table->json('product_types')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();
         });
