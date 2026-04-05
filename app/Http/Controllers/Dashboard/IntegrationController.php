@@ -15,6 +15,34 @@ class IntegrationController extends Controller
         $user = Auth::user();
         $companyId = $user->company_id;
 
+        // Se o usuário não tem empresa, tentamos pegar a primeira ou criar uma
+        if (empty($companyId)) {
+            $company = \App\Models\Company::first();
+            
+            if (!$company) {
+                try {
+                    $company = new \App\Models\Company();
+                    $company->name = 'Minha Empresa';
+                    $company->status = 'active';
+                    $company->save();
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Não foi possível criar empresa: " . $e->getMessage());
+                }
+            }
+            
+            if ($company && $company->id) {
+                $companyId = $company->id;
+                // Forçamos a atualização do usuário
+                \App\Models\User::where('id', $user->id)->update(['company_id' => $companyId]);
+                $user->company_id = $companyId;
+            }
+        }
+
+        // Medida de segurança final: Se ainda for null, abortamos com erro amigável ao invés de crash SQL
+        if (empty($companyId)) {
+            abort(500, "Erro: Não foi possível carregar o contexto da sua empresa. Verifique se o banco de dados tem ao menos uma empresa cadastrada.");
+        }
+
         $integrations = Integration::where('company_id', $companyId)->get();
 
         if ($integrations->count() === 1) {
