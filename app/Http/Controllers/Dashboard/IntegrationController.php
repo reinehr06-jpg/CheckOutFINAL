@@ -173,7 +173,7 @@ class IntegrationController extends Controller
         
         $integration->update([
             'api_key_hash' => hash('sha256', $newApiKey),
-            'api_key_prefix' => substr($newApiKey, 0, 8),
+            'api_key_prefix' => substr($newApiKey, 0, 16),
         ]);
 
         return redirect()->route('dashboard.integrations.show', $integration->id)

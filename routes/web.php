@@ -16,6 +16,7 @@ use App\Http\Controllers\Public\EventCheckoutController;
 use App\Http\Controllers\AsaasCheckoutController;
 use App\Http\Controllers\Dashboard\SourceConfigController;
 use App\Http\Controllers\Dashboard\PasswordController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Middleware\RateLimitCheckout;
 use App\Http\Middleware\CheckTransactionAccess;
 

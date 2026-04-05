@@ -35,7 +35,8 @@ class AuthenticateApi
             return response()->json(['error' => 'Invalid API key'], 401);
         }
 
-        Log::debug('AuthenticateApi: Success', ['integration' => $integration->id]);
+        $request->attributes->add(['integration' => $integration]);
+        $request->attributes->add(['company' => $integration->company]);
 
         $request->merge(['integration' => $integration]);
         $request->merge(['company' => $integration->company]);
