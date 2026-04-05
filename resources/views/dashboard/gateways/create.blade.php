@@ -74,13 +74,72 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-section" id="webhook-section" style="display: none; margin-top: 24px; padding: 24px; background: rgba(124, 58, 237, 0.03); border: 1px dashed var(--primary); border-radius: 16px;">
+            <h4 style="color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-tower-broadcast"></i> Configuração de Webhook
+            </h4>
+            
+            <div class="form-group">
+                <label>URL de Notificação (Endpoint)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="webhook-url-display" class="form-control" readonly style="background: #f1f5f9; cursor: default; font-family: monospace; font-size: 0.8rem; flex: 1;">
+                    <button type="button" onclick="copyWebhookUrl()" class="btn" style="background: var(--bg-sidebar); color: white; padding: 0 16px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">
+                       <i class="fas fa-copy"></i> COPIAR
+                    </button>
+                </div>
+                <p class="form-help">Cole esta URL nas configurações de Webhook do seu painel Asaas.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="webhook_token">API Secret / Webhook Token</label>
+                <input type="password" name="config[webhook_token]" id="webhook_token" class="form-control" placeholder="Token gerado pelo gateway">
+                <p class="form-help">Utilizado para validar a autenticidade das notificações recebidas.</p>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 24px;">
             <label class="checkbox-container">
                 <input type="checkbox" name="is_default" value="1" {{ old('is_default') ? 'checked' : '' }}>
                 <span class="checkmark"></span>
                 Definir como gateway padrão
             </label>
         </div>
+@push('scripts')
+<script>
+    const slugSelect = document.getElementById('slug');
+    const webhookSection = document.getElementById('webhook-section');
+    const webhookUrlDisplay = document.getElementById('webhook-url-display');
+    const baseUrl = "{{ url('/api/webhooks/gateway') }}";
+
+    function updateWebhookSection() {
+        const val = slugSelect.value;
+        if (['asaas', 'stripe', 'pagseguro'].includes(val)) {
+            webhookSection.style.display = 'block';
+            webhookUrlDisplay.value = `${baseUrl}/${val}`;
+        } else {
+            webhookSection.style.display = 'none';
+        }
+    }
+
+    slugSelect.addEventListener('change', updateWebhookSection);
+    updateWebhookSection(); // Initial state
+
+    function copyWebhookUrl() {
+        webhookUrlDisplay.select();
+        document.execCommand('copy');
+        
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> COPIADO!';
+        btn.style.background = '#10b981';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'var(--bg-sidebar)';
+        }, 2000);
+    }
+</script>
+@endpush
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-lg">

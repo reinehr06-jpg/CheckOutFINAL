@@ -56,7 +56,30 @@
             </div>
         </div>
 
-        <div class="form-row">
+        <div class="form-section" id="webhook-section" style="display: none; margin-top: 24px; padding: 24px; background: rgba(124, 58, 237, 0.03); border: 1px dashed var(--primary); border-radius: 16px;">
+            <h4 style="color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-tower-broadcast"></i> Configuração de Webhook
+            </h4>
+            
+            <div class="form-group">
+                <label>URL de Notificação (Endpoint)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="webhook-url-display" class="form-control" readonly style="background: #f1f5f9; cursor: default; font-family: monospace; font-size: 0.8rem; flex: 1;">
+                    <button type="button" onclick="copyWebhookUrl()" class="btn" style="background: var(--bg-sidebar); color: white; padding: 0 16px; border-radius: 10px; font-size: 0.75rem; font-weight: 800;">
+                       <i class="fas fa-copy"></i> COPIAR
+                    </button>
+                </div>
+                <p class="form-help">Cole esta URL nas configurações de Webhook do seu painel Asaas.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="webhook_token">API Secret / Webhook Token (Novo)</label>
+                <input type="password" name="config[webhook_token]" id="webhook_token" class="form-control" placeholder="Mudar segredo do webhook">
+                <p class="form-help">Mantenha em branco para não alterar a chave de validação atual.</p>
+            </div>
+        </div>
+
+        <div class="form-row" style="margin-top: 24px;">
             <div class="form-group">
                 <label class="checkbox-container">
                     <input type="checkbox" name="is_default" value="1" {{ old('is_default', $gateway->is_default) ? 'checked' : '' }}>
@@ -73,6 +96,40 @@
                 </label>
             </div>
         </div>
+@push('scripts')
+<script>
+    const slug = "{{ $gateway->slug }}";
+    const webhookSection = document.getElementById('webhook-section');
+    const webhookUrlDisplay = document.getElementById('webhook-url-display');
+    const baseUrl = "{{ url('/api/webhooks/gateway') }}";
+
+    function updateWebhookSection() {
+        if (['asaas', 'stripe', 'pagseguro'].includes(slug)) {
+            webhookSection.style.display = 'block';
+            webhookUrlDisplay.value = `${baseUrl}/${slug}`;
+        } else {
+            webhookSection.style.display = 'none';
+        }
+    }
+
+    updateWebhookSection();
+
+    function copyWebhookUrl() {
+        webhookUrlDisplay.select();
+        document.execCommand('copy');
+        
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> COPIADO!';
+        btn.style.background = '#10b981';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'var(--bg-sidebar)';
+        }, 2000);
+    }
+</script>
+@endpush
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary btn-lg">
