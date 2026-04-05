@@ -28,6 +28,7 @@
             height: 56px; background: rgba(255,255,255,0.9); backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--border); display: flex; align-items: center; 
             padding: 0 24px; position: sticky; top: 0; z-index: 50; justify-content: space-between;
+        }
         .dropdown-menu.show { display: block !important; }
         .dropdown-menu a:hover { background: #f8fafc; }
         .hamburger { border: none; background: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 8px; display: none; }

@@ -54,7 +54,9 @@ class IntegrationController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'base_url' => 'sometimes|url',
+            'base_url' => 'nullable|url',
+            'webhook_url' => 'nullable|url',
+            'webhook_secret' => 'nullable|string|max:255',
         ]);
 
         $user = Auth::user();
@@ -66,6 +68,8 @@ class IntegrationController extends Controller
             'name' => $request->input('name'),
             'slug' => Str::slug($request->input('name')),
             'base_url' => $request->input('base_url') ?? 'https://vendas.basileia.global',
+            'webhook_url' => $request->input('webhook_url'),
+            'webhook_secret' => $request->input('webhook_secret'),
             'api_key_hash' => hash('sha256', $apiKey),
             'api_key_prefix' => substr($apiKey, 0, 8),
             'permissions' => ['all'],

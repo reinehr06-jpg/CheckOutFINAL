@@ -2,8 +2,8 @@
 @section('title', 'Integrações')
 
 @section('header_actions')
-    <button onclick="document.getElementById('modal-create').classList.add('show')" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-        <i class="fas fa-plus"></i> NOVA CONEXÃO
+    <button onclick="toggleDrawer('drawer-create', true)" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-plus"></i> NOVA CONEXÃO ELITE
     </button>
 @endsection
 
@@ -97,7 +97,7 @@
 
             <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 12px;">
                 <a href="{{ route('dashboard.integrations.show', $int->id) }}" class="btn" style="background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 0.85rem; text-decoration: none; text-align: center; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);">
-                     CONECTAR & CONFIGURAR
+                     DADOS DA CONEXÃO
                 </a>
                 <form method="POST" action="{{ route('dashboard.integrations.toggle', $int->id) }}" style="display: inline;">
                     @csrf
@@ -113,70 +113,105 @@
                 <i class="fas fa-network-wired"></i>
             </div>
             <h3 style="font-size: 1.4rem; font-weight: 900; color: var(--bg-sidebar); margin-bottom: 8px;">Nenhum sistema conectado</h3>
-            <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 30px;">Comece conectando sua primeira plataforma de vendas (como o Basileia Vendas) para automatizar seus recebimentos.</p>
-            <button onclick="document.getElementById('modal-create').classList.add('show')" class="btn" style="background: var(--primary); color: white; border: none; padding: 16px 32px; border-radius: 14px; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);">
+            <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 440px; margin: 0 auto 30px;">Comece conectando sua primeira plataforma de vendas para automatizar seus recebimentos.</p>
+            <button onclick="toggleDrawer('drawer-create', true)" class="btn" style="background: var(--primary); color: white; border: none; padding: 16px 32px; border-radius: 14px; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);">
                 CRIAR MINHA PRIMEIRA CONEXÃO
             </button>
         </div>
     @endforelse
 </div>
 
-<!-- Modal Create (Centered) -->
-<div id="modal-create" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 200; align-items: center; justify-content: center;">
-    <div class="modal-content animate-up" style="background: #fff; width: 100%; max-width: 500px; border-radius: 28px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-        <div style="background: var(--elite-purple); padding: 30px; text-align: center; color: white;">
-            <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 20px;">
-                <i class="fas fa-plus"></i>
+<!-- Side Drawer Create (Premium Panel) -->
+<div id="drawer-create" class="drawer-overlay" onclick="if(event.target === this) toggleDrawer('drawer-create', false)">
+    <div class="drawer-content">
+        <div class="drawer-header">
+            <div>
+                <h3>Nova Conexão Elite</h3>
+                <p style="font-size: 0.75rem; opacity: 0.8; font-weight: 600;">Expanda seu ecossistema de pagamentos.</p>
             </div>
-            <h3 style="font-size: 1.4rem; font-weight: 900; margin-bottom: 6px;">Nova Conexão Elite</h3>
-            <p style="font-size: 0.85rem; opacity: 0.8;">Expanda seu ecossistema de pagamentos.</p>
+            <button class="drawer-close" onclick="toggleDrawer('drawer-create', false)">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         
-        <form method="POST" action="{{ route('dashboard.integrations.store') }}" style="padding: 30px;">
-            @csrf
-            <div style="display: grid; gap: 24px;">
-                <div class="form-group">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; letter-spacing: 0.5px;">Identificação do Sistema</label>
-                    <input type="text" name="name" required placeholder="Ex: Basileia Vendas - Store Principal" style="width: 100%; height: 52px; padding: 0 20px; border-radius: 14px; border: 1px solid var(--border); background: #f8fafc; font-size: 0.95rem; font-weight: 600; outline: none; transition: all 0.2s ease;">
-                </div>
-                <div class="form-group">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; letter-spacing: 0.5px;">URL Base do Sistema (API)</label>
-                    <input type="url" name="base_url" placeholder="https://vendas.seusite.com" style="width: 100%; height: 52px; padding: 0 20px; border-radius: 14px; border: 1px solid var(--border); background: #f8fafc; font-size: 0.95rem; font-weight: 600; outline: none;">
-                </div>
+        <div class="drawer-body">
+            <form id="form-create-integration" method="POST" action="{{ route('dashboard.integrations.store') }}">
+                @csrf
                 
-                <div style="background: rgba(124, 58, 237, 0.04); padding: 18px; border-radius: 16px; border: 1px solid rgba(124, 58, 237, 0.1); margin-bottom: 10px;">
-                    <p style="font-size: 0.8rem; color: #6d28d9; font-weight: 700; line-height: 1.6; margin: 0; display: flex; gap: 10px;">
-                        <i class="fas fa-shield-alt" style="margin-top: 2px;"></i>
-                        Ao confirmar, o Basileia Secure gerará um par de chaves de alta segurança (Bearer Auth) para validar todas as requisições deste sistema.
-                    </p>
+                <div style="margin-bottom: 30px;">
+                    <h5 style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; letter-spacing: 0.5px;">1. Identificação Básica</h5>
+                    
+                    <div class="form-group-elite">
+                        <label for="name">Nome do Sistema</label>
+                        <div class="input-group-elite">
+                            <i class="fas fa-desktop input-group-icon"></i>
+                            <input type="text" name="name" id="name" class="input-elite" placeholder="Ex: Basileia Vendas - Loja Principal" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group-elite">
+                        <label for="base_url">URL Base do Sistema (API)</label>
+                        <div class="input-group-elite">
+                            <i class="fas fa-link input-group-icon"></i>
+                            <input type="url" name="base_url" id="base_url" class="input-elite" placeholder="https://vendas.seusite.com">
+                        </div>
+                        <p class="form-help-elite">Onde seu sistema está hospedado.</p>
+                    </div>
                 </div>
 
-                <div style="display: flex; gap: 12px;">
-                    <button type="button" class="btn" onclick="document.getElementById('modal-create').classList.remove('show')" style="flex: 1; height: 54px; background: #f8fafc; color: var(--text-muted); border: 1px solid var(--border); border-radius: 16px; font-weight: 800; font-size: 0.9rem; cursor: pointer;">Cancelar</button>
-                    <button type="submit" class="btn" style="flex: 2; height: 54px; background: var(--primary); color: white; border: none; border-radius: 16px; font-weight: 900; font-size: 0.95rem; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.3);">CONFIRMAR CRIAÇÃO</button>
+                <div style="margin-bottom: 30px; border-top: 1px solid var(--border-light); padding-top: 24px;">
+                    <h5 style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; letter-spacing: 0.5px;">2. Configuração Avançada (Opcional)</h5>
+                    
+                    <div class="form-group-elite">
+                        <label for="webhook_url">URL de Notificações (Webhook)</label>
+                        <div class="input-group-elite">
+                            <i class="fas fa-broadcast-tower input-group-icon"></i>
+                            <input type="url" name="webhook_url" id="webhook_url" class="input-elite" placeholder="https://vendas.com/api/webhook/checkout">
+                        </div>
+                        <p class="form-help-elite">URL para onde enviaremos o status dos pagamentos.</p>
+                    </div>
+
+                    <div class="form-group-elite">
+                        <label for="webhook_secret">Webhook Secret (Whsec)</label>
+                        <div class="input-group-elite">
+                            <i class="fas fa-shield-halved input-group-icon"></i>
+                            <input type="text" name="webhook_secret" id="webhook_secret" class="input-elite" placeholder="whsec_...">
+                        </div>
+                        <p class="form-help-elite">Copie este valor do seu sistema de vendas.</p>
+                    </div>
                 </div>
-            </div>
-        </form>
+
+                <div class="glass-section">
+                    <p style="font-size: 0.75rem; color: var(--primary); font-weight: 700; line-height: 1.5; margin: 0; display: flex; gap: 10px;">
+                        <i class="fas fa-shield-check" style="font-size: 1rem; margin-top: 2px;"></i>
+                        <span>O Basileia Secure gerará automaticamente um Token Bearer para autenticação segura deste sistema.</span>
+                    </p>
+                </div>
+            </form>
+        </div>
+
+        <div class="drawer-footer">
+            <button type="button" class="btn" onclick="toggleDrawer('drawer-create', false)" style="flex: 1; height: 50px; background: #f8fafc; border: 1px solid var(--border); color: var(--text-muted); border-radius: 12px; font-weight: 800;">CANCELAR</button>
+            <button type="submit" form="form-create-integration" class="btn btn-primary" style="flex: 2; height: 50px; justify-content: center; border-radius: 12px; font-weight: 900; box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.3);">CONFIRMAR CRIAÇÃO</button>
+        </div>
     </div>
 </div>
 
 <script>
-    // Toggle Modal Utility
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') document.getElementById('modal-create').classList.remove('show');
+    function toggleDrawer(id, show) {
+        const drawer = document.getElementById(id);
+        if (show) {
+            drawer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        } else {
+            drawer.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Escape to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') toggleDrawer('drawer-create', false);
     });
-    // Add show class trigger
-    const modal = document.getElementById('modal-create');
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.attributeName === 'class') {
-                modal.style.display = modal.classList.contains('show') ? 'flex' : 'none';
-            }
-        });
-    });
-    observer.observe(modal, { attributes: true });
 </script>
-@endsection
->
-</div>
 @endsection

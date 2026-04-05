@@ -350,3 +350,182 @@ table tbody td {
     .main-content { margin-left: 70px; } 
 }
 @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* ==========================================
+   PREMIUM ELITE - FORM & DRAWER SYSTEM
+   ========================================== */
+
+/* Premium Card Overhaul */
+.card-premium {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(124, 58, 237, 0.1);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(124, 58, 237, 0.05);
+    border-radius: 20px;
+    padding: 30px;
+    transition: var(--transition);
+}
+.card-premium:hover {
+    border-color: rgba(124, 58, 237, 0.2);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+}
+
+/* Elite Form Groups */
+.form-group-elite {
+    margin-bottom: 24px;
+}
+.form-group-elite label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    transition: var(--transition);
+}
+.form-group-elite:focus-within label {
+    color: var(--primary);
+}
+
+.input-group-elite {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.input-group-icon {
+    position: absolute;
+    left: 16px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+.input-elite {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px 0 46px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+.input-elite:focus {
+    outline: none;
+    background: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-glow);
+}
+.input-elite:focus + .input-group-icon {
+    color: var(--primary);
+}
+
+/* Premium Select Dropdown */
+.select-elite {
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m19 9-7 7-7-7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+}
+
+/* Sidebar Drawer (Aba Lateral) */
+.drawer-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.drawer-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.drawer-content {
+    position: absolute;
+    top: 0;
+    right: -500px;
+    width: 100%;
+    max-width: 480px;
+    height: 100%;
+    background: #fff;
+    box-shadow: -10px 0 50px rgba(0, 0, 0, 0.1);
+    transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+.drawer-overlay.active .drawer-content {
+    right: 0;
+}
+
+.drawer-header {
+    padding: 30px;
+    background: var(--elite-purple);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.drawer-header h3 { font-size: 1.25rem; font-weight: 900; }
+.drawer-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+.drawer-close:hover { background: rgba(255, 255, 255, 0.2); }
+
+.drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+}
+.drawer-footer {
+    padding: 24px 30px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    gap: 12px;
+}
+
+/* Glass Section */
+.glass-section {
+    background: rgba(124, 58, 237, 0.03);
+    border: 1px solid rgba(124, 58, 237, 0.08);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+
+/* Help Text */
+.form-help-elite {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.4;
+    font-weight: 500;
+}
