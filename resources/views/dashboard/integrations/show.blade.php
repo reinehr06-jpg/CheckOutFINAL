@@ -74,26 +74,34 @@
                     </div>
                 </div>
 
-                <div style="background: #fff; padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
-                    <label style="display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">API Key (Bearer Auth para o Vendas)</label>
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                        @if(session('new_api_key'))
-                            <div style="flex: 1; background: #fefce8; border: 1px dashed #eab308; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                                <code style="font-weight: 800; color: #854d0e; font-size: 0.95rem;">{{ session('new_api_key') }}</code>
-                                <button onclick="navigator.clipboard.writeText('{{ session('new_api_key') }}'); alert('Chave Copiada!')" style="background: #854d0e; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; cursor: pointer;">COPIAR</button>
-                            </div>
-                        @else
-                            <code style="font-weight: 700; color: var(--primary); font-size: 1rem;">{{ $integration->api_key_prefix }}••••••••••••••</code>
-                        @endif
+                <div style="background: #fff; padding: 16px; border-radius: 12px; border: 1px solid var(--border);">
+                    <label style="display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">API Key (Bearer Auth para o Vendas)</label>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
                         
+                        <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+                            @if(session('new_api_key'))
+                                <code style="font-weight: 800; color: #854d0e; font-size: 0.95rem; background: #fefce8; border: 1px dashed #eab308; padding: 10px 14px; border-radius: 10px; flex: 1;">{{ session('new_api_key') }}</code>
+                                <button onclick="navigator.clipboard.writeText('{{ session('new_api_key') }}'); alert('Chave Copiada!')" style="background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 0.75rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.1);">
+                                    <i class="far fa-copy"></i> COPIAR
+                                </button>
+                            @else
+                                <code style="font-weight: 700; color: var(--primary); font-size: 1.1rem; background: #f8fafc; padding: 10px 14px; border-radius: 10px; flex: 1; border: 1px solid var(--border);">{{ $integration->api_key_prefix }}••••••••••••••</code>
+                            @endif
+                        </div>
+
                         <form action="{{ route('dashboard.integrations.regenerate-key', $integration->id) }}" method="POST" style="margin: 0;">
                             @csrf
-                            <button type="submit" style="background: none; border: none; color: #10b981; cursor: pointer; font-weight: 800; font-size: 0.75rem; display: flex; align-items: center; gap: 6px;">
-                                <i class="fas fa-sync-alt"></i> 
-                                {{ session('new_api_key') ? 'Gerar Outra' : 'Ver/Regenerar' }}
+                            <button type="submit" style="background: #f1f5f9; color: #475569; border: none; padding: 12px 16px; border-radius: 10px; font-weight: 800; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+                                <i class="fas fa-sync-alt"></i> REGENERAR
                             </button>
                         </form>
                     </div>
+                    @if(!session('new_api_key'))
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-info-circle text-primary"></i> 
+                            A chave é exibida apenas uma vez após a geração por segurança. Clique em Regenerar caso precise de uma nova.
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>
