@@ -15,10 +15,25 @@ class IntegrationController extends Controller
         $user = Auth::user();
         $companyId = $user->company_id;
 
-        $integrations = Integration::where('company_id', $companyId)
-            ->withCount('transactions')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $integrations = Integration::where('company_id', $companyId)->get();
+
+        if ($integrations->count() === 1) {
+            return redirect()->route('dashboard.integrations.show', $integrations->first()->id);
+        }
+
+        if ($integrations->count() === 0) {
+            $apiKey = 'ck_live_' . Str::random(32);
+            $newIntegration = Integration::create([
+                'company_id' => $companyId,
+                'name' => 'Basileia Vendas',
+                'slug' => 'basileia-vendas',
+                'status' => 'active',
+                'api_key_hash' => hash('sha256', $apiKey),
+                'api_key_prefix' => substr($apiKey, 0, 8),
+            ]);
+            return redirect()->route('dashboard.integrations.show', $newIntegration->id)
+                ->with('success', 'Nova integração pronta para configurar. API Key gerada: ' . $apiKey);
+        }
 
         return view('dashboard.integrations.index', compact('integrations'));
     }
