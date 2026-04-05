@@ -8,6 +8,8 @@ class GatewayFactory
 {
     private const GATEWAYS = [
         'asaas' => AsaasGateway::class,
+        'stripe' => StripeGateway::class,
+        'pagseguro' => PagSeguroGateway::class,
     ];
 
     public function make(string $type): GatewayInterface

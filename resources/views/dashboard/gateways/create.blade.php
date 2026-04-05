@@ -23,9 +23,13 @@
         </div>
 
         <div class="form-group">
-            <label for="slug">Identificador (Slug)</label>
-            <input type="text" name="slug" id="slug" class="form-control" placeholder="Ex: asaas" required value="{{ old('slug') }}">
-            <p class="form-help">Um identificador único (letras minúsculas e hífens).</p>
+            <label for="slug">Plataforma (Tipo)</label>
+            <select name="slug" id="slug" class="form-control" required>
+                <option value="asaas" {{ old('slug') === 'asaas' ? 'selected' : '' }}>Asaas</option>
+                <option value="stripe" {{ old('slug') === 'stripe' ? 'selected' : '' }}>Stripe</option>
+                <option value="pagseguro" {{ old('slug') === 'pagseguro' ? 'selected' : '' }}>PagSeguro</option>
+            </select>
+            <p class="form-help">Selecione o provedor de pagamento.</p>
         </div>
 
         <div class="form-section">

@@ -41,8 +41,6 @@
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Integrações</div>
                 <ul class="sidebar-nav">
-                    <li><a href="{{ route('dashboard.integrations.index') }}" class="{{ request()->routeIs('dashboard.integrations*') ? 'active' : '' }}"><i class="fas fa-store"></i> Basileia Vendas</a></li>
-                    <li><a href="{{ route('dashboard.integrations.index') }}" class="{{ request()->routeIs('dashboard.integrations*') ? 'active' : '' }}"><i class="fas fa-globe"></i> Site Contratação</a></li>
                     <li><a href="{{ route('dashboard.events.index') }}" class="{{ request()->routeIs('dashboard.events*') ? 'active' : '' }}"><i class="fas fa-link"></i> Eventos / Links</a></li>
                     <li><a href="{{ route('dashboard.sources.index') }}" class="{{ request()->routeIs('dashboard.sources*') ? 'active' : '' }}"><i class="fas fa-network-wired"></i> Sistemas Origem</a></li>
                 </ul>

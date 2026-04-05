@@ -23,8 +23,13 @@
         </div>
 
         <div class="form-group">
+            <label for="slug">Plataforma</label>
+            <input type="text" id="platform" class="form-control" readonly value="{{ ucfirst($gateway->slug ?? 'Asaas') }}">
+        </div>
+
+        <div class="form-group">
             <label for="slug">Identificador (Slug)</label>
-            <input type="text" name="slug" id="slug" class="form-control" placeholder="Ex: asaas" required readonly value="{{ $gateway->slug }}">
+            <input type="text" name="slug" id="slug" class="form-control" readonly value="{{ $gateway->slug }}">
             <p class="form-help">O identificador não pode ser alterado após a criação.</p>
         </div>
 
