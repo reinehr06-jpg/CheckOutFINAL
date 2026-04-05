@@ -71,11 +71,22 @@
 
                 <div style="background: #fff; padding: 16px; border-radius: 10px; border: 1px solid var(--border);">
                     <label style="display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">API Key (Bearer Auth para o Vendas)</label>
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <code style="font-weight: 700; color: var(--primary); font-size: 1rem;">{{ $integration->api_key_prefix }}••••••••••••••</code>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        @if(session('new_api_key'))
+                            <div style="flex: 1; background: #fefce8; border: 1px dashed #eab308; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                <code style="font-weight: 800; color: #854d0e; font-size: 0.95rem;">{{ session('new_api_key') }}</code>
+                                <button onclick="navigator.clipboard.writeText('{{ session('new_api_key') }}'); alert('Chave Copiada!')" style="background: #854d0e; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; cursor: pointer;">COPIAR</button>
+                            </div>
+                        @else
+                            <code style="font-weight: 700; color: var(--primary); font-size: 1rem;">{{ $integration->api_key_prefix }}••••••••••••••</code>
+                        @endif
+                        
                         <form action="{{ route('dashboard.integrations.regenerate-key', $integration->id) }}" method="POST" style="margin: 0;">
                             @csrf
-                            <button type="submit" style="background: none; border: none; color: #10b981; cursor: pointer; font-weight: 800; font-size: 0.75rem;"><i class="fas fa-sync-alt"></i> Ver/Regenerar</button>
+                            <button type="submit" style="background: none; border: none; color: #10b981; cursor: pointer; font-weight: 800; font-size: 0.75rem; display: flex; align-items: center; gap: 6px;">
+                                <i class="fas fa-sync-alt"></i> 
+                                {{ session('new_api_key') ? 'Gerar Outra' : 'Ver/Regenerar' }}
+                            </button>
                         </form>
                     </div>
                 </div>

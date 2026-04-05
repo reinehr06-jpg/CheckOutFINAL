@@ -181,12 +181,14 @@ class IntegrationController extends Controller
         }
 
         $newApiKey = 'ck_live_' . Str::random(32);
+        
         $integration->update([
             'api_key_hash' => hash('sha256', $newApiKey),
             'api_key_prefix' => substr($newApiKey, 0, 8),
         ]);
 
         return redirect()->route('dashboard.integrations.show', $integration->id)
-            ->with('success', 'API Key regenerada. Nova chave: ' . $newApiKey);
+            ->with('success', 'Nova API Key gerada com sucesso!')
+            ->with('new_api_key', $newApiKey);
     }
 }
