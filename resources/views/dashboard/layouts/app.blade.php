@@ -65,6 +65,7 @@
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Sistemas</div>
                 <ul class="sidebar-nav">
+                    <li><a href="{{ route('dashboard.gateways.index') }}" class="{{ request()->routeIs('dashboard.gateways*') ? 'active' : '' }}"><i class="fas fa-wallet"></i><span>Gateways</span></a></li>
                     <li><a href="{{ route('dashboard.integrations.index') }}" class="{{ request()->routeIs('dashboard.integrations*') ? 'active' : '' }}"><i class="fas fa-plug"></i><span>Integrações</span></a></li>
                     <li><a href="{{ route('dashboard.webhooks') }}" class="{{ request()->routeIs('dashboard.webhooks*') ? 'active' : '' }}"><i class="fas fa-tower-broadcast"></i><span>Webhooks</span></a></li>
                 </ul>

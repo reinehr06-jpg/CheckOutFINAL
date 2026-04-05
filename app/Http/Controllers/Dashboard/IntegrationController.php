@@ -85,8 +85,8 @@ class IntegrationController extends Controller
         }
 
         $integration->update($request->only([
-            'name', 'description', 'gateway_config',
-            'webhook_url', 'webhook_events',
+            'name', 'description', 'base_url',
+            'webhook_url', 'webhook_secret',
         ]));
 
         return redirect()->route('dashboard.integrations.show', $integration->id)

@@ -1,48 +1,75 @@
 @extends('dashboard.layouts.app')
-
-@section('title', 'Integração: ' . ($integration->name ?? ''))
+@section('title', 'Configuração de Integração')
 
 @section('content')
-<a href="{{ route('dashboard.integrations.index') }}" class="back-link animate-up">
-    <i class="fas fa-arrow-left"></i> Voltar para Integrações
-</a>
-
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-    <div class="card animate-up" style="animation-delay: 0.1s;">
-        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 16px;">Informações</h3>
-        <div class="space-y-3">
-            <div class="flex justify-between"><span class="detail-label">Nome</span><span class="detail-value">{{ $integration->name }}</span></div>
-            <div class="flex justify-between"><span class="detail-label">Slug</span><span class="detail-value" style="font-family: monospace;">{{ $integration->slug }}</span></div>
-            <div class="flex justify-between"><span class="detail-label">Status</span><span class="badge {{ $integration->status === 'active' ? 'badge-success' : 'badge-danger' }}">{{ $integration->status === 'active' ? 'Ativa' : 'Inativa' }}</span></div>
-            <div class="flex justify-between"><span class="detail-label">URL Base</span><span class="detail-value" style="font-size: 0.8rem;">{{ $integration->base_url ?? '-' }}</span></div>
-            <div class="flex justify-between"><span class="detail-label">Transações</span><span class="detail-value">{{ number_format($integration->transactions_count ?? 0) }}</span></div>
-            <div class="flex justify-between"><span class="detail-label">Criado</span><span class="detail-value">{{ $integration->created_at?->format('d/m/Y H:i') }}</span></div>
+<div class="animate-up" style="max-width: 800px; margin: 0 auto;">
+    
+    <!-- API Key Header Card -->
+    <div class="card" style="padding: 24px; margin-bottom: 24px; border-left: 4px solid var(--primary);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--bg-sidebar);">API Key</h3>
+            <span class="badge badge-success">Ativa</span>
         </div>
+        
+        <div style="background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <code style="font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: #475569; letter-spacing: 1px;">
+                {{ $integration->api_key_prefix }}••••••••••••••••••••••••••••
+            </code>
+            <form action="{{ route('dashboard.integrations.regenerate-key', $integration->id) }}" method="POST">
+                @csrf
+                <button type="submit" class="btn-action" style="background: var(--primary); color: white; padding: 8px 16px; font-size: 0.75rem; border-radius: 8px; border: none; font-weight: 700; cursor: pointer;">
+                    <i class="fas fa-sync-alt" style="margin-right: 8px;"></i>Regenerar API Key
+                </button>
+            </form>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">Use no header: <code style="color: var(--primary);">Authorization: Bearer ck_live_...</code></p>
     </div>
 
-    <div class="card animate-up" style="animation-delay: 0.2s;">
-        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 16px;">API Key</h3>
-        <div style="background: var(--surface-hover); padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; word-break: break-all; margin-bottom: 16px;">
-            {{ $integration->api_key_prefix ?? 'N/A' }}••••••••••••
-        </div>
-        <form method="POST" action="{{ route('dashboard.integrations.regenerate-key', $integration->id) }}" onsubmit="return confirm('Tem certeza? A chave atual será invalidada.')">
-            @csrf
-            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-sync"></i> Regenerar API Key</button>
-        </form>
+    <!-- Main Configuration Form -->
+    <div class="card" style="padding: 30px;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--bg-sidebar); margin-bottom: 24px;">Configuração</h3>
 
-        <h3 style="font-size: 1rem; font-weight: 700; margin: 24px 0 16px;">Atualizar</h3>
-        <form method="POST" action="{{ route('dashboard.integrations.update', $integration->id) }}">
+        <form action="{{ route('dashboard.integrations.update', $integration->id) }}" method="POST">
             @csrf
             @method('PUT')
-            <div class="form-group">
-                <label>Nome</label>
-                <input type="text" name="name" value="{{ $integration->name }}">
+
+            <div style="display: grid; gap: 20px;">
+                
+                <!-- Nome -->
+                <div class="form-group">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Nome</label>
+                    <input type="text" name="name" class="form-control" value="{{ $integration->name }}" placeholder="Ex: Basileia Vendas" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; font-size: 0.95rem;">
+                </div>
+
+                <!-- URL Base -->
+                <div class="form-group">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">URL Base</label>
+                    <input type="url" name="base_url" class="form-control" value="{{ $integration->base_url }}" placeholder="https://seu-vendas.com" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; font-size: 0.95rem;">
+                    <p style="font-size: 0.7rem; color: var(--text-muted); mt: 1">O endereço principal do seu sistema externo.</p>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+
+                <!-- Webhook URL -->
+                <div class="form-group">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Webhook URL</label>
+                    <input type="url" name="webhook_url" class="form-control" value="{{ $integration->webhook_url }}" placeholder="https://seu-vendas.com/api/webhook" style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; font-size: 0.95rem;">
+                    <p style="font-size: 0.7rem; color: var(--text-muted); mt: 1">URL do Vendas para onde o Checkout enviará notificações de pagamento.</p>
+                </div>
+
+                <!-- Webhook Secret -->
+                <div class="form-group">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Webhook Secret</label>
+                    <input type="text" name="webhook_secret" class="form-control" value="{{ $integration->webhook_secret }}" placeholder="whsec_..." style="width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; font-size: 0.95rem; font-family: monospace;">
+                    <p style="font-size: 0.7rem; color: var(--text-muted); mt: 1">Secret gerado pelo Vendas. O Checkout usa essa chave para assinar as requisições.</p>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <button type="submit" class="btn" style="background: var(--primary); color: white; border: none; padding: 14px 24px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease;">
+                        Salvar Configuração
+                    </button>
+                </div>
             </div>
-            <div class="form-group">
-                <label>URL Base</label>
-                <input type="url" name="base_url" value="{{ $integration->base_url }}">
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
         </form>
     </div>
 </div>
