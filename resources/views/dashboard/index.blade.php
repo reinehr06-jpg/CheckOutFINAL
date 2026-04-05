@@ -2,7 +2,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<!-- Welcome Elite Header -->
+<!-- Welcome Basileia Header -->
 <div class="animate-up" style="animation-delay: 0.1s; margin-bottom: 20px;">
     <div style="display: flex; align-items: center; justify-content: space-between;">
         <div>

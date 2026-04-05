@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Elite - Checkout</title>
+    <title>Login - Basileia Secure</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-light: #6366f1;
+            --primary: #7c3aed; /* Basileia Purple */
+            --primary-light: #a78bfa;
             --bg-dark: #0f172a;
             --text-muted: #94a3b8;
             --radius-xl: 16px;
         }
         body {
             margin: 0; padding: 0;
-            background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+            background: linear-gradient(135deg, #2e1065 0%, #0f172a 100%);
             min-height: 100vh;
             display: flex; align-items: center; justify-content: center;
             font-family: 'Inter', sans-serif;
@@ -38,7 +38,7 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: -1.5px; margin: 0 0 4px 0; }
-        .header h1 span { color: var(--primary-light); display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 3px; margin-top: -4px; }
+        .header h1 span { color: var(--primary-light); }
         .header p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 30px; }
         
         .form-group { margin-bottom: 20px; text-align: left; }
@@ -58,7 +58,7 @@
             cursor: pointer; transition: all 0.3s ease; 
             display: flex; align-items: center; justify-content: center; gap: 10px;
         }
-        .btn:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3); }
+        .btn:hover { background: var(--primary-light); transform: translateY(-1px); box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3); }
         
         .footer { margin-top: 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 24px; }
         .footer p { color: #64748b; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0; }
@@ -69,8 +69,8 @@
 <body>
     <div class="login-glass">
         <div class="header">
-            <h1>Checkout <span>Elite</span></h1>
-            <p>Painel de Controle Restrito</p>
+            <h1>Basileia <span>Secure</span></h1>
+            <p>Painel de Controle Corporativo</p>
         </div>
 
         @if($errors->any())
@@ -92,13 +92,13 @@
                 <input type="password" name="password" class="form-control" required placeholder="••••••••">
             </div>
             <button type="submit" class="btn">
-                <span>Acessar Painel</span>
+                <span>Acessar Basileia</span>
                 <i class="fas fa-chevron-right"></i>
             </button>
         </form>
 
         <div class="footer">
-            <p>Platform Elite &copy; {{ date('Y') }}</p>
+            <p>Basileia Secure &copy; {{ date('Y') }}</p>
         </div>
     </div>
 </body>

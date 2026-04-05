@@ -4,10 +4,10 @@
    ========================================== */
 
 :root {
-    --primary: #4f46e5;
-    --primary-light: #6366f1;
-    --primary-dark: #3730a3;
-    --primary-glow: rgba(79, 70, 229, 0.1);
+    --primary: #7c3aed;
+    --primary-light: #a78bfa;
+    --primary-dark: #5b21b6;
+    --primary-glow: rgba(124, 58, 237, 0.1);
     
     --secondary: #10b981;
     --secondary-light: #34d399;
@@ -108,7 +108,7 @@ body {
     font-size: 0.65rem; 
     text-transform: uppercase; 
     letter-spacing: 2px; 
-    color: #6366f1;
+    color: #a78bfa;
     font-weight: 800;
 }
 

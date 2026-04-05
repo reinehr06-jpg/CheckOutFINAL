@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Dashboard' }} - Checkout Elite</title>
+    <title>{{ $title ?? 'Dashboard' }} - Basileia Secure</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="stylesheet" href="/css/checkout.css?v={{ time() }}">
     <style>
-        /* INLINED CRITICAL DASHBOARD CSS */
+        /* INLINED CRITICAL DASHBOARD CSS - PURPLE THEME */
         :root {
             --bg-main: #f8fafc;
             --bg-sidebar: #111827;
-            --primary: #4f46e5;
+            --primary: #7c3aed; /* Basileia Purple */
             --border: #e2e8f0;
         }
         .layout-wrapper { display: flex; min-height: 100vh; background: var(--bg-main); margin: 0; }
@@ -37,8 +37,8 @@
         <!-- Compact Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <h2>Checkout</h2>
-                <span>Platform Elite</span>
+                <h2 style="font-size: 1.4rem; color: #fff;">Basileia</h2>
+                <span style="color: var(--primary); font-weight: 800; font-size: 0.7rem; text-transform: uppercase;">Secure</span>
             </div>
 
             <div class="sidebar-user">
@@ -77,7 +77,7 @@
                     <li><a href="{{ route('dashboard.companies.index') }}" class="{{ request()->routeIs('dashboard.companies*') ? 'active' : '' }}"><i class="fas fa-building"></i> Empresas</a></li>
                 </ul>
             </div>
-            @endif
+
             <div class="sidebar-logout">
                 <form method="POST" action="{{ route('logout') }}" id="logout-form-sidebar">
                     @csrf
@@ -93,10 +93,10 @@
                     <span class="topbar-title">@yield('title', 'Dashboard')</span>
                 </div>
                 <div class="topbar-actions">
-                    <span class="topbar-user">{{ auth()->user()->name ?? 'Usuário' }}</span>
+                    <span class="topbar-user" style="font-weight: 700; color: var(--primary);">{{ auth()->user()->name ?? 'Usuário' }}</span>
                     <form method="POST" action="{{ route('logout') }}" style="display: inline;">
                         @csrf
-                        <button type="submit" class="topbar-logout">Sair</button>
+                        <button type="submit" class="topbar-logout" style="border: none; background: none; color: #f87171; font-weight: 700; cursor: pointer; padding: 6px 12px;">Sair</button>
                     </form>
                 </div>
             </header>
@@ -112,6 +112,5 @@
         </div>
     </div>
     @yield('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
