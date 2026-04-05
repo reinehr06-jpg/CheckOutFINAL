@@ -8,8 +8,10 @@ fi
 echo "=== Starting Basileia Checkout ==="
 echo "DB_HOST=$DB_HOST"
 
-# Fixed APP_KEY (deterministic)
-APP_KEY="base64:YmFzaWxlaWEtY2hlY2tvdXQtc2VjcmV0LWtleS0yMDI2"
+# Respect the APP_KEY from environment, or use a valid 32-byte fallback (AES-256)
+if [ -z "$APP_KEY" ]; then
+    export APP_KEY="base64:YmFzaWxlaWEtY2hlY2tvdXQtc2VjcmV0LWtleS0yMDI="
+fi
 
 # Write .env file
 cat > .env << EOF
