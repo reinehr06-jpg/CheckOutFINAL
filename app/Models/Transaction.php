@@ -62,6 +62,13 @@ class Transaction extends Model
         'expires_at' => 'datetime',
     ];
 
+    protected $appends = ['payment_url'];
+
+    public function getPaymentUrlAttribute(): string
+    {
+        return config('app.url') . '/checkout/' . $this->uuid;
+    }
+
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);

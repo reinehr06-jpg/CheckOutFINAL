@@ -11,6 +11,8 @@ Route::prefix('/webhooks/gateway')->group(function () {
     Route::post('/pagseguro', [WebhookController::class, 'pagseguro'])->name('webhooks.pagseguro');
 });
 
-// Webhook que o Checkout envia para sistemas externos (ex: Basileia Vendas)
-// Rota pública que recebe webhooks do gateway e repassa para integrações configuradas
-Route::post('/webhooks/checkout', [CheckoutWebhookController::class, 'handle'])->name('webhooks.checkout');
+// Webhook que o Checkout recebe de sistemas externos (ex: Basileia Vendas)
+// Rota pública protegida por token de integração (ck_live_...) e assinatura X-Checkout-Signature
+Route::middleware('api.auth')
+    ->post('/webhooks/checkout', [\App\Http\Controllers\Api\V1\VendasWebhookController::class, 'handle'])
+    ->name('webhooks.vendas');

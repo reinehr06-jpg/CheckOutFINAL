@@ -66,7 +66,10 @@ class TransactionController extends Controller
         );
 
         return response()->json([
-            'transaction' => $transaction->load(['items', 'customer']),
+            'transaction' => [
+                'uuid' => $transaction->uuid,
+                'payment_url' => $transaction->payment_url,
+            ],
         ], Response::HTTP_CREATED);
     }
 

@@ -30,8 +30,8 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('auth/refresh', [AuthController::class, 'refresh'])->middleware('auth:sanctum');
 
-    // Protected routes
-    Route::middleware('auth:sanctum')->group(function () {
+    // Protected routes (via integration ck_live_... keys)
+    Route::middleware('api.auth')->group(function () {
         // Transactions
         Route::apiResource('transactions', TransactionController::class);
         Route::post('transactions/{id}/cancel', [TransactionController::class, 'cancel']);

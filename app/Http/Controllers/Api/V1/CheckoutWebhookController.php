@@ -138,14 +138,7 @@ class CheckoutWebhookController extends Controller
             'transaction' => [
                 'uuid' => $transaction->uuid,
                 'external_id' => $transaction->external_id,
-                'amount' => (float) $transaction->amount,
                 'status' => $transaction->status,
-                'payment_method' => $transaction->payment_method,
-            ],
-            'payment' => [
-                'gateway_payment_id' => $transaction->payments->first()?->gateway_payment_id,
-                'amount' => (float) $transaction->payments->first()?->amount,
-                'billing_type' => $transaction->payments->first()?->billing_type,
             ],
             'timestamp' => now()->toIso8601String(),
         ];

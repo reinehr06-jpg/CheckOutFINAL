@@ -73,7 +73,7 @@ class IntegrationController extends Controller
             'webhook_url' => $request->input('webhook_url'),
             'webhook_secret' => $request->input('webhook_secret'),
             'api_key_hash' => hash('sha256', $apiKey),
-            'api_key_prefix' => substr($apiKey, 0, 8),
+            'api_key_prefix' => substr($apiKey, 0, 16),
             'permissions' => ['all'],
             'status' => 'active',
         ]);
