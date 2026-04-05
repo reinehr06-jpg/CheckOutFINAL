@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'method' => $request->method(),
                     'ip' => $request->ip(),
                     'headers' => $request->headers->all(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
                 return response()->json([
                     'message' => 'Unauthenticated.',

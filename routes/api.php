@@ -21,9 +21,6 @@ Route::prefix('v1')->group(function () {
     // Webhook do Asaas (novo - viaasaas_payment_id)
     Route::post('webhook/asaas', [AsaasWebhookController::class, 'handle'])
         ->name('webhook.asaas');
-    
-    // Webhook do Checkout (envia para sistemas externos como Basileia Vendas)
-    Route::post('webhooks/checkout', [CheckoutWebhookController::class, 'handle']);
 
     // Auth
     Route::post('auth/login', [AuthController::class, 'login']);

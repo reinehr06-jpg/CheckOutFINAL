@@ -12,6 +12,11 @@ class AuthenticateApi
 {
     public function handle(Request $request, Closure $next)
     {
+        Log::debug('AuthenticateApi: handle() started', [
+            'url' => $request->fullUrl(),
+            'method' => $request->method(),
+        ]);
+
         $apiKey = $request->bearerToken() 
             ?? $request->header('X-API-Key') 
             ?? $request->input('api_key');
