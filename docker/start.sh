@@ -34,11 +34,10 @@ EOF
 
 echo "APP_KEY set"
 
-# Create dirs
-mkdir -p storage/framework/sessions storage/framework/cache/data storage/framework/views storage/logs
-chmod -R 755 storage bootstrap/cache
-
-# Clear config cache
+# Clear config cache and set total permissions
+find storage -type d -exec chmod 777 {} +
+find storage -type f -exec chmod 666 {} +
+echo "Permissions set"
 rm -rf bootstrap/cache/*.php 2>/dev/null || true
 
 # Wait for DB and run migrations
@@ -76,5 +75,7 @@ php artisan tinker --execute="
 " 2>&1 || echo "WARNING: Could not create admin user"
 
 # Start server
-echo "Starting artisan server on port 8000 (bind 0.0.0.0)..."
-exec php artisan serve --host=0.0.0.0 --port=8000
+echo ""
+echo "=== SINAL DE VIDA ATIVADO - Servidor na porta 8000 ==="
+echo ""
+exec php -S 0.0.0.0:8000 -t public
