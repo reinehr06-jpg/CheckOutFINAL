@@ -47,7 +47,9 @@ class IntegrationController extends Controller
             ->withCount('transactions')
             ->get();
 
-        return view('dashboard.integrations.index', compact('integrations'));
+        $template = Integration::where('company_id', $companyId)->latest()->first();
+
+        return view('dashboard.integrations.index', compact('integrations', 'template'));
     }
 
     public function store(Request $request)

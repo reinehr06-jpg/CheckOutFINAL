@@ -153,20 +153,25 @@
                         <label for="base_url">URL Base do Sistema (API)</label>
                         <div class="input-group-elite">
                             <i class="fas fa-link input-group-icon"></i>
-                            <input type="url" name="base_url" id="base_url" class="input-elite" placeholder="https://vendas.seusite.com">
+                            <input type="url" name="base_url" id="base_url" class="input-elite" placeholder="https://vendas.seusite.com" value="{{ $template->base_url ?? '' }}">
                         </div>
                         <p class="form-help-elite">Onde seu sistema está hospedado.</p>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 30px; border-top: 1px solid var(--border-light); padding-top: 24px;">
-                    <h5 style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; letter-spacing: 0.5px;">2. Configuração Avançada (Opcional)</h5>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <h5 style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin: 0;">2. Configuração Avançada (Opcional)</h5>
+                        @if($template)
+                            <span style="font-size: 0.6rem; color: var(--primary); font-weight: 800; background: var(--primary-glow); padding: 2px 8px; border-radius: 5px;">PRÉ-PREENCHIDO</span>
+                        @endif
+                    </div>
                     
                     <div class="form-group-elite">
                         <label for="webhook_url">URL de Notificações (Webhook)</label>
                         <div class="input-group-elite">
                             <i class="fas fa-broadcast-tower input-group-icon"></i>
-                            <input type="url" name="webhook_url" id="webhook_url" class="input-elite" placeholder="https://vendas.com/api/webhook/checkout">
+                            <input type="url" name="webhook_url" id="webhook_url" class="input-elite" placeholder="https://vendas.com/api/webhook/checkout" value="{{ $template->webhook_url ?? '' }}">
                         </div>
                         <p class="form-help-elite">URL para onde enviaremos o status dos pagamentos.</p>
                     </div>
@@ -175,7 +180,7 @@
                         <label for="webhook_secret">Webhook Secret (Whsec)</label>
                         <div class="input-group-elite">
                             <i class="fas fa-shield-halved input-group-icon"></i>
-                            <input type="text" name="webhook_secret" id="webhook_secret" class="input-elite" placeholder="whsec_...">
+                            <input type="text" name="webhook_secret" id="webhook_secret" class="input-elite" placeholder="whsec_..." value="{{ $template->webhook_secret ?? '' }}">
                         </div>
                         <p class="form-help-elite">Copie este valor do seu sistema de vendas.</p>
                     </div>
