@@ -25,11 +25,30 @@
         <div class="form-group">
             <label for="slug">Plataforma (Tipo)</label>
             <select name="slug" id="slug" class="form-control" required>
-                <option value="asaas" {{ old('slug') === 'asaas' ? 'selected' : '' }}>Asaas</option>
-                <option value="stripe" {{ old('slug') === 'stripe' ? 'selected' : '' }}>Stripe</option>
-                <option value="pagseguro" {{ old('slug') === 'pagseguro' ? 'selected' : '' }}>PagSeguro</option>
+                <option value="adyen">Adyen</option>
+                <option value="airwallex">Airwallex</option>
+                <option value="asaas">Asaas (Brasil)</option>
+                <option value="authorizenet">Authorize.net</option>
+                <option value="bluesnap">BlueSnap</option>
+                <option value="braintree">Braintree</option>
+                <option value="checkoutcom">Checkout.com</option>
+                <option value="custom">Custom (Personalizado)</option>
+                <option value="flutterwave">Flutterwave</option>
+                <option value="klarna">Klarna</option>
+                <option value="mercadopago">Mercado Pago</option>
+                <option value="mollie">Mollie</option>
+                <option value="pagseguro">PagSeguro</option>
+                <option value="paypal">PayPal</option>
+                <option value="payoneer">Payoneer</option>
+                <option value="rapyd">Rapyd</option>
+                <option value="razorpay">Razorpay</option>
+                <option value="skrill">Skrill</option>
+                <option value="square">Square</option>
+                <option value="stripe">Stripe (Global)</option>
+                <option value="verifone">Verifone (2Checkout)</option>
+                <option value="worldpay">Worldpay</option>
             </select>
-            <p class="form-help">Selecione o provedor de pagamento.</p>
+            <p class="form-help">Escolha a plataforma de pagamento para ativação imediata.</p>
         </div>
 
         <div class="form-section">

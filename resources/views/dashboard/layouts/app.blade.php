@@ -4,57 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') - Checkout</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="/css/checkout.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>{{ $title ?? 'Dashboard' }} - Checkout Elite</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="{{ asset('css/checkout.css') }}">
+    @stack('styles')
 </head>
 <body>
     <div class="layout-wrapper">
-        <aside class="sidebar" id="sidebar">
+        <!-- Compact Sidebar -->
+        <aside class="sidebar">
             <div class="sidebar-brand">
                 <h2>Checkout</h2>
-                <span>Payment Platform</span>
+                <span>Platform Elite</span>
             </div>
+
             <div class="sidebar-user">
-                <div class="sidebar-user-avatar">{{ substr(auth()->user()->name ?? 'A', 0, 1) }}</div>
-                <div class="sidebar-user-info">
-                    <div class="sidebar-user-name">{{ auth()->user()->name ?? 'Admin' }}</div>
-                    <div class="sidebar-user-role">{{ ucfirst(auth()->user()->role ?? 'admin') }}</div>
+                <div class="sidebar-user-avatar">
+                    {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
+                </div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div class="sidebar-user-name">{{ Auth::user()->name ?? 'Admin' }}</div>
+                    <div class="sidebar-user-role">Super Usuário</div>
                 </div>
             </div>
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Visão Geral</div>
-                <ul class="sidebar-nav">
-                    <li><a href="{{ route('dashboard.index') }}" class="{{ request()->routeIs('dashboard.index') ? 'active' : '' }}"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
-                </ul>
-            </div>
+
+            <!-- Operação -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Operação</div>
                 <ul class="sidebar-nav">
-                    <li><a href="{{ route('dashboard.transactions') }}" class="{{ request()->routeIs('dashboard.transactions*') ? 'active' : '' }}"><i class="fas fa-money-bill-trend-up"></i> Transações</a></li>
-                    <li><a href="{{ route('dashboard.webhooks') }}" class="{{ request()->routeIs('dashboard.webhooks*') ? 'active' : '' }}"><i class="fas fa-bolt"></i> Webhooks</a></li>
+                    <li><a href="{{ route('dashboard.index') }}" class="{{ request()->routeIs('dashboard.index') ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+                    <li><a href="{{ route('dashboard.transactions') }}" class="{{ request()->routeIs('dashboard.transactions*') ? 'active' : '' }}"><i class="fas fa-exchange-alt"></i><span>Transações</span></a></li>
+                    <li><a href="{{ route('dashboard.events.index') }}" class="{{ request()->routeIs('dashboard.events*') ? 'active' : '' }}"><i class="fas fa-link"></i><span>Links de Pagto</span></a></li>
                 </ul>
             </div>
+
+            <!-- Sistemas -->
             <div class="sidebar-section">
-                <div class="sidebar-section-title">Integrações</div>
+                <div class="sidebar-section-title">Sistemas</div>
                 <ul class="sidebar-nav">
-                    <li><a href="{{ route('dashboard.events.index') }}" class="{{ request()->routeIs('dashboard.events*') ? 'active' : '' }}"><i class="fas fa-link"></i> Eventos / Links</a></li>
-                    <li><a href="{{ route('dashboard.sources.index') }}" class="{{ request()->routeIs('dashboard.sources*') ? 'active' : '' }}"><i class="fas fa-network-wired"></i> Sistemas Origem</a></li>
+                    <li><a href="{{ route('dashboard.integrations.index') }}" class="{{ request()->routeIs('dashboard.integrations*') ? 'active' : '' }}"><i class="fas fa-plug"></i><span>Integrações</span></a></li>
+                    <li><a href="{{ route('dashboard.webhooks') }}" class="{{ request()->routeIs('dashboard.webhooks*') ? 'active' : '' }}"><i class="fas fa-tower-broadcast"></i><span>Webhooks</span></a></li>
                 </ul>
             </div>
+
+            <!-- Financeiro -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Financeiro</div>
-                <ul class="sidebar-nav">
-                    <li><a href="{{ route('dashboard.gateways.index') }}" class="{{ request()->routeIs('dashboard.gateways*') ? 'active' : '' }}"><i class="fas fa-credit-card"></i> Gateways</a></li>
-                    <li><a href="{{ route('dashboard.reports') }}" class="{{ request()->routeIs('dashboard.reports*') ? 'active' : '' }}"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
-                </ul>
-            </div>
-            @if(auth()->user()?->isSuperAdmin())
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Sistema</div>
                 <ul class="sidebar-nav">
                     <li><a href="{{ route('dashboard.companies.index') }}" class="{{ request()->routeIs('dashboard.companies*') ? 'active' : '' }}"><i class="fas fa-building"></i> Empresas</a></li>
                 </ul>

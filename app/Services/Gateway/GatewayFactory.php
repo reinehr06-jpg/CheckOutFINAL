@@ -2,7 +2,7 @@
 
 namespace App\Services\Gateway;
 
-use InvalidArgumentException;
+use Exception;
 
 class GatewayFactory
 {
@@ -10,6 +10,25 @@ class GatewayFactory
         'asaas' => AsaasGateway::class,
         'stripe' => StripeGateway::class,
         'pagseguro' => PagSeguroGateway::class,
+        'paypal' => PayPalGateway::class,
+        'adyen' => AdyenGateway::class,
+        'braintree' => BraintreeGateway::class,
+        'square' => SquareGateway::class,
+        'authorizenet' => AuthorizeNetGateway::class,
+        'verifone' => VerifoneGateway::class,
+        'checkoutcom' => CheckoutComGateway::class,
+        'klarna' => KlarnaGateway::class,
+        'worldpay' => WorldpayGateway::class,
+        'mercadopago' => MercadoPagoGateway::class,
+        'mollie' => MollieGateway::class,
+        'razorpay' => RazorpayGateway::class,
+        'airwallex' => AirwallexGateway::class,
+        'payoneer' => PayoneerGateway::class,
+        'skrill' => SkrillGateway::class,
+        'rapyd' => RapydGateway::class,
+        'flutterwave' => FlutterwaveGateway::class,
+        'bluesnap' => BlueSnapGateway::class,
+        'custom' => CustomGateway::class,
     ];
 
     public function make(string $type): GatewayInterface
@@ -17,9 +36,15 @@ class GatewayFactory
         $type = strtolower($type);
 
         if (!isset(self::GATEWAYS[$type])) {
-            throw new InvalidArgumentException("Gateway [{$type}] is not supported.");
+            throw new Exception("Gateway type '{$type}' not supported.");
         }
 
-        return app()->make(self::GATEWAYS[$type]);
+        $class = self::GATEWAYS[$type];
+        return new $class();
+    }
+
+    public static function getAvailableGateways(): array
+    {
+        return array_keys(self::GATEWAYS);
     }
 }

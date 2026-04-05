@@ -2,14 +2,15 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<div class="animate-up" style="animation-delay: 0.1s;">
-    <div class="welcome-section">
-        <div class="welcome-text">
-            <h1>Olá, {{ $userName ?? 'Admin' }} 👋</h1>
-            <p>Acompanhe os resultados de {{ now()->translatedFormat('F') }}.</p>
+<div class="animate-up" style="animation-delay: 0.1s; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h1 style="font-size: 1.25rem; font-weight: 900; color: var(--text-primary); letter-spacing: -0.5px;">Olá, {{ Auth::user()->name ?? 'Admin' }} 👋</h1>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">Resultados consolidados de {{ now()->translatedFormat('F Y') }}.</p>
         </div>
-        <div class="welcome-badge">
-            <span>Checkout <i class="fas fa-check-circle" style="margin-left: 8px;"></i></span>
+        <div class="topbar-user" style="background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.1);">
+            <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+            Sistema Operacional
         </div>
     </div>
 </div>
@@ -18,98 +19,90 @@
     <!-- Volume Transacionado -->
     <div class="kpi-card animate-up" style="animation-delay: 0.2s;">
         <i class="fas fa-money-bill-trend-up kpi-icon"></i>
-        <span class="label">Volume Transacionado</span>
-        <div class="value">R$ {{ number_format($volumeMonth ?? 0, 2, ',', '.') }}</div>
-        <div class="footer">
-            <span class="{{ ($volumeTrend ?? 0) >= 0 ? 'trend-up' : 'trend-down' }}">
-                <i class="fas fa-caret-{{ ($volumeTrend ?? 0) >= 0 ? 'up' : 'down' }}"></i>
-                {{ number_format(abs($volumeTrend ?? 0), 1) }}%
-            </span>
-            <span style="color: var(--text-muted); font-size: 0.7rem;">vs mês anterior</span>
+        <span class="label">Volume Mensal</span>
+        <div class="value" style="font-size: 1.3rem;">R$ {{ number_format($volumeMonth ?? 0, 2, ',', '.') }}</div>
+        <div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">
+            <i class="fas fa-arrow-trend-up"></i> {{ number_format(abs($volumeTrend ?? 0), 1) }}% <span style="color: var(--text-muted); font-weight: 500;">vs mês ant.</span>
         </div>
     </div>
 
     <!-- Taxa de Aprovação -->
-    <div class="kpi-card animate-up" style="animation-delay: 0.3s;">
+    <div class="kpi-card animate-up" style="animation-delay: 0.3s; border-left: 3px solid var(--success);">
         <i class="fas fa-chart-line kpi-icon"></i>
-        <span class="label">Taxa de Aprovação</span>
-        <div class="value">{{ number_format($approvalRate ?? 0, 1) }}%</div>
-        <div class="footer">
-            <span style="color: var(--success); font-weight: 700; font-size: 0.75rem;">
-                {{ $approvedCount ?? 0 }} aprovadas
-            </span>
-            <span style="color: var(--text-muted); font-size: 0.7rem;">este mês</span>
+        <span class="label">Taxa Aprovação</span>
+        <div class="value" style="font-size: 1.3rem;">{{ number_format($approvalRate ?? 0, 1) }}%</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+            {{ $approvedCount ?? 0 }} transações aprovadas
         </div>
     </div>
 
-    <!-- Integrações Ativas -->
+    <!-- Integrações -->
     <div class="kpi-card animate-up" style="animation-delay: 0.4s;">
         <i class="fas fa-plug kpi-icon"></i>
-        <span class="label">Integrações Ativas</span>
-        <div class="value">{{ $activeIntegrations ?? 0 }}</div>
-        <div class="footer">
-            <span style="color: var(--text-muted); font-size: 0.7rem;">
-                {{ $totalIntegrations ?? 0 }} total cadastradas
-            </span>
+        <span class="label">Conexões</span>
+        <div class="value" style="font-size: 1.3rem;">{{ $activeIntegrations ?? 0 }}</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+            {{ $totalIntegrations ?? 0 }} sistemas cadastrados
         </div>
     </div>
 
-    <!-- Webhooks Entregues -->
-    <div class="kpi-card animate-up" style="animation-delay: 0.5s;">
+    <!-- Webhooks -->
+    <div class="kpi-card animate-up" style="animation-delay: 0.5s; border-left: 3px solid var(--primary-light);">
         <i class="fas fa-bolt kpi-icon"></i>
-        <span class="label">Webhooks Entregues</span>
-        <div class="value" style="color: var(--success);">{{ number_format($webhookDelivered ?? 0) }}</div>
-        <div class="footer">
+        <span class="label">Saúde API</span>
+        <div class="value" style="font-size: 1.3rem; color: var(--primary);">{{ number_format($webhookDelivered ?? 0) }}</div>
+        <div style="font-size: 0.7rem; color: {{ ($webhookFailed ?? 0) > 0 ? 'var(--danger)' : 'var(--success)' }}; font-weight: 700; margin-top: 2px;">
             @if(($webhookFailed ?? 0) > 0)
-                <span style="color: var(--danger); font-weight: 700; font-size: 0.75rem;">
-                    {{ $webhookFailed }} falharam
-                </span>
+                {{ $webhookFailed }} falhas detectadas
             @else
-                <span style="color: var(--success); font-weight: 700; font-size: 0.75rem;">100% entregues</span>
+                Integridade Garantida (100%)
             @endif
         </div>
     </div>
 </div>
 
-<div class="main-grid">
+<div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 20px; margin-bottom: 20px;">
     <!-- Gráfico de Volume -->
-    <div class="chart-container animate-up" style="animation-delay: 0.6s;">
-        <div class="card-header">
-            <h3>Volume de Transações</h3>
-            <span class="badge badge-primary">Últimos 7 dias</span>
+    <div class="card animate-up" style="animation-delay: 0.6s; padding: 15px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="font-size: 0.9rem; font-weight: 800;">Volume 7 Dias</h3>
+            <span class="badge badge-primary" style="font-size: 0.6rem;">Tempo Real</span>
         </div>
-        <canvas id="volumeChart" style="max-height: 280px;"></canvas>
+        <canvas id="volumeChart" style="height: 180px;"></canvas>
     </div>
 
-    <!-- Insights -->
-    <div class="insights-container animate-up" style="animation-delay: 0.7s;">
-        <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 5px; margin-left: 5px;">Insights Rápidos</h3>
+    <!-- Insights Rápidos -->
+    <div class="card animate-up" style="animation-delay: 0.7s; padding: 15px;">
+        <h3 style="font-size: 0.9rem; font-weight: 800; margin-bottom: 12px;">Fluxo de Hoje</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="background: var(--bg-main); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                <div style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800;">Processado</div>
+                <div style="font-size: 1rem; font-weight: 900; color: var(--text-primary);">R$ {{ number_format($todayVolume ?? 0, 2, ',', '.') }}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="background: var(--bg-main); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800;">Vendas</div>
+                    <div style="font-size: 0.9rem; font-weight: 900;">{{ number_format($todayTransactions ?? 0) }}</div>
+                </div>
+                <div style="background: var(--bg-main); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800;">Gateway</div>
+                    <div style="font-size: 0.9rem; font-weight: 900; color: var(--primary);">Stripe</div>
+                </div>
+            </div>
 
-        <div class="insight-card">
-            <div class="insight-header"><i class="fas fa-shopping-basket"></i> Transações Hoje</div>
-            <div class="insight-value">{{ number_format($todayTransactions ?? 0) }}</div>
-            <p class="insight-desc">R$ {{ number_format($todayVolume ?? 0, 2, ',', '.') }} em volume</p>
+            <div style="background: var(--warning-bg); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.1);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.65rem; text-transform: uppercase; color: #b45309; font-weight: 800;">Aguardando</span>
+                    <i class="fas fa-clock" style="font-size: 0.7rem; color: #b45309;"></i>
+                </div>
+                <div style="font-size: 0.9rem; font-weight: 900; color: #b45309;">{{ $pendingTransactions ?? 0 }} Pendentes</div>
+            </div>
         </div>
-
-        <div class="insight-card">
-            <div class="insight-header"><i class="fas fa-credit-card"></i> Gateway Principal</div>
-            <div class="insight-value">{{ $defaultGateway ?? 'Nenhum' }}</div>
-            <p class="insight-desc">{{ $activeGateways ?? 0 }} gateway(s) configurado(s)</p>
-        </div>
-
-        <div class="insight-card" style="border-left: 3px solid var(--warning);">
-            <div class="insight-header"><i class="fas fa-clock" style="color: var(--warning);"></i> Pendentes</div>
-            <div class="insight-value" style="color: var(--warning);">{{ $pendingTransactions ?? 0 }} <small style="font-size: 0.7rem; opacity: 0.6;">transações</small></div>
-            <p class="insight-desc">Aguardando processamento</p>
-        </div>
-
-        @if(($webhookFailed ?? 0) > 0)
-        <div class="insight-card" style="border-left: 3px solid var(--danger);">
-            <div class="insight-header"><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> Webhooks com Falha</div>
-            <div class="insight-value" style="color: var(--danger);">{{ $webhookFailed }} <small style="font-size: 0.7rem; opacity: 0.6;">entregas</small></div>
-            <p class="insight-desc">Necessitam retry manual</p>
-        </div>
-        @endif
+    </div>
+</div>
+@endif
     </div>
 </div>
 
