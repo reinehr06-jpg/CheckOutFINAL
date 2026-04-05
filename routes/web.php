@@ -19,7 +19,7 @@ use App\Http\Controllers\Dashboard\PasswordController;
 use App\Http\Middleware\RateLimitCheckout;
 use App\Http\Middleware\CheckTransactionAccess;
 
-Route::get('/', function (Illuminate\Http\Request $request) {
+Route::get('/', function (\Illuminate\Http\Request $request) {
     if ($request->has('asaas_payment_id')) {
         return redirect()->route('checkout.asaas.show', [
             'asaasPaymentId' => $request->get('asaas_payment_id')
