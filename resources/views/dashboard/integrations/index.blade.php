@@ -177,6 +177,3 @@
     observer.observe(modal, { attributes: true });
 </script>
 @endsection
->
-</div>
-@endsection

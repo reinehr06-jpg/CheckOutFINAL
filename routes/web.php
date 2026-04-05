@@ -104,3 +104,9 @@ Route::prefix('/dashboard')->middleware(['auth'])->group(function () {
     Route::patch('/sources/{source}/toggle', [SourceConfigController::class, 'toggle'])->name('dashboard.sources.toggle');
     Route::delete('/sources/{source}', [SourceConfigController::class, 'destroy'])->name('dashboard.sources.destroy');
 });
+
+Route::get('/clear-views', function() {
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+    return "Cache limpo com sucesso! Tente acessar as integrações agora.";
+});
