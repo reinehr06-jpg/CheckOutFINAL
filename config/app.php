@@ -3,6 +3,8 @@
 return [
     'default' => env('APP_NAME', 'Checkout'),
 
+    'key' => env('APP_KEY'),
+
     'cipher' => 'AES-256-CBC',
 
     'maintenance' => [
