@@ -29,6 +29,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
             if ($request->expectsJson()) {
+                Log::warning('AuthenticationException thrown for API request', [
+                    'url' => $request->fullUrl(),
+                    'method' => $request->method(),
+                    'ip' => $request->ip(),
+                    'headers' => $request->headers->all(),
+                ]);
                 return response()->json([
                     'message' => 'Unauthenticated.',
                 ], Response::HTTP_UNAUTHORIZED);

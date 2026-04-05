@@ -161,7 +161,7 @@ class WebhookController extends Controller
         }
 
         return Integration::where('webhook_secret', $signature)
-            ->where('is_active', true)
+            ->where('status', 'active')
             ->first();
     }
 }

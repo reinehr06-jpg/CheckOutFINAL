@@ -12,10 +12,17 @@ class AuthenticateApi
 {
     public function handle(Request $request, Closure $next)
     {
-        $apiKey = $request->bearerToken();
+        $apiKey = $request->bearerToken() 
+            ?? $request->header('X-API-Key') 
+            ?? $request->input('api_key');
 
         if (!$apiKey) {
-            Log::debug('AuthenticateApi: No token provided');
+            Log::debug('AuthenticateApi: No token provided', [
+                'url' => $request->fullUrl(),
+                'method' => $request->method(),
+                'ip' => $request->ip(),
+                'headers' => $request->headers->all(),
+            ]);
             return response()->json(['error' => 'API key required'], 401);
         }
 
