@@ -11,6 +11,15 @@ use App\Http\Controllers\Api\V1\CheckoutWebhookController;
 use App\Http\Controllers\Api\V1\WebhookController;
 use App\Http\Controllers\AsaasWebhookController;
 
+Route::get('diag-check', function() {
+    return response()->json([
+        'status' => 'OK',
+        'server' => 'CheckOut-Production',
+        'version' => 'NUCLEAR_DIAG_999',
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
+
 Route::prefix('v1')->group(function () {
     // Ingestão de pagamentos do Vendas/Sistemas Externos
     Route::post('payments/receive', [\App\Http\Controllers\Api\PaymentApiController::class, 'receive']);
