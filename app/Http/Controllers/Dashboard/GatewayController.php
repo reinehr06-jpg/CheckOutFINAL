@@ -21,6 +21,11 @@ class GatewayController extends Controller
         return view('dashboard.gateways.index', compact('gateways'));
     }
 
+    public function create()
+    {
+        return view('dashboard.gateways.create');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -46,6 +51,7 @@ class GatewayController extends Controller
         $gateway = Gateway::create([
             'company_id' => $user->company_id,
             'name' => $request->input('name'),
+            'type' => $request->input('slug'), // Map slug to type for compatibility
             'slug' => $request->input('slug'),
             'config' => $config,
             'is_default' => $request->boolean('is_default', false),
@@ -82,6 +88,18 @@ class GatewayController extends Controller
         return view('dashboard.gateways.show', compact('gateway'));
     }
 
+    public function edit(int $id)
+    {
+        $user = Auth::user();
+        $gateway = Gateway::where('company_id', $user->company_id)->find($id);
+
+        if (!$gateway) {
+            abort(404, 'Gateway não encontrado.');
+        }
+
+        return view('dashboard.gateways.edit', compact('gateway'));
+    }
+
     public function update(Request $request, int $id)
     {
         $request->validate([
@@ -105,9 +123,17 @@ class GatewayController extends Controller
                 ->update(['is_default' => false]);
         }
 
-        $gateway->update($request->only(['name', 'config', 'is_default', 'is_active']));
+        $data = $request->only(['name', 'is_default', 'is_active']);
+        
+        if ($request->has('config')) {
+            $currentConfig = $gateway->config ?? [];
+            $newConfig = array_filter($request->input('config'), fn($val) => !is_null($val) && $val !== '');
+            $data['config'] = array_merge($currentConfig, $newConfig);
+        }
 
-        return redirect()->route('dashboard.gateways.show', $gateway->id)
+        $gateway->update($data);
+
+        return redirect()->route('dashboard.gateways.index')
             ->with('success', 'Gateway atualizado com sucesso.');
     }
 
