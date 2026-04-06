@@ -12,6 +12,7 @@ class Subscription extends Model
 
     protected $fillable = [
         'uuid',
+        'integration_id',
         'company_id',
         'customer_id',
         'gateway_id',
@@ -26,6 +27,7 @@ class Subscription extends Model
         'next_billing_date',
         'gateway_subscription_id',
         'metadata',
+        'callback_url',
         'cancelled_at',
     ];
 

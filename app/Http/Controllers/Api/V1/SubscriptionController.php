@@ -69,10 +69,13 @@ class SubscriptionController extends Controller
             'customer.name' => 'required|string',
             'customer.email' => 'required|email',
             'customer.document' => 'required|string',
+            'customer.phone' => 'sometimes|string',
+            'customer.address' => 'sometimes|array',
             'plan_name' => 'required|string',
             'amount' => 'required|numeric',
             'billing_cycle' => 'sometimes|string',
             'payment_method' => 'sometimes|in:credit_card,pix,boleto',
+            'callback_url' => 'sometimes|url',
             'metadata' => 'sometimes|array',
         ]);
 
@@ -80,7 +83,7 @@ class SubscriptionController extends Controller
             return response()->json([
                 'error' => 'Validation Failed',
                 'details' => $validator->errors(),
-                'received' => $request->all() // Help the user see what went wrong
+                'received' => $request->all()
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -88,34 +91,51 @@ class SubscriptionController extends Controller
 
         try {
             // 4. Create/Find local Customer
+            $customerData = [
+                'name' => $data['customer']['name'],
+                'document' => preg_replace('/\D/', '', $data['customer']['document']),
+                'phone' => $data['customer']['phone'] ?? null,
+                'address' => $data['customer']['address'] ?? null,
+            ];
+
             $customer = \App\Models\Customer::updateOrCreate(
                 ['email' => $data['customer']['email'], 'company_id' => $integration->company_id],
-                [
-                    'name' => $data['customer']['name'],
-                    'document' => preg_replace('/\D/', '', $data['customer']['document']),
-                ]
+                $customerData
             );
 
-            // 5. Create/Find Customer in Asaas
+            // 5. Create/Find Customer in Asaas (With full profile for Invoicing)
+            $address = $data['customer']['address'] ?? [];
             $asaasCustomer = $asaas->createCustomer([
                 'name' => $data['customer']['name'],
                 'email' => $data['customer']['email'],
                 'document' => $data['customer']['document'],
+                'phone' => $data['customer']['phone'] ?? null,
+                'address' => $address['street'] ?? null,
+                'address_number' => $address['number'] ?? null,
+                'neighborhood' => $address['neighborhood'] ?? null,
+                'city' => $address['city'] ?? null,
+                'state' => $address['state'] ?? null,
+                'zip_code' => $address['postalCode'] ?? null,
                 'external_reference' => 'customer_' . $customer->id,
             ]);
 
-            // 6. Create Subscription in Asaas
+            // 6. Map Asaas Cycle (yearly -> ANNUAL)
+            $cycle = strtoupper($data['billing_cycle']);
+            if ($cycle === 'YEARLY' || $cycle === 'ANUAL') $cycle = 'ANNUAL';
+            if ($cycle === 'MONTHLY' || $cycle === 'MENSAL') $cycle = 'MONTHLY';
+
+            // 7. Create Subscription in Asaas
             $asaasSubscription = $asaas->createSubscription([
                 'customer' => $asaasCustomer['id'],
                 'billing_type' => strtoupper($data['payment_method'] ?? 'credit_card'),
                 'value' => $data['amount'],
                 'next_due_date' => now()->addDays(3)->format('Y-m-d'),
-                'cycle' => strtoupper($data['billing_cycle']),
+                'cycle' => $cycle,
                 'description' => $data['plan_name'],
                 'externalReference' => 'sub_' . time(),
             ]);
 
-            // 7. Save local subscription
+            // 8. Save local subscription
             $subscription = Subscription::create([
                 'uuid' => \Illuminate\Support\Str::uuid(),
                 'integration_id' => $integration->id,
@@ -125,6 +145,7 @@ class SubscriptionController extends Controller
                 'amount' => $data['amount'],
                 'billing_cycle' => strtolower($data['billing_cycle']),
                 'gateway_subscription_id' => $asaasSubscription['id'],
+                'callback_url' => $data['callback_url'] ?? null,
                 'metadata' => $data['metadata'] ?? [],
                 'status' => 'active',
             ]);
