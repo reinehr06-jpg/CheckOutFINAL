@@ -22,17 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
         $middleware->trustProxies(at: '*');
-        
-        // GLOBAL DIAGNOSTIC LOGGING
-        $middleware->append(function (Request $request, $next) {
-            Log::emergency('GLOBAL_REQUEST_TRACE', [
-                'url' => $request->fullUrl(),
-                'method' => $request->method(),
-                'ip' => $request->ip(),
-            ]);
-            return $next($request);
-        });
-
         $middleware->alias([
             'api.auth' => \App\Http\Middleware\AuthenticateApi::class,
         ]);
