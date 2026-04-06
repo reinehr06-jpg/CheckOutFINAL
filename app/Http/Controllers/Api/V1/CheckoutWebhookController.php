@@ -133,19 +133,21 @@ class CheckoutWebhookController extends Controller
 
         $checkoutEvent = $eventMap[$eventType] ?? $eventType;
 
-        $webhookPayload = [
+        // FIXED: Build payload once and remove NULLs to ensure signature consistency
+        $webhookPayload = array_filter([
             'event' => $checkoutEvent,
-            'transaction' => [
+            'transaction' => array_filter([
                 'uuid' => $transaction->uuid,
                 'external_id' => $transaction->external_id,
                 'status' => $transaction->status,
-            ],
+                'gateway_id' => $transaction->gateway_transaction_id,
+            ]),
             'timestamp' => now()->toIso8601String(),
-        ];
+        ], fn($value) => !is_null($value));
 
         $secret = $integration->webhook_secret ?? config('checkout.webhook_secret');
         
-        // Standardize JSON encoding for signature and body to be bit-for-bit identical
+        // FIXED: Ensure absolute bit-for-bit identity between signed string and sent body
         $jsonPayload = json_encode($webhookPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $signature = $secret ? hash_hmac('sha256', $jsonPayload, $secret) : null;
 
@@ -165,6 +167,8 @@ class CheckoutWebhookController extends Controller
             
             if ($signature) {
                 $headers['X-Checkout-Signature'] = $signature;
+                // Compatibility header for some systems expecting the sha256= prefix
+                $headers['X-Hub-Signature-256'] = 'sha256=' . $signature;
             }
 
             $response = Http::timeout(30)
