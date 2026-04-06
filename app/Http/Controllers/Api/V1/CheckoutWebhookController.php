@@ -151,14 +151,6 @@ class CheckoutWebhookController extends Controller
         $jsonPayload = json_encode($webhookPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $signature = $secret ? hash_hmac('sha256', $jsonPayload, $secret) : null;
 
-        Log::info('[DIAGNOSTIC_WEBHOOK] Starting dispatch', [
-            'transaction_id' => $transaction->id,
-            'webhook_url' => $integration->webhook_url,
-            'secret_prefix' => $secret ? substr($secret, 0, 8) . '...' : 'NULL',
-            'payload_to_sign' => $jsonPayload,
-            'signature_generated' => $signature,
-        ]);
-
         try {
             $headers = [
                 'Content-Type' => 'application/json',
