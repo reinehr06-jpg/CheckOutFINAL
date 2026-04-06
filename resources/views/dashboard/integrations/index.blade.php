@@ -152,8 +152,8 @@
                     <div class="integration-step-item">
                         <div class="step-badge">2</div>
                         <div class="step-content">
-                            <h4>PASSO 2 — Colar o secret no Checkout</h4>
-                            <p>Cole o secret que você copiou abaixo. Isso faz o Checkout reconhecer e validar tudo que vem do Vendas.</p>
+                            <h4>PASSO 2 — Chave de Segurança do Sync (Webhook Secret)</h4>
+                            <p>Cole o secret gerado no Vendas. Isso permite que o Checkout <b>sincronize as vendas</b> com segurança.</p>
                             <div class="form-group-elite" style="margin-top: 12px;">
                                 <div class="input-group-elite">
                                     <i class="fas fa-key input-group-icon"></i>
@@ -176,8 +176,8 @@
                     <div class="integration-step-item">
                         <div class="step-badge">4</div>
                         <div class="step-content">
-                            <h4>PASSO 4 — Colar a URL no Checkout</h4>
-                            <p>Cole essa URL no campo abaixo. É para cá que o Checkout enviará as notificações de pagamento.</p>
+                            <h4>PASSO 4 — Destino do Sincronismo (URL de Webhook)</h4>
+                            <p>Cole essa URL no campo abaixo. É para cá que o Checkout enviará as notificações de pagamento aprovado.</p>
                             <div class="form-group-elite" style="margin-top: 12px;">
                                 <div class="input-group-elite">
                                     <i class="fas fa-link input-group-icon"></i>

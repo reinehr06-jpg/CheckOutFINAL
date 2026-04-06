@@ -26,7 +26,7 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
             'asaasPaymentId' => $request->get('asaas_payment_id')
         ] + $request->all());
     }
-    return redirect('/login');
+    return response('Checkout Base - Aguardando Identificador', 200);
 });
 
 // Public event checkout pages
@@ -36,7 +36,7 @@ Route::get('/evento/{slug}/success', [EventCheckoutController::class, 'success']
 
 // Minimalist Checkout Links (secure.basileia.global/{uuid})
 Route::get('/{uuid}', [CheckoutController::class, 'show'])
-    ->where('uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+    ->where('uuid', '[a-zA-Z0-9-]+')
     ->name('checkout.pay');
 
 Route::prefix('pay')->group(function () {

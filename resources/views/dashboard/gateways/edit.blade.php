@@ -9,7 +9,7 @@
             <a href="{{ route('dashboard.gateways.index') }}" style="text-decoration: none; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
                 <i class="fas fa-arrow-left"></i> VOLTAR PARA LISTA
             </a>
-            <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--bg-sidebar); letter-spacing: -1px;">Editar: {{ $gateway->name }}</h2>
+            <h2 style="font-size: 1.6rem; font-weight: 900; color: var(--bg-sidebar); letter-spacing: -1px;">Editar: {{ $gateway->name }} ⚡</h2>
             <p style="font-size: 0.9rem; color: var(--text-muted);">Atualize as credenciais ou configurações deste gateway.</p>
         </div>
         <div style="width: 60px; height: 60px; background: var(--primary-glow); color: var(--primary); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
@@ -72,9 +72,33 @@
 
                     <div class="glass-section" style="margin-top: 20px;">
                         <label class="checkbox-container" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
-                            <input type="checkbox" name="config[sandbox]" value="1" {{ old('config.sandbox', $gateway->config['sandbox'] ?? false) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: var(--primary);">
+                            <input type="checkbox" name="config[sandbox]" value="1" {{ old('config.sandbox', $gateway->getConfig('sandbox', false)) ? 'checked' : '' }} style="width: 18px; height: 18px; accent-color: var(--primary);">
                             <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Ambiente de Testes (Sandbox)</span>
                         </label>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-light); padding-top: 30px; margin-top: 30px;">
+                    <h4 style="font-size: 1rem; font-weight: 800; color: var(--bg-sidebar); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <span style="width: 28px; height: 28px; background: #0ea5e9; color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">3</span>
+                        Configuração de Webhook (Retorno)
+                    </h4>
+
+                    <div class="form-group-elite">
+                        <label>URL de Callback (Para configurar no Gateway)</label>
+                        <div class="input-group-elite" style="background: var(--bg-main); border-style: dashed;">
+                            <i class="fas fa-link input-group-icon"></i>
+                            <input type="text" class="input-elite" value="{{ url('/api/webhooks/asaas') }}" readonly style="cursor: pointer; color: var(--primary); font-weight: 700;" onclick="this.select(); navigator.clipboard.writeText(this.value); alert('URL copiada!');">
+                        </div>
+                        <p class="form-help-elite">Copie esta URL e cole no painel do seu provedor (Ex: Asaas > Configurações de Webhook).</p>
+                    </div>
+
+                    <div class="form-group-elite">
+                        <label for="webhook_token">Novo Webhook Access Token (Deixe vazio para manter)</label>
+                        <div class="input-group-elite">
+                            <i class="fas fa-shield-halved input-group-icon"></i>
+                            <input type="password" name="config[webhook_token]" id="webhook_token" class="input-elite" placeholder="••••••••••••••••••••••••">
+                        </div>
                     </div>
                 </div>
             </div>

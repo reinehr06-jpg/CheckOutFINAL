@@ -15,16 +15,6 @@ class AsaasWebhookController extends Controller
 
     public function handle(Request $request)
     {
-        $expectedToken = config('services.asaas.webhook_token');
-        $receivedToken = $request->header('asaas-access-token');
-
-        if ($expectedToken && $receivedToken !== $expectedToken) {
-            Log::warning('AsaasWebhook: Invalid token', [
-                'received' => $receivedToken,
-            ]);
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
         $event = $request->input('event');
         $payment = $request->input('payment');
 
@@ -43,8 +33,22 @@ class AsaasWebhookController extends Controller
             Log::warning('AsaasWebhook: Transaction not found', [
                 'asaas_payment_id' => $payment['id'],
             ]);
+            // Return 200 to Asaas to stop retries if transaction truly doesn't exist anymore
             return response()->json(['ok' => true]);
         }
+
+        // --- Per-Gateway Token Validation ---
+        $gateway = $transaction->gateway;
+        $expectedToken = $gateway ? $gateway->getConfig('webhook_token') : config('services.asaas.webhook_token');
+        $receivedToken = $request->header('asaas-access-token');
+
+        if ($expectedToken && $receivedToken !== $expectedToken) {
+            Log::warning('AsaasWebhook: Invalid token for gateway ' . ($gateway->id ?? 'unknown'), [
+                'received' => $receivedToken,
+            ]);
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        // ------------------------------------
 
         $status = match ($payment['status'] ?? '') {
             'RECEIVED', 'CONFIRMED' => 'approved',

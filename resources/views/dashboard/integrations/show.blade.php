@@ -9,9 +9,17 @@
             <h2 style="font-size: 1.5rem; font-weight: 900; color: var(--bg-sidebar); letter-spacing: -1px;">Guia de Integração Basileia Secure</h2>
             <p style="font-size: 0.9rem; color: var(--text-muted);">Siga os 6 passos abaixo para conectar o sistema <strong>{{ $integration->name }}</strong>.</p>
         </div>
-        <a href="{{ route('dashboard.integrations.index') }}" style="text-decoration: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; gap: 8px; background: #fff; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--border);">
-            <i class="fas fa-arrow-left"></i> Voltar para Lista
-        </a>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="background: {{ ($integration->webhook_url && $integration->webhook_secret) ? '#ecfdf5' : '#fef2f2' }}; padding: 10px 16px; border-radius: 12px; display: flex; align-items: center; gap: 8px; border: 1px solid {{ ($integration->webhook_url && $integration->webhook_secret) ? '#10b981' : '#f87171' }};">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: {{ ($integration->webhook_url && $integration->webhook_secret) ? '#10b981' : '#ef4444' }};"></div>
+                <span style="font-size: 0.75rem; font-weight: 900; color: {{ ($integration->webhook_url && $integration->webhook_secret) ? '#065f46' : '#991b1b' }}; text-transform: uppercase;">
+                    Sincronismo (Sync): {{ ($integration->webhook_url && $integration->webhook_secret) ? 'ATIVO' : 'PENDENTE' }}
+                </span>
+            </div>
+            <a href="{{ route('dashboard.integrations.index') }}" style="text-decoration: none; color: var(--text-muted); font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; gap: 8px; background: #fff; padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border);">
+                <i class="fas fa-arrow-left"></i> Voltar para Lista
+            </a>
+        </div>
     </div>
 
     @if(session('new_api_key'))
@@ -47,8 +55,8 @@
         <!-- STEP 2 -->
         <div class="card" style="padding: 24px; border-left: 4px solid var(--primary); background: rgba(124, 58, 237, 0.02);">
             <div style="position: absolute; left: -14px; top: 22px; width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.75rem;">2</div>
-            <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--bg-sidebar); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">PASSO 2 — Colar o secret no Checkout</h4>
-            <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 16px;">Cole o secret que você copiou do sistema de vendas abaixo. Isso faz o Checkout reconhecer e validar tudo que vem de lá.</p>
+            <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--bg-sidebar); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">PASSO 2 — Chave de Segurança do Sync (Webhook Secret)</h4>
+            <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 16px;">Cole o secret do seu sistema de vendas abaixo. Isso permite que o Checkout <b>sincronize os pagamentos de volta</b> com segurança.</p>
             
             <form action="{{ route('dashboard.integrations.update', $integration->id) }}" method="POST" style="display: flex; gap: 12px;">
                 @csrf
@@ -68,8 +76,8 @@
         <!-- STEP 4 -->
         <div class="card" style="padding: 24px; border-left: 4px solid var(--primary); background: rgba(124, 58, 237, 0.02);">
             <div style="position: absolute; left: -14px; top: 22px; width: 24px; height: 24px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.75rem;">4</div>
-            <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--bg-sidebar); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">PASSO 4 — Colar a URL no Checkout (callback_url)</h4>
-            <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 16px;">Cole a URL do Vendas no campo abaixo. É para cá que o Checkout enviará as notificações de pagamento.</p>
+            <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--bg-sidebar); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">PASSO 4 — Destino do Sincronismo (URL de Webhook)</h4>
+            <p style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 16px;">Indique para onde o Checkout deve enviar os avisos de pagamento aprovado. Geralmente termina em <code>/api/webhook/checkout</code>.</p>
             
             <form action="{{ route('dashboard.integrations.update', $integration->id) }}" method="POST" style="display: flex; gap: 12px;">
                 @csrf

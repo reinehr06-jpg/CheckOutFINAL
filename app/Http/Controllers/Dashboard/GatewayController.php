@@ -82,7 +82,7 @@ class GatewayController extends Controller
         $config = [];
         foreach ($gateway->configs as $configModel) {
             $value = $configModel->decrypted_value;
-            if (in_array($configModel->key, ['api_key', 'api_secret', 'webhook_token'])) {
+            if (in_array($configModel->key, ['api_key', 'api_secret', 'webhook_token', 'token'])) {
                 $value = $this->maskValue($value);
             }
             $config[$configModel->key] = $value;
