@@ -17,33 +17,38 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Show the payment page for a transaction.
+     * Show the payment page for a transaction or subscription.
      * GET /pay/{uuid}
      */
     public function show(string $uuid)
     {
-        $transaction = Transaction::where('uuid', $uuid)->firstOrFail();
+        $resource = \App\Models\Transaction::where('uuid', $uuid)->first() 
+                   ?? \App\Models\Subscription::where('uuid', $uuid)->firstOrFail();
 
-        // If transaction is already approved, show success/receipt directly
-        if ($transaction->status === 'approved') {
-            return view('checkout.success', compact('transaction'));
+        // If it's a transaction already approved, show success/receipt directly
+        if ($resource instanceof \App\Models\Transaction && $resource->status === 'approved') {
+            return view('checkout.success', ['transaction' => $resource]);
         }
 
-        // Fetch latest data from Asaas (especially for PIX QR)
+        $gatewayId = $resource->asaas_payment_id ?? $resource->gateway_subscription_id;
+
+        // Fetch latest data from Asaas
         try {
-            $asaasData = $this->asaas->getPayment($transaction->asaas_payment_id);
+            $isSubscription = $resource instanceof \App\Models\Subscription;
+            $endpoint = $isSubscription ? "/subscriptions/{$gatewayId}" : "/payments/{$gatewayId}";
+            $asaasData = $this->asaas->request('get', $endpoint);
             
             // If it's a PIX payment, we might need the QR Code
             $pixData = [];
-            if ($asaasData['billingType'] === 'PIX') {
-                $pixData = $this->asaas->request('get', "/payments/{$transaction->asaas_payment_id}/pixQrCode");
+            if (isset($asaasData['billingType']) && $asaasData['billingType'] === 'PIX') {
+                $pixData = $this->asaas->request('get', "/payments/{$gatewayId}/pixQrCode");
             }
 
-            return view('checkout.pay', compact('transaction', 'asaasData', 'pixData'));
+            return view('checkout.pay', ['transaction' => $resource, 'asaasData' => $asaasData, 'pixData' => $pixData, 'isSubscription' => $isSubscription]);
 
         } catch (\Exception $e) {
             Log::error("Error loading checkout: " . $e->getMessage());
-            return view('checkout.error', ['message' => 'Erro ao carregar dados do pagamento.']);
+            return view('checkout.error', ['message' => 'Erro ao carregar dados do pagamento ou plano expirado.']);
         }
     }
 
@@ -53,7 +58,8 @@ class CheckoutController extends Controller
      */
     public function process(Request $request, string $uuid)
     {
-        $transaction = Transaction::where('uuid', $uuid)->firstOrFail();
+        $resource = \App\Models\Transaction::where('uuid', $uuid)->first() 
+                   ?? \App\Models\Subscription::where('uuid', $uuid)->firstOrFail();
 
         $request->validate([
             'holder_name' => 'required|string',
@@ -64,9 +70,12 @@ class CheckoutController extends Controller
         ]);
 
         try {
+            $isSubscription = $resource instanceof \App\Models\Subscription;
+            $gatewayId = $isSubscription ? $resource->gateway_subscription_id : $resource->asaas_payment_id;
+            $endpoint = $isSubscription ? "/subscriptions/{$gatewayId}/payWithCreditCard" : "/payments/{$gatewayId}/payWithCreditCard";
+
             // Logic to pay with credit card via Asaas
-            // This will use the EXISTING asaas_payment_id created by Vendas
-            $response = $this->asaas->request('post', "/payments/{$transaction->asaas_payment_id}/payWithCreditCard", [
+            $response = $this->asaas->request('post', $endpoint, [
                 'creditCard' => [
                     'holderName' => $request->input('holder_name'),
                     'number' => preg_replace('/\D/', '', $request->input('card_number')),
@@ -76,17 +85,17 @@ class CheckoutController extends Controller
                 ],
                 'creditCardHolderInfo' => [
                     'name' => $request->input('holder_name'),
-                    'email' => $transaction->customer_email,
-                    'cpfCnpj' => preg_replace('/\D/', '', $transaction->customer_document ?? ''),
-                    'postalCode' => preg_replace('/\D/', '', $transaction->customer_zip_code ?? '00000000'),
-                    'addressNumber' => '1', // Default or from metadata
-                    'phone' => preg_replace('/\D/', '', $transaction->customer_phone ?? ''),
+                    'email' => $resource->customer_email ?? $resource->customer?->email ?? 'contato@basileia.global',
+                    'cpfCnpj' => preg_replace('/\D/', '', $resource->customer_document ?? $resource->customer?->document ?? ''),
+                    'postalCode' => preg_replace('/\D/', '', $resource->customer_zip_code ?? '00000000'),
+                    'addressNumber' => '1',
+                    'phone' => preg_replace('/\D/', '', $resource->customer_phone ?? ''),
                 ],
                 'remoteIp' => $request->ip(),
             ]);
 
             if ($response['status'] === 'CONFIRMED' || $response['status'] === 'RECEIVED') {
-                $transaction->update([
+                $resource->update([
                     'status' => 'approved',
                     'paid_at' => now(),
                     'gateway_response' => $response,
@@ -97,8 +106,8 @@ class CheckoutController extends Controller
                     \App\Models\PaymentToken::updateOrCreate(
                         ['token' => $response['creditCardToken']],
                         [
-                            'company_id' => $transaction->company_id,
-                            'customer_id' => $transaction->customer_id,
+                            'company_id' => $resource->company_id,
+                            'customer_id' => $resource->customer_id,
                             'gateway' => 'asaas',
                             'brand' => $response['payment'] ?? 'CARTÃO', // Simplified
                             'last4' => substr($request->input('card_number'), -4),
@@ -109,14 +118,15 @@ class CheckoutController extends Controller
                 }
 
                 // Notify Vendas (Back-sync)
-                if ($transaction->callback_url) {
+                $callbackUrl = $resource->callback_url ?? ($resource->integration?->webhook_url ?? null);
+                if ($callbackUrl) {
                     try {
-                        \Illuminate\Support\Facades\Http::post($transaction->callback_url, [
-                            'event' => 'payment.approved',
-                            'asaas_id' => $transaction->asaas_payment_id,
-                            'transaction_uuid' => $transaction->uuid,
+                        \Illuminate\Support\Facades\Http::post($callbackUrl, [
+                            'event' => $isSubscription ? 'subscription.paid' : 'payment.approved',
+                            'asaas_id' => $gatewayId,
+                            'resource_uuid' => $resource->uuid,
                             'status' => 'approved',
-                            'amount' => $transaction->amount,
+                            'amount' => $resource->amount,
                         ]);
                     } catch (\Exception $e) {
                         Log::error("Failed to notify Vendas: " . $e->getMessage());
@@ -137,19 +147,28 @@ class CheckoutController extends Controller
     /**
      * Show success page.
      */
+    public function success(string $uuid)
+    {
+        $resource = \App\Models\Transaction::where('uuid', $uuid)->first() 
+                   ?? \App\Models\Subscription::where('uuid', $uuid)->firstOrFail();
+        
+        return view('checkout.success', ['transaction' => $resource]);
+    }
+
     /**
      * Show the receipt for a transaction.
      * GET /pay/{uuid}/receipt
      */
     public function receipt(string $uuid)
     {
-        $transaction = Transaction::where('uuid', $uuid)->firstOrFail();
+        $resource = \App\Models\Transaction::where('uuid', $uuid)->first() 
+                   ?? \App\Models\Subscription::where('uuid', $uuid)->firstOrFail();
         
-        if ($transaction->status !== 'approved') {
+        if ($resource->status !== 'approved') {
             abort(403, 'Comprovante não disponível.');
         }
 
-        $company = $transaction->company;
+        $company = $resource->company;
         $settings = $company->settings ?? [];
         $receipt = $settings['receipt'] ?? [
             'header_text' => 'Comprovante de Pagamento',
@@ -158,6 +177,6 @@ class CheckoutController extends Controller
             'show_customer_data' => true,
         ];
 
-        return view('checkout.receipt_template', compact('transaction', 'company', 'receipt'));
+        return view('checkout.receipt_template', ['transaction' => $resource, 'company' => $company, 'receipt' => $receipt]);
     }
 }

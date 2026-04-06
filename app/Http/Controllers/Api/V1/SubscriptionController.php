@@ -31,31 +31,61 @@ class SubscriptionController extends Controller
         return response()->json($subscriptions);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, \App\Services\Gateway\AsaasGateway $asaas)
     {
         $request->validate([
-            'customer_id' => 'required|integer|exists:customers,id',
-            'plan_id' => 'required|integer|exists:plans,id',
-            'payment_method' => 'required|in:credit_card,pix,boleto',
-            'card_token' => 'required_if:payment_method,credit_card|string',
-            'billing_type' => 'sometimes|in:prepaid,postpaid',
+            'customer' => 'required|array',
+            'customer.name' => 'required|string',
+            'customer.email' => 'required|email',
+            'customer.document' => 'required|string',
+            'plan_name' => 'required|string',
+            'amount' => 'required|numeric',
+            'billing_cycle' => 'sometimes|string', // MONTHLY, QUARTERLY, etc.
+            'payment_method' => 'sometimes|in:credit_card,pix,boleto',
             'metadata' => 'sometimes|array',
         ]);
 
         $integration = $request->attributes->get('integration');
 
+        // 1. Create/Find Customer in Asaas
+        $asaasCustomer = $asaas->createCustomer([
+            'name' => $request->input('customer.name'),
+            'email' => $request->input('customer.email'),
+            'document' => $request->input('customer.document'),
+            'external_reference' => 'subscription_' . time(),
+        ]);
+
+        // 2. Create Subscription in Asaas
+        $asaasSubscription = $asaas->createSubscription([
+            'customer' => $asaasCustomer['id'],
+            'billing_type' => strtoupper($request->input('payment_method', 'credit_card')),
+            'value' => $request->input('amount'),
+            'next_due_date' => now()->addDays(3)->format('Y-m-d'),
+            'cycle' => $request->input('billing_cycle', 'MONTHLY'),
+            'description' => $request->input('plan_name'),
+            'externalReference' => 'sub_' . time(),
+        ]);
+
+        // 3. Save local subscription
         $subscription = Subscription::create([
+            'uuid' => \Illuminate\Support\Str::uuid(),
             'integration_id' => $integration->id,
-            'customer_id' => $request->input('customer_id'),
-            'plan_id' => $request->input('plan_id'),
-            'payment_method' => $request->input('payment_method'),
-            'billing_type' => $request->input('billing_type', 'prepaid'),
+            'company_id' => $integration->company_id,
+            'customer_id' => null, // Simplified
+            'plan_name' => $request->input('plan_name'),
+            'amount' => $request->input('amount'),
+            'billing_cycle' => $request->input('billing_cycle', 'MONTHLY'),
+            'gateway_subscription_id' => $asaasSubscription['id'],
             'metadata' => $request->input('metadata'),
             'status' => 'active',
         ]);
 
         return response()->json([
-            'subscription' => $subscription->load(['customer', 'plan']),
+            'subscription' => [
+                'uuid' => $subscription->uuid,
+                'payment_url' => $subscription->payment_url,
+            ],
+            'message' => 'Subscription created successfully. Link generated.'
         ], Response::HTTP_CREATED);
     }
 

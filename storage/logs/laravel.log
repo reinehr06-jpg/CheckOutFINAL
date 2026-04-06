@@ -1634,3 +1634,24 @@
 #11 /Users/viniciusreinehr/CheckOutFINAL/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
 #12 {main}
 "} 
+[2026-04-05 22:58:01] production.ERROR: filemtime(): stat failed for /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/.env {"exception":"[object] (ErrorException(code: 0): filemtime(): stat failed for /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/.env at /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Foundation/Console/ServeCommand.php:147)
+[stacktrace]
+#0 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(258): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleError(2, 'filemtime(): st...', '/Users/vinicius...', 147)
+#1 [internal function]: Illuminate\\Foundation\\Bootstrap\\HandleExceptions->{closure:Illuminate\\Foundation\\Bootstrap\\HandleExceptions::forwardsTo():257}(2, 'filemtime(): st...', '/Users/vinicius...', 147)
+#2 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Foundation/Console/ServeCommand.php(147): filemtime('/Users/vinicius...')
+#3 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): Illuminate\\Foundation\\Console\\ServeCommand->handle()
+#4 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::{closure:Illuminate\\Container\\BoundMethod::call():35}()
+#5 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#6 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#7 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#8 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate\\Container\\Container->call(Array)
+#9 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#10 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#11 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/symfony/console/Application.php(1117): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#12 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(Illuminate\\Foundation\\Console\\ServeCommand), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#13 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#14 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#15 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#16 /Users/viniciusreinehr/.gemini/antigravity/scratch/CheckOutFINAL/artisan(13): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#17 {main}
+"} 

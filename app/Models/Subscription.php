@@ -29,15 +29,12 @@ class Subscription extends Model
         'cancelled_at',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-        'interval' => 'integer',
-        'current_period_start' => 'date',
-        'current_period_end' => 'date',
-        'next_billing_date' => 'date',
-        'metadata' => 'array',
-        'cancelled_at' => 'datetime',
-    ];
+    protected $appends = ['payment_url'];
+
+    public function getPaymentUrlAttribute(): string
+    {
+        return config('app.url') . '/pay/' . $this->uuid;
+    }
 
     public function company(): BelongsTo
     {
