@@ -2,8 +2,8 @@
 @section('title', 'Integrações')
 
 @section('header_actions')
-    <button onclick="toggleDrawer('drawer-create', true)" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-        <i class="fas fa-plus"></i> NOVA CONEXÃO ELITE
+    <button onclick="toggleDrawer('drawer-create', true)" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 12px; font-weight: 900; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+        <i class="fas fa-plus-circle"></i> NOVA INTEGRAÇÃO
     </button>
 @endsection
 
@@ -126,8 +126,8 @@
     <div class="drawer-content">
         <div class="drawer-header">
             <div>
-                <h3>Nova Conexão Elite</h3>
-                <p style="font-size: 0.75rem; opacity: 0.8; font-weight: 600;">Expanda seu ecossistema de pagamentos.</p>
+                <h3>Nova Integração</h3>
+                <p style="font-size: 0.75rem; opacity: 0.8; font-weight: 600;">Siga os 7 passos para conectar ao Basileia Vendas.</p>
             </div>
             <button class="drawer-close" onclick="toggleDrawer('drawer-create', false)">
                 <i class="fas fa-times"></i>
@@ -138,60 +138,94 @@
             <form id="form-create-integration" method="POST" action="{{ route('dashboard.integrations.store') }}">
                 @csrf
                 
-                <div style="margin-bottom: 30px;">
-                    <h5 style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; letter-spacing: 0.5px;">1. Identificação Básica</h5>
-                    
-                    <div class="form-group-elite">
-                        <label for="name">Nome do Sistema</label>
-                        <div class="input-group-elite">
-                            <i class="fas fa-desktop input-group-icon"></i>
-                            <input type="text" name="name" id="name" class="input-elite" placeholder="Ex: Basileia Vendas - Loja Principal" required>
+                <div class="integration-step-list">
+                    <!-- PASSO 1 -->
+                    <div class="integration-step-item">
+                        <div class="step-badge">1</div>
+                        <div class="step-content">
+                            <h4>PASSO 1 — Gerar o secret no Basileia Vendas</h4>
+                            <p>Vá nas configurações do Basileia Vendas, procure por "Integrações" ou "Checkout" e gere o Webhook Secret. Copie esse valor.</p>
                         </div>
                     </div>
 
-                    <div class="form-group-elite">
-                        <label for="base_url">URL Base do Sistema (API)</label>
-                        <div class="input-group-elite">
-                            <i class="fas fa-link input-group-icon"></i>
-                            <input type="url" name="base_url" id="base_url" class="input-elite" placeholder="https://vendas.seusite.com" value="{{ $template->base_url ?? '' }}">
+                    <!-- PASSO 2 -->
+                    <div class="integration-step-item">
+                        <div class="step-badge">2</div>
+                        <div class="step-content">
+                            <h4>PASSO 2 — Colar o secret no Checkout</h4>
+                            <p>Cole o secret que você copiou abaixo. Isso faz o Checkout reconhecer e validar tudo que vem do Vendas.</p>
+                            <div class="form-group-elite" style="margin-top: 12px;">
+                                <div class="input-group-elite">
+                                    <i class="fas fa-key input-group-icon"></i>
+                                    <input type="text" name="webhook_secret" id="webhook_secret" class="input-elite" placeholder="whsec_..." required>
+                                </div>
+                            </div>
                         </div>
-                        <p class="form-help-elite">Onde seu sistema está hospedado.</p>
+                    </div>
+
+                    <!-- PASSO 3 -->
+                    <div class="integration-step-item">
+                        <div class="step-badge">3</div>
+                        <div class="step-content">
+                            <h4>PASSO 3 — Pegar a URL do webhook do Vendas</h4>
+                            <p>Ainda nas configurações do Basileia Vendas, copie a URL do endpoint de webhook (ex: vendas.com/api/webhook/checkout).</p>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 4 -->
+                    <div class="integration-step-item">
+                        <div class="step-badge">4</div>
+                        <div class="step-content">
+                            <h4>PASSO 4 — Colar a URL no Checkout</h4>
+                            <p>Cole essa URL no campo abaixo. É para cá que o Checkout enviará as notificações de pagamento.</p>
+                            <div class="form-group-elite" style="margin-top: 12px;">
+                                <div class="input-group-elite">
+                                    <i class="fas fa-link input-group-icon"></i>
+                                    <input type="url" name="webhook_url" id="webhook_url" class="input-elite" placeholder="https://vendas.basileia.global/api/webhook/checkout" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 5 -->
+                    <div class="integration-step-item">
+                        <div class="step-badge">5</div>
+                        <div class="step-content">
+                            <h4>PASSO 5 — Pegar a URL do Checkout e colocar no Vendas</h4>
+                            <p>Copie a URL abaixo e cole nas configurações do Basileia Vendas no campo <b>Checkout URL</b>.</p>
+                            <div class="input-group-elite" style="margin-top: 12px; background: #f1f5f9; padding: 10px; border-radius: 12px; border: 1px dashed var(--primary);">
+                                <code id="checkout-url-text" style="font-size: 0.8rem; font-weight: 800; color: var(--primary);">https://secure.basileia.global</code>
+                                <button type="button" onclick="copyToClipboard('https://secure.basileia.global', this)" style="background: var(--primary); color: white; border: none; padding: 5px 12px; border-radius: 8px; font-size: 0.6rem; cursor: pointer; font-weight: 900; margin-left: auto;">COPIAR</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 6 -->
+                    <div class="integration-step-item">
+                        <div class="step-badge">6</div>
+                        <div class="step-content">
+                            <h4>PASSO 6 — Testar a Integração</h4>
+                            <p>Crie uma venda no Vendas e verifique se o link foi gerado automaticamente. Realize um pagamento e veja se o status mudou.</p>
+                        </div>
+                    </div>
+
+                    <!-- PASSO 7 -->
+                    <div class="integration-step-item" style="border-left: 2px solid var(--success);">
+                        <div class="step-badge" style="background: var(--success);">7</div>
+                        <div class="step-content">
+                            <h4>PASSO 7 — Identificar e Gerar API Key</h4>
+                            <p>Dê um nome para esta conexão. O sistema gerará sua <b>API KEY</b> exclusiva para autenticação.</p>
+                            <div class="form-group-elite" style="margin-top: 12px;">
+                                <div class="input-group-elite">
+                                    <i class="fas fa-desktop input-group-icon"></i>
+                                    <input type="text" name="name" id="name" class="input-elite" placeholder="Ex: Basileia Vendas - Loja Principal" required>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <div style="margin-bottom: 30px; border-top: 1px solid var(--border-light); padding-top: 24px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                        <h5 style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin: 0;">2. Configuração Avançada (Opcional)</h5>
-                        @if($template)
-                            <span style="font-size: 0.6rem; color: var(--primary); font-weight: 800; background: var(--primary-glow); padding: 2px 8px; border-radius: 5px;">PRÉ-PREENCHIDO</span>
-                        @endif
-                    </div>
-                    
-                    <div class="form-group-elite">
-                        <label for="webhook_url">URL de Notificações (Webhook)</label>
-                        <div class="input-group-elite">
-                            <i class="fas fa-broadcast-tower input-group-icon"></i>
-                            <input type="url" name="webhook_url" id="webhook_url" class="input-elite" placeholder="https://vendas.com/api/webhook/checkout" value="{{ $template->webhook_url ?? '' }}">
-                        </div>
-                        <p class="form-help-elite">URL para onde enviaremos o status dos pagamentos.</p>
-                    </div>
-
-                    <div class="form-group-elite">
-                        <label for="webhook_secret">Webhook Secret (Whsec)</label>
-                        <div class="input-group-elite">
-                            <i class="fas fa-shield-halved input-group-icon"></i>
-                            <input type="text" name="webhook_secret" id="webhook_secret" class="input-elite" placeholder="whsec_..." value="{{ $template->webhook_secret ?? '' }}">
-                        </div>
-                        <p class="form-help-elite">Copie este valor do seu sistema de vendas.</p>
-                    </div>
-                </div>
-
-                <div class="glass-section">
-                    <p style="font-size: 0.75rem; color: var(--primary); font-weight: 700; line-height: 1.5; margin: 0; display: flex; gap: 10px;">
-                        <i class="fas fa-shield-check" style="font-size: 1rem; margin-top: 2px;"></i>
-                        <span>O Basileia Secure gerará automaticamente um Token Bearer para autenticação segura deste sistema.</span>
-                    </p>
-                </div>
+                
+                <input type="hidden" name="base_url" value="https://vendas.basileia.global">
             </form>
         </div>
 
@@ -214,9 +248,73 @@
         }
     }
 
+    // Copy to clipboard function
+    function copyToClipboard(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = 'COPIADO!';
+            btn.style.background = '#10b981';
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = 'var(--primary)';
+            }, 2000);
+        });
+    }
+
     // Escape to close
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') toggleDrawer('drawer-create', false);
     });
 </script>
+
+<style>
+    .integration-step-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .integration-step-item {
+        display: flex;
+        gap: 20px;
+        padding: 20px 0;
+        border-left: 2px solid #e2e8f0;
+        margin-left: 15px;
+        padding-left: 25px;
+        position: relative;
+    }
+    .step-badge {
+        position: absolute;
+        left: -16px;
+        top: 22px;
+        width: 30px;
+        height: 30px;
+        background: var(--primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 900;
+        box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+        z-index: 2;
+    }
+    .step-content h4 {
+        font-size: 0.85rem;
+        font-weight: 900;
+        color: var(--bg-sidebar);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .step-content p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+        font-weight: 600;
+    }
+    .integration-step-item:last-child {
+        border-left: 2px solid transparent;
+    }
+</style>
 @endsection
