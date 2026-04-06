@@ -87,9 +87,9 @@ class CheckoutController extends Controller
                     'name' => $request->input('holder_name'),
                     'email' => $resource->customer_email ?? $resource->customer?->email ?? 'contato@basileia.global',
                     'cpfCnpj' => preg_replace('/\D/', '', $resource->customer_document ?? $resource->customer?->document ?? ''),
-                    'postalCode' => preg_replace('/\D/', '', $resource->customer_zip_code ?? '00000000'),
-                    'addressNumber' => '1',
-                    'phone' => preg_replace('/\D/', '', $resource->customer_phone ?? ''),
+                    'postalCode' => preg_replace('/\D/', '', $resource->customer_zip_code ?? ($resource->customer?->address['postalCode'] ?? '00000000')),
+                    'addressNumber' => $resource->customer_number ?? ($resource->customer?->address['number'] ?? '1'),
+                    'phone' => preg_replace('/\D/', '', $resource->customer_phone ?? $resource->customer?->phone ?? ''),
                 ],
                 'remoteIp' => $request->ip(),
             ]);
