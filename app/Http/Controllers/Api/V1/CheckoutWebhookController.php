@@ -144,7 +144,10 @@ class CheckoutWebhookController extends Controller
         ];
 
         $secret = $integration->webhook_secret ?? config('checkout.webhook_secret');
-        $signature = $secret ? hash_hmac('sha256', json_encode($webhookPayload), $secret) : null;
+        
+        // Standardize JSON encoding for signature and body to be bit-for-bit identical
+        $jsonPayload = json_encode($webhookPayload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $signature = $secret ? hash_hmac('sha256', $jsonPayload, $secret) : null;
 
         try {
             $headers = [
@@ -157,7 +160,8 @@ class CheckoutWebhookController extends Controller
 
             $response = Http::timeout(30)
                 ->withHeaders($headers)
-                ->post($integration->webhook_url, $webhookPayload);
+                ->withBody($jsonPayload, 'application/json')
+                ->post($integration->webhook_url);
 
             if ($response->successful()) {
                 Log::info('Checkout webhook sent successfully', [

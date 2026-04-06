@@ -71,7 +71,7 @@ class IntegrationController extends Controller
             'slug' => Str::slug($request->input('name')),
             'base_url' => $request->input('base_url') ?? 'https://vendas.basileia.global',
             'webhook_url' => $request->input('webhook_url'),
-            'webhook_secret' => $request->input('webhook_secret'),
+            'webhook_secret' => $request->input('webhook_secret') ? trim($request->input('webhook_secret')) : null,
             'api_key_hash' => hash('sha256', $apiKey),
             'api_key_prefix' => substr($apiKey, 0, 16),
             'permissions' => ['all'],
@@ -118,9 +118,11 @@ class IntegrationController extends Controller
             abort(404, 'Integração não encontrada.');
         }
 
-        $integration->update($request->only([
+        $integration->update(array_merge($request->only([
             'name', 'description', 'base_url',
-            'webhook_url', 'webhook_secret',
+            'webhook_url'
+        ]), [
+            'webhook_secret' => $request->has('webhook_secret') ? trim($request->input('webhook_secret')) : $integration->webhook_secret
         ]));
 
         return redirect()->route('dashboard.integrations.show', $integration->id)
