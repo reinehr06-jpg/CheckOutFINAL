@@ -155,6 +155,20 @@ Route::get('/demo-criar/{metodo}', function($metodo) {
     $uuid = 'demo-' . $metodo . '-' . time();
     $asaasId = 'pay_demo_' . time();
     
+    $metodoMap = [
+        'pix' => 'pix',
+        'cartao' => 'credit_card',
+        'boleto' => 'boleto',
+    ];
+    $paymentMethod = $metodoMap[$metodo] ?? 'credit_card';
+    
+    $metodoMap = [
+        'pix' => 'pix',
+        'cartao' => 'credit_card',
+        'boleto' => 'boleto',
+    ];
+    $paymentMethod = $metodoMap[$metodo] ?? 'credit_card';
+    
     $tx = \App\Models\Transaction::create([
         'uuid' => $uuid,
         'company_id' => $company->id,
@@ -164,7 +178,7 @@ Route::get('/demo-criar/{metodo}', function($metodo) {
         'currency' => 'BRL',
         'status' => 'pending',
         'asaas_payment_id' => $asaasId,
-        'payment_method' => $metodo,
+        'payment_method' => $paymentMethod,
     ]);
     
     return redirect('/demo/' . $metodo . '/' . $uuid);
