@@ -301,7 +301,7 @@
         <!-- Card Valor -->
         <div class="value-card">
             <div class="value-card-logo">
-                <img src="https://basileia.global/wp-content/uploads/2023/12/cropped-Design_sem_nome-1.png" alt="Basileia" onerror="this.style.display='none'">
+                <img src="https://basileia.global/wp-content/uploads/2024/01/Basileia-1.png" alt="Basileia" onerror="this.style.display='none'">
             </div>
             <div class="value-card-plan">{{ $transaction->description ?? 'Plano Premium' }}</div>
             <div class="value-card-amount">R$ {{ number_format($transaction->amount, 2, ',', '.') }}</div>
