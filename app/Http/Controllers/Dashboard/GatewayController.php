@@ -51,6 +51,7 @@ class GatewayController extends Controller
         $gateway = Gateway::create([
             'company_id' => $user->company_id,
             'name' => $request->input('name'),
+            'slug' => $request->input('slug'),
             'type' => $request->input('slug'),
             'status' => 'active',
             'is_default' => $request->boolean('is_default', false),
