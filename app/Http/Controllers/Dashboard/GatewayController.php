@@ -34,10 +34,10 @@ class GatewayController extends Controller
                 'slug' => 'required|string|max:50|unique:gateways,slug',
                 'is_default' => 'sometimes|boolean',
                 'config' => 'sometimes|array',
-                'config.api_key' => 'required_with:config|string',
-                'config.api_secret' => 'sometimes|string',
-                'config.sandbox' => 'sometimes|boolean',
-                'config.webhook_url' => 'sometimes|url',
+                'config.api_key' => 'required|string',
+                'config.api_secret' => 'nullable|string',
+                'config.sandbox' => 'nullable|boolean',
+                'config.webhook_url' => 'nullable|url',
             ]);
 
             $user = Auth::user();
@@ -58,8 +58,9 @@ class GatewayController extends Controller
                 'is_default' => $request->boolean('is_default', false),
             ]);
 
-            if ($request->has('config')) {
-                foreach ($request->input('config') as $key => $value) {
+            if ($request->filled('config')) {
+                $configData = $request->input('config', []);
+                foreach ($configData as $key => $value) {
                     if ($value !== null && $value !== '') {
                         $gateway->setConfig($key, $value);
                     }
