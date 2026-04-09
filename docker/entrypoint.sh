@@ -1,5 +1,3 @@
-#!/bin/bash
-
 echo "=== Basileia Checkout Starting ==="
 
 REAL_DB_HOST=${DB_HOST:-postgres}
@@ -34,6 +32,9 @@ chmod -R 755 storage bootstrap/cache
 
 echo "Running migrations..."
 php artisan migrate --force --no-interaction 2>&1 || echo "Migration warning"
+
+echo "Fixing gateway slug..."
+php artisan gateway:fix-slug 2>&1 || echo "Gateway fix warning"
 
 php artisan tinker --execute="
     \App\Models\User::firstOrCreate(

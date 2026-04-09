@@ -16,6 +16,7 @@ class GatewaySeeder extends Seeder
         Gateway::create([
             'company_id' => $company->id,
             'name' => 'Asaas Principal',
+            'slug' => 'asaas',
             'type' => 'asaas',
             'status' => 'active',
             'is_default' => true,
