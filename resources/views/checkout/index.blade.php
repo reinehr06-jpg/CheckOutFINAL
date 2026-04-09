@@ -71,16 +71,12 @@
             justify-content: center;
             margin-bottom: 24px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            overflow: hidden;
         }
         .value-card-logo img {
-            width: 60px;
-            height: 60px;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
-        }
-        .value-card-logo span {
-            font-size: 40px;
-            font-weight: 900;
-            color: var(--primary);
         }
         .value-card-plan {
             font-size: 14px;
@@ -120,18 +116,17 @@
             position: relative;
         }
         
-        /* Locale Switcher */
-        .locale-switcher {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            z-index: 10;
+        /* Locale Switcher - Above card */
+        .locale-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
         }
         .locale-switcher select {
             background: white;
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 6px 10px;
+            padding: 6px 12px;
             font-size: 12px;
             cursor: pointer;
             color: var(--text-dark);
@@ -140,15 +135,15 @@
         /* Cartão 3D Preto */
         .card-preview {
             width: 100%;
-            height: 140px;
-            border-radius: 12px;
+            height: 180px;
+            border-radius: 14px;
             position: relative;
             margin-bottom: 20px;
             transition: all 0.3s ease;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 16px;
+            padding: 20px;
             color: white;
         }
         .card-preview.default {
@@ -240,7 +235,7 @@
         }
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 80px 60px;
+            grid-template-columns: 1fr 1fr 60px;
             gap: 10px;
         }
         .cta-button {
@@ -306,8 +301,7 @@
         <!-- Card Valor -->
         <div class="value-card">
             <div class="value-card-logo">
-                <img src="https://basileia.global/wp-content/uploads/2023/12/Design_sem_nome-1.png" alt="Basileia" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-                <span style="display:none">B</span>
+                <img src="https://basileia.global/wp-content/uploads/2023/12/cropped-Design_sem_nome-1.png" alt="Basileia" onerror="this.style.display='none'">
             </div>
             <div class="value-card-plan">{{ $transaction->description ?? 'Plano Premium' }}</div>
             <div class="value-card-amount">R$ {{ number_format($transaction->amount, 2, ',', '.') }}</div>
@@ -327,12 +321,14 @@
         
         <!-- Card Pagamento -->
         <div class="payment-card">
-            <div class="locale-switcher">
-                <select x-model="country">
-                    <template x-for="c in countries" :key="c.code">
-                        <option :value="c.code" x-text="c.flag + ' ' + c.name"></option>
-                    </template>
-                </select>
+            <div class="locale-row">
+                <div class="locale-switcher">
+                    <select x-model="country">
+                        <template x-for="c in countries" :key="c.code">
+                            <option :value="c.code" x-text="c.flag + ' ' + c.name"></option>
+                        </template>
+                    </select>
+                </div>
             </div>
             
             <!-- Cartão 3D -->
@@ -364,14 +360,12 @@
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Mês</label>
-                        <input type="text" name="card_expiry_month" class="form-input" placeholder="MM" maxlength="2" required>
+                        <label class="form-label">Validade</label>
+                        <input type="text" name="card_expiry" class="form-input" placeholder="MM/AA" maxlength="5" required
+                            x-model="cardExpiry"
+                            @input="cardExpiry = $event.target.value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2')">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Ano</label>
-                        <input type="text" name="card_expiry_year" class="form-input" placeholder="AA" maxlength="2" required>
-                    </div>
-                    <div class="form-group">
+                    <div class="form-group" style="grid-column: span 2;">
                         <label class="form-label">CVC</label>
                         <input type="text" name="card_cvv" class="form-input" placeholder="123" maxlength="4" required>
                     </div>
