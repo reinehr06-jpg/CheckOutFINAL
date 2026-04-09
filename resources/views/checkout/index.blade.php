@@ -365,11 +365,122 @@
             font-size: 12px;
             white-space: nowrap;
         }
+        .payment-method-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .payment-method-btn {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #e1dbe9;
+            border-radius: 12px;
+            background: #fff;
+            color: #43395d;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .payment-method-btn.active {
+            border-color: #7b2ff7;
+            background: rgba(123, 47, 247, 0.05);
+            color: #7b2ff7;
+        }
+        .payment-method-btn:hover:not(.active) {
+            border-color: #b99fe4;
+        }
+        .pix-section {
+            text-align: center;
+            padding: 20px;
+        }
+        .pix-qrcode {
+            background: #fff;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        .pix-qrcode img {
+            width: 180px;
+            height: 180px;
+            display: block;
+        }
+        .pix-code-container {
+            background: #f5f3f7;
+            border: 1px dashed #c9c1d9;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .pix-code-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #817796;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .pix-code-value {
+            font-family: monospace;
+            font-size: 11px;
+            color: #221749;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+        .pix-copy-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #7b2ff7, #a855f7);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 6px 16px rgba(123,47,247,0.25);
+        }
+        .pix-copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(123,47,247,0.35);
+        }
+        .pix-copy-btn.copied {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+        .pix-info {
+            margin-top: 16px;
+            padding: 12px;
+            background: #ecfdf5;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+        }
+        .pix-info-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #065f46;
+            margin-bottom: 4px;
+        }
+        .pix-info-desc {
+            font-size: 11px;
+            color: #047857;
+        }
     </style>
 </head>
 <body
     x-data="{
         country: 'BR',
+        billingType: '{{ $billingType ?? 'CREDIT_CARD' }}',
+        pixCopied: false,
+        copyPixCode() {
+            navigator.clipboard.writeText('{{ $pixData['payload'] ?? '' }}');
+            this.pixCopied = true;
+            setTimeout(() => this.pixCopied = false, 2000);
+        },
         cfg: null,
         countries: [
             {code:'BR',name:'Brasil',flag:'🇧🇷'},{code:'US',name:'United States',flag:'🇺🇸'},
@@ -680,12 +791,56 @@
                 </select>
             </div>
             <h2 class="form-title" x-text="cfg.payTitle"></h2>
-            <div class="payment-via">
-                <span class="payment-label" x-text="cfg.viaLabel"></span>
-                <span class="payment-chip" x-text="cfg.chipLabel"></span>
+            
+            <!-- Payment Method Toggle -->
+            <div class="payment-method-toggle">
+                <button type="button" class="payment-method-btn" :class="{ 'active': billingType === 'CREDIT_CARD' }" @click="billingType = 'CREDIT_CARD'">
+                    <i class="fas fa-credit-card"></i> Cartão
+                </button>
+                <button type="button" class="payment-method-btn" :class="{ 'active': billingType === 'PIX' }" @click="billingType = 'PIX'">
+                    <i class="fas fa-qrcode"></i> PIX
+                </button>
             </div>
 
-            <div class="card-wrapper">
+            <!-- PIX Section (shown when billingType is PIX) -->
+            <template x-if="billingType === 'PIX'">
+                <div class="pix-section">
+                    <div class="pix-qrcode">
+                        @if(!empty($pixData['encodedImage']))
+                            <img src="data:image/png;base64,{{ $pixData['encodedImage'] }}" alt="QR Code PIX">
+                        @else
+                            <div style="width:180px;height:180px;display:flex;align-items:center;justify-content:center;background:#f5f3f7;color:#817796;">
+                                QR Code não disponível
+                            </div>
+                        @endif
+                    </div>
+                    
+                    <div class="pix-code-container">
+                        <div class="pix-code-label">Código PIX Copia e Cola</div>
+                        <div class="pix-code-value">{{ $pixData['payload'] ?? 'Aguardando geração...' }}</div>
+                    </div>
+                    
+                    <button type="button" class="pix-copy-btn" :class="{ 'copied': pixCopied }" @click="copyPixCode()">
+                        <span x-show="!pixCopied"><i class="fas fa-copy"></i> Copiar Código PIX</span>
+                        <span x-show="pixCopied"><i class="fas fa-check"></i> Copiado!</span>
+                    </button>
+                    
+                    <div class="pix-info">
+                        <div class="pix-info-title"><i class="fas fa-check-circle"></i> Pagamento Instantâneo</div>
+                        <div class="pix-info-desc">O pagamento será confirmado em segundos após a transferência.</div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Credit Card Section (shown when billingType is CREDIT_CARD) -->
+            <template x-if="billingType === 'CREDIT_CARD'">
+                <div>
+                    <div class="payment-via" style="margin-bottom: 8px;">
+                        <span class="payment-label" x-text="cfg.viaLabel"></span>
+                        <span class="payment-chip" x-text="cfg.chipLabel"></span>
+                    </div>
+
+                    <div class="card-wrapper">
                 <div class="credit-card-3d" :style="{ background: getCardGradient() }">
                     <div class="card-chip"></div>
                     <div class="card-brand-logo">
@@ -757,6 +912,9 @@
                     <span x-text="cfg.btnPrefix + ' ' + fmt()"></span>
                 </button>
             </form>
+                </div>
+            </template>
+            
             <div class="security-footer">
                 <svg width="15" height="15" fill="none" stroke="#3ca95c" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                 <span x-text="cfg.secureText"></span>
