@@ -220,19 +220,25 @@ class GatewayController extends Controller
                 'Content-Type' => 'application/json',
             ];
 
-            // Teste 1: Validar API Key / Dados da conta
+            // Teste 1: Validar API Key - Usando endpoint de conta
             try {
-                $response = $client->get($baseUrl . '/users/me', ['headers' => $headers]);
+                $response = $client->get($baseUrl . '/accounts/me', ['headers' => $headers]);
                 $data = json_decode($response->getBody()->getContents(), true);
                 $results[] = [
                     'test' => 'API Key',
                     'status' => 'passed',
                     'message' => 'API Key válida',
-                    'data' => $data['email'] ?? 'N/A'
+                    'data' => $data['email'] ?? ($data['businessEmail'] ?? 'N/A')
                 ];
             } catch (\Exception $e) {
-                $results[] = ['test' => 'API Key', 'status' => 'failed', 'message' => 'API Key inválida ou expirada'];
-                $allPassed = false;
+                // Tentar endpoint alternativo
+                try {
+                    $response = $client->get($baseUrl . '/my-account', ['headers' => $headers]);
+                    $results[] = ['test' => 'API Key', 'status' => 'passed', 'message' => 'API Key válida (endpoint alternativo)'];
+                } catch (\Exception $e2) {
+                    $results[] = ['test' => 'API Key', 'status' => 'failed', 'message' => 'API Key inválida ou endpoint não encontrado'];
+                    $allPassed = false;
+                }
             }
 
             // Teste 2: Listar clientes
