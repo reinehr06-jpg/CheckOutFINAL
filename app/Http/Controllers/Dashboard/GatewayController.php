@@ -28,45 +28,51 @@ class GatewayController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:50|unique:gateways,slug',
-            'is_default' => 'sometimes|boolean',
-            'config' => 'sometimes|array',
-            'config.api_key' => 'required_with:config|string',
-            'config.api_secret' => 'sometimes|string',
-            'config.sandbox' => 'sometimes|boolean',
-            'config.webhook_url' => 'sometimes|url',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'slug' => 'required|string|max:50|unique:gateways,slug',
+                'is_default' => 'sometimes|boolean',
+                'config' => 'sometimes|array',
+                'config.api_key' => 'required_with:config|string',
+                'config.api_secret' => 'sometimes|string',
+                'config.sandbox' => 'sometimes|boolean',
+                'config.webhook_url' => 'sometimes|url',
+            ]);
 
-        $user = Auth::user();
+            $user = Auth::user();
 
-        $config = $request->input('config', []);
+            $config = $request->input('config', []);
 
-        if ($request->boolean('is_default')) {
-            Gateway::where('company_id', $user->company_id)
-                ->update(['is_default' => false]);
-        }
+            if ($request->boolean('is_default')) {
+                Gateway::where('company_id', $user->company_id)
+                    ->update(['is_default' => false]);
+            }
 
-        $gateway = Gateway::create([
-            'company_id' => $user->company_id,
-            'name' => $request->input('name'),
-            'slug' => $request->input('slug'),
-            'type' => $request->input('slug'),
-            'status' => 'active',
-            'is_default' => $request->boolean('is_default', false),
-        ]);
+            $gateway = Gateway::create([
+                'company_id' => $user->company_id,
+                'name' => $request->input('name'),
+                'slug' => $request->input('slug'),
+                'type' => $request->input('slug'),
+                'status' => 'active',
+                'is_default' => $request->boolean('is_default', false),
+            ]);
 
-        if ($request->has('config')) {
-            foreach ($request->input('config') as $key => $value) {
-                if ($value !== null && $value !== '') {
-                    $gateway->setConfig($key, $value);
+            if ($request->has('config')) {
+                foreach ($request->input('config') as $key => $value) {
+                    if ($value !== null && $value !== '') {
+                        $gateway->setConfig($key, $value);
+                    }
                 }
             }
-        }
 
-        return redirect()->route('dashboard.gateways.index')
-            ->with('success', 'Gateway adicionado com sucesso.');
+            return redirect()->route('dashboard.gateways.index')
+                ->with('success', 'Gateway adicionado com sucesso.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Erro ao salvar: ' . $e->getMessage());
+        }
     }
 
     public function show(int $id)
