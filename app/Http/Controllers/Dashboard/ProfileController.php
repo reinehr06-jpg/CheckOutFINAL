@@ -42,6 +42,7 @@ class ProfileController extends Controller
 
         if ($this->twoFactorService->enable($user, $request->input('code'))) {
             Log::info('2FA enabled by user', ['user_id' => $user->id]);
+            $request->session()->put('2fa_verified', true);
             return redirect()->route('dashboard.index')
                 ->with('success', 'Autenticação de dois fatores ativada com sucesso!');
         }

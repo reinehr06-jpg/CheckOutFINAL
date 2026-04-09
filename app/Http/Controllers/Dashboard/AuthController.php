@@ -110,8 +110,6 @@ class AuthController extends Controller
 
             if ($user->two_factor_enabled) {
                 $request->session()->put('2fa_required', true);
-                Auth::logout();
-                $request->session()->put('pre_2fa_user_id', $user->id);
                 return redirect()->route('profile.2fa.verify');
             }
 
