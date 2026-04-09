@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\CheckoutPageController;
 use App\Http\Controllers\Public\PaymentStatusController;
 use App\Http\Controllers\Dashboard\AuthController;
@@ -21,14 +22,7 @@ use App\Http\Middleware\RateLimitCheckout;
 use App\Http\Middleware\CheckTransactionAccess;
 use App\Http\Controllers\Dashboard\ProfileController;
 
-Route::get('/', function (\Illuminate\Http\Request $request) {
-    if ($request->has('asaas_payment_id')) {
-        return redirect()->route('checkout.asaas.show', [
-            'asaasPaymentId' => $request->get('asaas_payment_id')
-        ] + $request->all());
-    }
-    return response('Checkout Base - Aguardando Identificador', 200);
-});
+Route::get('/', [HomeController::class, 'index']);
 
 Route::get('/checkout/asaas/{asaasPaymentId}', [AsaasCheckoutController::class, 'show'])->name('checkout.asaas.show');
 Route::post('/checkout/asaas/process/{asaasPaymentId}', [AsaasCheckoutController::class, 'process'])->name('checkout.asaas.process');
