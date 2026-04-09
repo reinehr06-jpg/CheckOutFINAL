@@ -11,6 +11,7 @@ class Gateway extends Model
     protected $fillable = [
         'company_id',
         'name',
+        'slug',
         'type',
         'status',
         'is_default',
