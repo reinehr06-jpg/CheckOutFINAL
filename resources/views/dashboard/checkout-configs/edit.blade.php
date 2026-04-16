@@ -1,6 +1,7 @@
 @extends('dashboard.layouts.app')
 @section('title', ($is_new ? 'Novo' : 'Editar') . ' Checkout')
 
+@section('content')
 @php
 $configData = $config->config ?? [];
 $defaults = App\Models\CheckoutConfig::defaultConfig();
