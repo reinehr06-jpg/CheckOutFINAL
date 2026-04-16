@@ -7,37 +7,47 @@ use Illuminate\Support\Facades\Log;
 
 class AsaasPaymentService
 {
-    private string $apiKey;
+    private ?string $apiKey;
+
     private string $environment;
 
     public function __construct()
     {
-        $this->apiKey = config('gateways.asaas.api_key', env('ASAAS_API_KEY'));
-        $this->environment = config('gateways.asaas.environment', env('ASAAS_ENVIRONMENT', 'sandbox'));
+        // Centralized configuration from services.php
+        $this->apiKey = config('services.asaas.api_key', '');
+        $this->environment = config('services.asaas.environment', env('APP_ENV', 'sandbox'));
     }
 
     private function getBaseUrl(): string
     {
-        return $this->environment === 'production'
-            ? 'https://api.asaas.com/v3'
-            : 'https://api-sandbox.asaas.com/v3';
+        return $this->environment === 'sandbox'
+            ? config('services.asaas.base_url_sandbox', 'https://sandbox.asaas.com/api/v3')
+            : config('services.asaas.base_url_production', 'https://api.asaas.com/api/v3');
     }
 
     private function request(string $method, string $endpoint, array $data = []): array
     {
+        $url = "{$this->getBaseUrl()}{$endpoint}";
+
         try {
+            if (empty($this->apiKey)) {
+                throw new \RuntimeException('Asaas API Key is not configured in .env (ASAAS_API_KEY)');
+            }
+
             $response = Http::withHeaders([
                 'access_token' => $this->apiKey,
                 'Content-Type' => 'application/json',
-            ])->timeout(30)->{$method}("{$this->getBaseUrl()}{$endpoint}", $data);
+            ])->timeout(30)->{$method}($url, $data);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 $body = $response->json();
                 $message = $body['errors'][0]['description'] ?? 'Request failed';
                 Log::error('AsaasPaymentService: Request failed', [
+                    'url' => $url,
+                    'environment' => $this->environment,
                     'method' => $method,
-                    'endpoint' => $endpoint,
-                    'error' => $message,
+                    'status' => $response->status(),
+                    'errors' => $body['errors'] ?? [],
                 ]);
                 throw new \RuntimeException("Asaas API Error: {$message}");
             }
@@ -45,74 +55,88 @@ class AsaasPaymentService
             return $response->json();
         } catch (\Exception $e) {
             Log::error('AsaasPaymentService: Exception', [
+                'url' => $url,
                 'error' => $e->getMessage(),
             ]);
             throw $e;
         }
     }
 
+    /**
+     * Get payment or subscription details.
+     */
     public function getPayment(string $paymentId): ?array
     {
         try {
-            return $this->request('GET', "/payments/{$paymentId}");
+            // Asaas v3: subscriptions have a different endpoint
+            $endpoint = str_starts_with($paymentId, 'sub_')
+                ? "/subscriptions/{$paymentId}"
+                : "/payments/{$paymentId}";
+
+            return $this->request('GET', $endpoint);
         } catch (\Exception $e) {
-            Log::warning('AsaasPaymentService: Payment not found', [
-                'payment_id' => $paymentId,
+            Log::warning('AsaasPaymentService: Record not found', [
+                'id' => $paymentId,
+                'environment' => $this->environment,
             ]);
+
             return null;
         }
     }
 
-    public function processCardPayment(string $paymentId, array $cardData): array
+    /**
+     * Get PIX QR Code for a payment.
+     */
+    public function getPixQrCode(string $paymentId): ?array
+    {
+        try {
+            // Subscriptions don't have QR codes directly; the individual initial payment does.
+            // But if it's a payment ID, we can get the QR code.
+            if (str_starts_with($paymentId, 'sub_')) {
+                return null;
+            }
+
+            return $this->request('GET', "/payments/{$paymentId}/pixQrCode");
+        } catch (\Exception $e) {
+            Log::error('AsaasPaymentService: Failed to get PIX QR Code', ['id' => $paymentId]);
+
+            return null;
+        }
+    }
+
+    /**
+     * Process a credit card payment using an existing payment ID or subscription ID.
+     */
+    public function processCardPayment(string $id, array $cardData, ?string $remoteIp = null): array
     {
         $expiry = explode('/', $cardData['card_expiry']);
         $month = trim($expiry[0] ?? '');
         $year = trim($expiry[1] ?? '');
 
-        $holderInfo = [
-            'name' => $cardData['card_name'],
-            'cpfCnpj' => preg_replace('/\D/', '', $cardData['card_document'] ?? ''),
-            'email' => $cardData['card_email'] ?? null,
-            'phone' => preg_replace('/\D/', '', $cardData['card_phone'] ?? null),
-            'address' => [
-                'street' => $cardData['card_address'] ?? '',
-                'number' => $cardData['card_address_number'] ?? '',
-                'neighborhood' => $cardData['card_neighborhood'] ?? '',
-                'city' => $cardData['card_city'] ?? '',
-                'state' => $cardData['card_state'] ?? '',
-                'postalCode' => preg_replace('/\D/', '', $cardData['card_cep'] ?? ''),
-            ],
-        ];
-
+        // Standard Asaas card payload
         $payload = [
             'creditCard' => [
-                'cardNumber' => preg_replace('/\D/', '', $cardData['card_number']),
-                'cardName' => $cardData['card_name'],
-                'expirationMonth' => $month,
-                'expirationYear' => $year,
-                'cvv' => $cardData['card_cvv'],
+                'holderName' => $cardData['card_name'],
+                'number' => preg_replace('/\D/', '', $cardData['card_number']),
+                'expiryMonth' => $month,
+                'expiryYear' => $year,
+                'ccv' => $cardData['card_cvv'],
             ],
-            'creditCardHolderInfo' => $holderInfo,
+            'creditCardHolderInfo' => [
+                'name' => $cardData['card_name'],
+                'email' => $cardData['card_email'] ?? 'cupom@basileia.global',
+                'cpfCnpj' => preg_replace('/\D/', '', $cardData['card_document']),
+                'postalCode' => preg_replace('/\D/', '', $cardData['card_cep'] ?? '00000000'),
+                'addressNumber' => $cardData['card_address_number'] ?? '1',
+                'phone' => preg_replace('/\D/', '', $cardData['card_phone'] ?? '0000000000'),
+            ],
+            'remoteIp' => $remoteIp ?? request()->ip(),
         ];
 
-        return $this->request('POST', "/payments/{$paymentId}", $payload);
-    }
+        $endpoint = str_starts_with($id, 'sub_')
+            ? "/subscriptions/{$id}"
+            : "/payments/{$id}/payWithCreditCard";
 
-    public function getPaymentStatus(string $paymentId): string
-    {
-        $payment = $this->getPayment($paymentId);
-        
-        if (!$payment) {
-            return 'unknown';
-        }
-
-        return match ($payment['status'] ?? '') {
-            'PENDING', 'AWAITING_RISK_ANALYSIS' => 'pending',
-            'RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH' => 'approved',
-            'OVERDUE' => 'overdue',
-            'REFUNDED', 'REFUND_REQUESTED', 'CHARGEBACK_REQUESTED' => 'refunded',
-            'CANCELED', 'DELETED' => 'cancelled',
-            default => 'unknown',
-        };
+        return $this->request('POST', $endpoint, $payload);
     }
 }

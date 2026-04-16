@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Gateway;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -137,7 +138,11 @@ class GatewayController extends Controller
                 ->update(['is_default' => false]);
         }
 
-        $gateway->update($request->only(['name', 'is_default']));
+        $gateway->update([
+            'name' => $request->input('name'),
+            'is_default' => $request->boolean('is_default'),
+            'status' => $request->boolean('is_active', true) ? 'active' : 'inactive',
+        ]);
 
         if ($request->has('config')) {
             foreach ($request->input('config') as $key => $value) {
@@ -161,10 +166,10 @@ class GatewayController extends Controller
             abort(404, 'Gateway não encontrado.');
         }
 
-        $gateway->update(['status' => 'inactive']);
+        $gateway->delete();
 
         return redirect()->route('dashboard.gateways.index')
-            ->with('success', 'Gateway desativado com sucesso.');
+            ->with('success', 'Gateway removido permanentemente.');
     }
 
     public function toggle(int $id)
@@ -228,7 +233,7 @@ class GatewayController extends Controller
 
             // Teste 1: Validar API Key - Usando endpoint de conta
             try {
-                $response = $client->get($baseUrl.'/accounts/me', ['headers' => $headers]);
+                $response = $client->get($baseUrl.'/myAccount', ['headers' => $headers]);
                 $data = json_decode($response->getBody()->getContents(), true);
                 $results[] = [
                     'test' => 'API Key',
@@ -237,14 +242,8 @@ class GatewayController extends Controller
                     'data' => $data['email'] ?? ($data['businessEmail'] ?? 'N/A'),
                 ];
             } catch (\Exception $e) {
-                // Tentar endpoint alternativo
-                try {
-                    $response = $client->get($baseUrl.'/my-account', ['headers' => $headers]);
-                    $results[] = ['test' => 'API Key', 'status' => 'passed', 'message' => 'API Key válida (endpoint alternativo)'];
-                } catch (\Exception $e2) {
-                    $results[] = ['test' => 'API Key', 'status' => 'failed', 'message' => 'API Key inválida ou endpoint não encontrado'];
-                    $allPassed = false;
-                }
+                $results[] = ['test' => 'API Key', 'status' => 'failed', 'message' => 'API Key inválida ou endpoint não encontrado'];
+                $allPassed = false;
             }
 
             // Teste 2: Listar clientes
@@ -256,12 +255,22 @@ class GatewayController extends Controller
                 $allPassed = false;
             }
 
-            // Teste 3: Criar cobrança teste (R$ 0,01)
+            // Teste 3: Criar cobrança teste (R$ 5,00)
             try {
+                // Tentar buscar um cliente real para o teste
+                $customerResponse = $client->get($baseUrl.'/customers?limit=1', ['headers' => $headers]);
+                $customers = json_decode($customerResponse->getBody()->getContents(), true);
+
+                if (empty($customers['data'])) {
+                    throw new \Exception('Nenhum cliente encontrado no Asaas para realizar o teste de cobrança.');
+                }
+
+                $customerId = $customers['data'][0]['id'];
+
                 $paymentData = [
-                    'customer' => 'cus_test',
+                    'customer' => $customerId,
                     'billingType' => 'PIX',
-                    'value' => 0.01,
+                    'value' => 5.00,
                     'dueDate' => date('Y-m-d', strtotime('+1 day')),
                     'description' => 'Teste de conexão - Checkout Basileia',
                 ];
@@ -272,19 +281,23 @@ class GatewayController extends Controller
                 $paymentDataResult = json_decode($response->getBody()->getContents(), true);
                 $paymentId = $paymentDataResult['id'] ?? null;
 
-                $results[] = ['test' => 'Criar Cobrança', 'status' => 'passed', 'message' => 'Cobrança criada: '.$paymentId];
-
-                // Teste 4: Deletar cobrança teste
-                if ($paymentId) {
-                    try {
-                        $client->delete($baseUrl.'/payments/'.$paymentId, ['headers' => $headers]);
-                        $results[] = ['test' => 'Excluir Cobrança', 'status' => 'passed', 'message' => 'Cobrança teste removida'];
-                    } catch (\Exception $e) {
-                        $results[] = ['test' => 'Excluir Cobrança', 'status' => 'warning', 'message' => 'Não foi possível remover'];
+                $envName = $gateway->getConfig('sandbox') ? 'SANDBOX' : 'PRODUÇÃO';
+                $results[] = [
+                    'test' => 'Criar Cobrança',
+                    'status' => 'passed',
+                    'message' => "Cobrança criada com sucesso ($envName)",
+                    'data' => "ID: $paymentId (Acesse seu painel Asaas $envName para conferir)",
+                ];
+            } catch (\Exception $e) {
+                $errorMessage = $e->getMessage();
+                if ($e instanceof ClientException && $e->hasResponse()) {
+                    $body = json_decode($e->getResponse()->getBody()->getContents(), true);
+                    if (isset($body['errors'][0]['description'])) {
+                        $errorMessage = $body['errors'][0]['description'];
                     }
                 }
-            } catch (\Exception $e) {
-                $results[] = ['test' => 'Criar Cobrança', 'status' => 'failed', 'message' => substr($e->getMessage(), 0, 80)];
+
+                $results[] = ['test' => 'Criar Cobrança', 'status' => 'failed', 'message' => 'Erro: '.substr($errorMessage, 0, 100)];
                 $allPassed = false;
             }
 
@@ -297,42 +310,58 @@ class GatewayController extends Controller
                 $allPassed = false;
             }
 
-            // Teste 6: Webhook - Listar webhooks configurados
+            // Teste 6: Webhook - Consultar configuração de webhook
             try {
-                $response = $client->get($baseUrl.'/webhooks', ['headers' => $headers]);
-                $webhookData = json_decode($response->getBody()->getContents(), true);
                 $webhookUrl = url('/api/webhooks/'.$gateway->slug);
-
                 $webhookConfigured = false;
-                foreach ($webhookData['data'] ?? [] as $wh) {
-                    if (isset($wh['url']) && str_contains($wh['url'], $webhookUrl)) {
+                $currentAsaasUrl = 'N/A';
+
+                try {
+                    $response = $client->get($baseUrl.'/webhook', ['headers' => $headers]);
+                    $webhookData = json_decode($response->getBody()->getContents(), true);
+                    $currentAsaasUrl = $webhookData['url'] ?? 'N/A';
+                    if ($currentAsaasUrl !== 'N/A' && str_contains($currentAsaasUrl, $webhookUrl)) {
                         $webhookConfigured = true;
-                        break;
+                    }
+                } catch (\Exception $e) {
+                    // Tentar plural se singular falhar
+                    try {
+                        $response = $client->get($baseUrl.'/webhooks', ['headers' => $headers]);
+                        $webhookData = json_decode($response->getBody()->getContents(), true);
+                        foreach ($webhookData['data'] ?? [] as $wh) {
+                            if (isset($wh['url']) && str_contains($wh['url'], $webhookUrl)) {
+                                $webhookConfigured = true;
+                                $currentAsaasUrl = $wh['url'];
+                                break;
+                            }
+                        }
+                    } catch (\Exception $e2) {
+                        $results[] = ['test' => 'Webhook', 'status' => 'warning', 'message' => 'Erro ao consultar: '.substr($e->getMessage(), 0, 50)];
+                        throw $e;
                     }
                 }
 
-                $results[] = ['test' => 'Webhook', 'status' => $webhookConfigured ? 'passed' : 'warning', 'message' => $webhookConfigured ? 'Webhook configurado' : 'Webhook não encontrado - Configure: '.$webhookUrl];
+                $results[] = [
+                    'test' => 'Webhook',
+                    'status' => $webhookConfigured ? 'passed' : 'warning',
+                    'message' => $webhookConfigured ? 'Webhook OK' : 'URL divergente ou não configurada',
+                    'data' => "Sistema: $webhookUrl | Asaas: $currentAsaasUrl",
+                ];
             } catch (\Exception $e) {
-                $results[] = ['test' => 'Webhook', 'status' => 'warning', 'message' => 'Não foi possível verificar'];
+                // Já tratado no try interno ou erro fatal
             }
 
-            // Teste 7: Criar Assinatura (Subscriptions)
+            // Teste 7: Assinaturas (Se disponível)
             try {
-                $subData = [
-                    'customer' => 'cus_test',
-                    'installmentCount' => 1,
-                    'installmentValue' => 0.01,
-                    'billingType' => 'PIX',
-                    'nextDueDate' => date('Y-m-d', strtotime('+1 day')),
-                    'description' => 'Teste assinatura',
-                ];
-                $response = $client->post($baseUrl.'/subscriptions', [
-                    'headers' => $headers,
-                    'json' => $subData,
-                ]);
+                $response = $client->get($baseUrl.'/subscriptions?limit=1', ['headers' => $headers]);
                 $results[] = ['test' => 'Assinaturas', 'status' => 'passed', 'message' => 'API de assinaturas OK'];
             } catch (\Exception $e) {
-                $results[] = ['test' => 'Assinaturas', 'status' => 'warning', 'message' => 'API de assinaturas pode requerer plano'];
+                $msg = $e->getMessage();
+                if ($e instanceof ClientException && $e->hasResponse()) {
+                    $body = json_decode($e->getResponse()->getBody()->getContents(), true);
+                    $msg = $body['errors'][0]['description'] ?? $msg;
+                }
+                $results[] = ['test' => 'Assinaturas', 'status' => 'warning', 'message' => 'Info: '.substr($msg, 0, 80)];
             }
 
             // Teste 8: Transferências (se disponível)
@@ -340,7 +369,12 @@ class GatewayController extends Controller
                 $response = $client->get($baseUrl.'/transfers?limit=1', ['headers' => $headers]);
                 $results[] = ['test' => 'Transferências', 'status' => 'passed', 'message' => 'API de transferências OK'];
             } catch (\Exception $e) {
-                $results[] = ['test' => 'Transferências', 'status' => 'warning', 'message' => 'API não disponível para este plano'];
+                $msg = $e->getMessage();
+                if ($e instanceof ClientException && $e->hasResponse()) {
+                    $body = json_decode($e->getResponse()->getBody()->getContents(), true);
+                    $msg = $body['errors'][0]['description'] ?? $msg;
+                }
+                $results[] = ['test' => 'Transferências', 'status' => 'warning', 'message' => 'Info: '.substr($msg, 0, 80)];
             }
 
             return response()->json([

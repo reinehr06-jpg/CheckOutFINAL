@@ -23,7 +23,7 @@ class AsaasGateway implements GatewayInterface
             : 'https://api.asaas.com/api/v3';
     }
 
-    private function request(string $method, string $endpoint, array $data = []): array
+    public function request(string $method, string $endpoint, array $data = []): array
     {
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
@@ -33,6 +33,13 @@ class AsaasGateway implements GatewayInterface
         if (! $response->successful()) {
             $body = $response->json();
             $message = $body['errors'][0]['description'] ?? 'Gateway request failed';
+
+            Log::error('AsaasGateway Request Failed', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'errors' => $body['errors'] ?? [],
+            ]);
+
             throw new \RuntimeException("Asaas API Error: {$message}", $response->status());
         }
 
@@ -160,6 +167,20 @@ class AsaasGateway implements GatewayInterface
             'description' => $data['description'] ?? null,
             'externalReference' => $data['external_reference'] ?? null,
         ]);
+    }
+
+    public function getPixQrCode(string $paymentId): ?array
+    {
+        try {
+            return $this->request('get', "/payments/{$paymentId}/pixQrCode");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('AsaasGateway: Error fetching PIX QR Code', [
+                'id' => $paymentId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 
     private function mapStatus(string $status): string
