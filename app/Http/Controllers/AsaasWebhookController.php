@@ -16,24 +16,29 @@ class AsaasWebhookController extends Controller
     public function handle(Request $request)
     {
         $event = $request->input('event');
-        $payment = $request->input('payment');
+        $data = $request->input('payment') ?? $request->input('subscription');
 
-        if (!$event || !$payment) {
+        if (!$event || !$data) {
+            Log::warning('AsaasWebhook: Missing data in payload', ['payload' => $request->all()]);
             return response()->json(['error' => 'Invalid payload'], 400);
         }
 
+        $paymentId = $data['id'] ?? null;
+
         Log::info('AsaasWebhook: Event received', [
             'event' => $event,
-            'payment_id' => $payment['id'] ?? null,
+            'id' => $paymentId,
         ]);
 
-        $transaction = Transaction::where('asaas_payment_id', $payment['id'])->first();
+        // Search in both Transactions and Subscriptions
+        $transaction = Transaction::where('asaas_payment_id', $paymentId)->first()
+                    ?? Transaction::where('gateway_id', $paymentId)->first()
+                    ?? \App\Models\Subscription::where('gateway_subscription_id', $paymentId)->first();
 
         if (!$transaction) {
-            Log::warning('AsaasWebhook: Transaction not found', [
-                'asaas_payment_id' => $payment['id'],
+            Log::warning('AsaasWebhook: Resource not found locally', [
+                'asaas_id' => $paymentId,
             ]);
-            // Return 200 to Asaas to stop retries if transaction truly doesn't exist anymore
             return response()->json(['ok' => true]);
         }
 
@@ -50,8 +55,8 @@ class AsaasWebhookController extends Controller
         }
         // ------------------------------------
 
-        $status = match ($payment['status'] ?? '') {
-            'RECEIVED', 'CONFIRMED' => 'approved',
+        $status = match ($data['status'] ?? '') {
+            'RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH' => 'approved',
             'PENDING', 'AWAITING_RISK_ANALYSIS' => 'pending',
             'OVERDUE' => 'overdue',
             'CANCELED', 'DELETED' => 'cancelled',
@@ -61,7 +66,7 @@ class AsaasWebhookController extends Controller
 
         $transaction->update([
             'status' => $status,
-            'paid_at' => in_array($payment['status'], ['RECEIVED', 'CONFIRMED']) ? now() : ($transaction->paid_at),
+            'paid_at' => in_array($data['status'] ?? '', ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH']) ? now() : ($transaction->paid_at),
         ]);
 
         $this->webhookNotifier->notify($transaction);

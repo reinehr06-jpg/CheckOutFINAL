@@ -9,6 +9,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnforceTwoFactorAuth
 {
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $user = Auth::user();
@@ -17,17 +22,23 @@ class EnforceTwoFactorAuth
             return $next($request);
         }
 
+        // Exclude internal routes, checkout, and 2FA setup itself
         $excludedRoutes = [
-            'profile.2fa.setup',
-            'profile.2fa.enable',
-            'profile.2fa.disable',
-            'profile.2fa.verify',
-            'profile.2fa.verify.post',
-            'password.change',
+            'login',
             'logout',
+            'profile.2fa.setup',
+            'profile.2fa.verify',
+            'checkout.pay',
+            'checkout.process',
+            'checkout.success',
+            'checkout.receipt',
+            'checkout.asaas.success',
         ];
 
-        if (in_array($request->route()?->name, $excludedRoutes)) {
+        if (in_array($request->route()?->name, $excludedRoutes) || 
+            $request->is('pay/*') || 
+            $request->is('checkout/*') ||
+            preg_match('/^[a-f0-9-]{36}$/', $request->path())) {
             return $next($request);
         }
 
@@ -39,3 +50,4 @@ class EnforceTwoFactorAuth
         return $next($request);
     }
 }
+鼓

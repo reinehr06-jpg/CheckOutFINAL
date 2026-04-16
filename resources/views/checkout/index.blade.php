@@ -469,10 +469,10 @@
         locale: 'pt-BR',
         currency: 'BRL',
         currencySymbol: 'R$',
-        planLabel: 'PLANO PREMIUM',
-        periodLabel: 'por mês',
+        planLabel: '{{ $plano }}',
+        periodLabel: '{{ $ciclo === 'monthly' ? 'por mês' : ($ciclo === 'yearly' ? 'por ano' : $ciclo) }}',
         payBtnLabel: 'Pagar',
-        features: ['Acesso completo', 'Suporte 24h', 'Cancelamento fácil'],
+        features: @json($features),
         billingType: '{{ $billingType ?? 'CREDIT_CARD' }}',
         cardNumber: '',
         cardHolder: '',
@@ -480,9 +480,10 @@
         cardBrand: 'default',
         showCvv: false,
         pixCopied: false,
+        timeLeft: 3600,
         localeData: {},
         updateCard() {
-            const num = this.cardNumber.replace(/\D/g, '');
+            const num = this.cardNumber.replace(/\s+/g, '').replace(/\D/g, '');
             if (num.startsWith('4')) this.cardBrand = 'visa';
             else if (num.match(/^5[1-5]/)) this.cardBrand = 'mastercard';
             else if (num.match(/^3[47]/)) this.cardBrand = 'amex';
@@ -493,7 +494,9 @@
             this.showCvv = !this.showCvv;
         },
         copyPixCode() {
-            navigator.clipboard.writeText('{{ $pixData['payload'] ?? '' }}');
+            const code = '{{ $pixData['payload'] ?? '' }}';
+            if (!code) return;
+            navigator.clipboard.writeText(code);
             this.pixCopied = true;
             setTimeout(() => this.pixCopied = false, 2000);
         },
@@ -511,10 +514,18 @@
             try {
                 return new Intl.NumberFormat(this.locale, {style: 'currency', currency: this.currency}).format(amount);
             } catch(e) {
-                return this.currencySymbol + ' ' + amount.toFixed(2);
+                return this.currencySymbol + ' ' + (amount ? parseFloat(amount).toFixed(2) : '0.00');
             }
         },
+        formatTime() {
+            const m = Math.floor(this.timeLeft / 60);
+            const s = this.timeLeft % 60;
+            return m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+        },
         init() {
+            if (this.billingType === 'PIX') {
+                setInterval(() => { if(this.timeLeft > 0) this.timeLeft--; }, 1000);
+            }
             this.localeData = {
                 BR: {locale: 'pt-BR', currency: 'BRL', symbol: 'R$', lang: 'pt', planLabel: 'PLANO PREMIUM', periodLabel: 'por mês', features: ['Acesso completo', 'Suporte 24h', 'Cancelamento fácil'], payBtn: 'Pagar'},
                 US: {locale: 'en-US', currency: 'USD', symbol: '$', lang: 'en', planLabel: 'PREMIUM PLAN', periodLabel: 'per month', features: ['Full access', '24h Support', 'Easy cancellation'], payBtn: 'Pay'},
@@ -535,18 +546,18 @@
             this.changeCountry();
         },
         countries: [
-            {code:'BR',name:'Brasil',flag:'🇧🇷'},{code:'US',name:'Estados Unidos',flag:'🇺🇸'},{code:'PT',name:'Portugal',flag:'🇵🇹'},{code:'ES',name:'Espanha',flag:'🇪🇸'},{code:'FR',name:'França',flag:'🇫🇷'},{code:'DE',name:'Alemanha',flag:'🇩🇪'},{code:'IT',name:'Itália',flag:'🇮🇹'},{code:'GB',name:'Reino Unido',flag:'🇬🇧'},{code:'CA',name:'Canadá',flag:'🇨🇦'},{code:'MX',name:'México',flag:'🇲🇽'},{code:'AR',name:'Argentina',flag:'🇦🇷'},{code:'CO',name:'Colômbia',flag:'🇨🇴'},{code:'CL',name:'Chile',flag:'🇨🇱'},{code:'PE',name:'Peru',flag:'🇵🇪'},{code:'VE',name:'Venezuela',flag:'🇻🇪'},{code:'UY',name:'Uruguai',flag:'🇺🇾'},{code:'PY',name:'Paraguai',flag:'🇵🇾'},{code:'BO',name:'Bolívia',flag:'🇧🇴'},{code:'EC',name:'Equador',flag:'🇪🇨'},{code:'AU',name:'Austrália',flag:'🇦🇺'},{code:'NZ',name:'Nova Zelândia',flag:'🇳🇿'},{code:'JP',name:'Japão',flag:'🇯🇵'},{code:'CN',name:'China',flag:'🇨🇳'},{code:'KR',name:'Coreia do Sul',flag:'🇰🇷'},{code:'IN',name:'Índia',flag:'🇮🇳'},{code:'RU',name:'Rússia',flag:'🇷🇺'},{code:'ZA',name:'África do Sul',flag:'🇿🇦'},{code:'NG',name:'Nigéria',flag:'🇳🇬'},{code:'EG',name:'Egito',flag:'🇪🇬'},{code:'SA',name:'Arábia Saudita',flag:'🇸🇦'},{code:'AE',name:'Emirados Árabes',flag:'🇦🇪'},{code:'IL',name:'Israel',flag:'🇮🇱'},{code:'TR',name:'Turquia',flag:'🇹🇷'},{code:'PL',name:'Polônia',flag:'🇵🇱'},{code:'NL',name:'Holanda',flag:'🇳🇱'},{code:'BE',name:'Bélgica',flag:'🇧🇪'},{code:'CH',name:'Suíça',flag:'🇨🇭'},{code:'AT',name:'Áustria',flag:'🇦🇹'},{code:'SE',name:'Suécia',flag:'🇸🇪'},{code:'NO',name:'Noruega',flag:'🇳🇴'},{code:'DK',name:'Dinamarca',flag:'🇩🇰'},{code:'FI',name:'Finlândia',flag:'🇫🇮'},{code:'IE',name:'Irlanda',flag:'🇮🇪'},{code:'GR',name:'Grécia',flag:'🇬🇷'},{code:'CZ',name:'República Tcheca',flag:'🇨🇿'},{code:'HU',name:'Hungria',flag:'🇭🇺'},{code:'RO',name:'Romênia',flag:'🇷🇴'},{code:'TH',name:'Tailândia',flag:'🇹🇭'},{code:'VN',name:'Vietnã',flag:'🇻🇳'},{code:'ID',name:'Indonésia',flag:'🇮🇩'},{code:'MY',name:'Malásia',flag:'🇲🇾'},{code:'SG',name:'Singapura',flag:'🇸🇬'},{code:'PH',name:'Filipinas',flag:'🇵🇭'},{code:'TW',name:'Taiwan',flag:'🇹🇼'},{code:'HK',name:'Hong Kong',flag:'🇭🇰'},{code:'MA',name:'Marrocos',flag:'🇲🇦'},{code:'DZ',name:'Argélia',flag:'🇩🇿'},{code:'TN',name:'Tunísia',flag:'🇹🇳'},{code:'GH',name:'Gana',flag:'🇬🇭'},{code:'KE',name:'Quênia',flag:'🇰🇪'},{code:'TZ',name:'Tanzânia',flag:'🇹🇿'},{code:'AO',name:'Angola',flag:'🇦🇴'},{code:'MZ',name:'Moçambique',flag:'🇲🇿'},{code:'RW',name:'Ruanda',flag:'🇷🇼'},{code:'UG',name:'Uganda',flag:'🇺🇬'},{code:'ET',name:'Etiópia',flag:'🇪🇹'},{code:'CM',name:'Camarões',flag:'🇨🇲'},{code:'SN',name:'Senegal',flag:'🇸🇳'},{code:'CI',name:'Costa do Marfim',flag:'🇨🇮'},{code:'NG',name:'Nigéria',flag:'🇳🇬'},{code:'CO',name:'Colômbia',flag:'🇨🇴'},{code:'PA',name:'Panamá',flag:'🇵🇦'},{code:'CR',name:'Costa Rica',flag:'🇨🇷'},{code:'GT',name:'Guatemala',flag:'🇬🇹'},{code:'HN',name:'Honduras',flag:'🇭🇳'},{code:'SV',name:'El Salvador',flag:'🇸🇻'},{code:'NI',name:'Nicarágua',flag:'🇳🇮'},{code:'DO',name:'República Dominicana',flag:'🇩🇴'},{code:'JM',name:'Jamaica',flag:'🇯🇲'},{code:'TT',name:'Trinidad e Tobago',flag:'🇹🇹'},{code:'BB',name:'Barbados',flag:'🇧🇧'},{code:'BS',name:'Bahamas',flag:'🇧🇸'},{code:'BZ',name:'Belize',flag:'🇧🇿'},{code:'PY',name:'Paraguai',flag:'🇵🇾'},{code:'UY',name:'Uruguai',flag:'🇺🇾'},{code:'SR',name:'Suriname',flag:'🇸🇷'},{code:'GY',name:'Guiana',flag:'🇬🇾'}
+            {code:'BR',name:'Brasil',flag:'🇧🇷'},{code:'US',name:'Estados Unidos',flag:'🇺🇸'},{code:'PT',name:'Portugal',flag:'🇵🇹'},{code:'ES',name:'Espanha',flag:'🇪🇸'},{code:'FR',name:'França',flag:'🇫🇷'},{code:'DE',name:'Alemanha',flag:'🇩🇪'},{code:'IT',name:'Itália',flag:'🇮🇹'},{code:'GB',name:'Reino Unido',flag:'🇬🇧'},{code:'CA',name:'Canadá',flag:'🇨🇦'},{code:'MX',name:'México',flag:'🇲🇽'},{code:'AR',name:'Argentina',flag:'🇦🇷'}
         ]
     }"
 >
     <div class="checkout-container">
         <!-- Card Valor -->
         <div class="value-card">
-            <div class="value-card-logo">
-                <img src="https://basileia.global/wp-content/uploads/2024/01/Basileia-1.png" alt="Basileia" onerror="this.style.display='none'">
+            <div class="value-card-logo" style="background:transparent;width:72px;height:72px;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:none;margin:0 auto 24px auto;">
+                <img src="{{ asset('img/basileia-logo-clean-b.png') }}" alt="Basileia" style="width:100%;height:100%;object-fit:contain;">
             </div>
             <div class="value-card-plan" x-text="planLabel"></div>
-            <div class="value-card-amount" x-text="formatPrice({{ $transaction->amount }})"></div>
+            <div class="value-card-amount" x-text="formatPrice({{ $resource->amount }})"></div>
             <div class="value-card-period" x-text="periodLabel"></div>
             <div class="value-card-features">
                 <template x-for="feature in features" :key="feature">
@@ -569,133 +580,73 @@
                 </div>
             </div>
             
-            <!-- Payment Method Toggle -->
-            <div class="payment-method-toggle">
-                <button type="button" class="payment-method-btn" :class="{ 'active': billingType === 'PIX' }" @click="billingType = 'PIX'">
-                    <i class="fas fa-qrcode"></i> PIX
-                </button>
-                <button type="button" class="payment-method-btn" :class="{ 'active': billingType === 'CREDIT_CARD' }" @click="billingType = 'CREDIT_CARD'">
-                    <i class="fas fa-credit-card"></i> Cartão
-                </button>
-            </div>
-            
             <!-- Cartão 3D -->
-            <div class="card-preview" :class="[cardBrand, showCvv ? 'flipped' : '']">
-                <div class="card-front">
-                    <div class="card-chip"></div>
-                    <div class="card-brand-logo">
-                        <template x-if="cardBrand === 'visa'">
-                            <svg viewBox="0 0 48 32" height="32"><rect width="48" height="32" rx="4" fill="#fff"/><text x="24" y="22" font-size="16" font-weight="bold" fill="#1A1F71" text-anchor="middle">VISA</text></svg>
-                        </template>
-                        <template x-if="cardBrand === 'mastercard'">
-                            <svg viewBox="0 0 48 32" height="32"><circle cx="18" cy="16" r="10" fill="#EB001B"/><circle cx="30" cy="16" r="10" fill="#F79E1B"/><path d="M24 9a10 10 0 0 1 0 14 10 10 0 0 1 0-14z" fill="#FF5F00"/></svg>
-                        </template>
-                        <template x-if="cardBrand === 'amex'">
-                            <svg viewBox="0 0 48 32" height="32"><rect width="48" height="32" rx="4" fill="#006FCF"/><text x="24" y="20" font-size="12" fill="#fff" text-anchor="middle" font-weight="bold">AMEX</text></svg>
-                        </template>
-                        <template x-if="cardBrand === 'elo'">
-                            <svg viewBox="0 0 48 32" height="32"><rect width="48" height="32" rx="4" fill="#FFCB05"/><text x="24" y="20" font-size="14" fill="#0047BB" text-anchor="middle" font-weight="bold">ELO</text></svg>
-                        </template>
-                        <template x-if="cardBrand === 'default'">
-                            <span class="brand-text">💳</span>
-                        </template>
-                    </div>
-                    <div class="card-number" x-text="cardNumber || '•••• •••• •••• ••••'"></div>
-                    <div class="card-details">
-                        <div class="card-holder-name" x-text="cardHolder || 'NOME DO TITULAR'"></div>
-                        <div x-text="cardExpiry || '••/••'"></div>
-                    </div>
-                </div>
-                <div class="card-back">
-                    <div class="cvv-strip">
-                        <div class="cvv-value" x-text="$refs.cvvInput?.value || '•••'"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Payment Form - Credit Card -->
             <template x-if="billingType === 'CREDIT_CARD'">
-            <form method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
-                @csrf
-                <input type="hidden" name="payment_method" value="credit_card">
-                
-                <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-input" placeholder="seu@email.com" required>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Número do Cartão</label>
-                    <input type="text" name="card_number" class="form-input" 
-                        placeholder="0000 0000 0000 0000" maxlength="19" required
-                        x-model="cardNumber"
-                        @input="cardNumber = $event.target.value.replace(/\s+/g, '').replace(/(\d{4})/g, '$1 ').trim(); updateCard()">
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Validade</label>
-                        <input type="text" name="card_expiry" class="form-input" placeholder="MM/AA" maxlength="5" required
-                            x-model="cardExpiry"
-                            @input="cardExpiry = $event.target.value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2')">
+                <div class="card-preview" :class="[cardBrand, showCvv ? 'flipped' : '']">
+                    <div class="card-front">
+                        <div class="card-chip"></div>
+                        <div class="card-brand-logo">
+                            <template x-if="cardBrand === 'visa'"><span class="brand-text">VISA</span></template>
+                            <template x-if="cardBrand === 'mastercard'"><span class="brand-text">MC</span></template>
+                            <template x-if="cardBrand === 'default'"><span class="brand-text">💳</span></template>
+                        </div>
+                        <div class="card-number" x-text="cardNumber || '•••• •••• •••• ••••'"></div>
+                        <div class="card-details">
+                            <div class="card-holder-name" x-text="cardHolder || 'NOME DO TITULAR'"></div>
+                            <div x-text="cardExpiry || '••/••'"></div>
+                        </div>
                     </div>
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label class="form-label">CVC</label>
-                        <input type="text" name="card_cvv" class="form-input" placeholder="123" maxlength="4" required
-                            x-ref="cvvInput"
-                            @focus="showCvv = true"
-                            @blur="showCvv = false">
+                    <div class="card-back">
+                        <div class="cvv-strip">
+                            <div class="cvv-value" x-text="$refs.cvvInput?.value || '•••'"></div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Nome do Titular</label>
-                    <input type="text" name="card_holder_name" class="form-input" placeholder="NOME COMPLETO" required
-                        x-model="cardHolder">
-                </div>
-                
-                <button type="submit" class="cta-button">
-                    <span x-text="'Pagar ' + formatPrice({{ $transaction->amount }})"></span>
-                </button>
-            </form>
             </template>
-            
-            <!-- PIX Section -->
+
+            <!-- PIX QR Code -->
             <template x-if="billingType === 'PIX'">
-            <div>
-                <div class="pix-qrcode" style="text-align: center; margin-bottom: 16px;">
+                <div class="pix-qrcode" style="margin-bottom: 24px; text-align: center;">
                     @if(!empty($pixData['encodedImage']))
-                        <img src="data:image/png;base64,{{ $pixData['encodedImage'] }}" alt="QR Code PIX" style="width: 160px;">
+                        <img src="data:image/png;base64,{{ $pixData['encodedImage'] }}" alt="QR Code PIX" style="width: 200px; height: 200px;">
                     @else
-                        <div style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:#94a3b8;margin:0 auto;">
-                            <i class="fas fa-qrcode fa-4x"></i>
+                        <div style="width: 200px; height: 200px; background: white; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid var(--border);">
+                            <i class="fas fa-qrcode fa-5x" style="opacity: 0.2;"></i>
                         </div>
                     @endif
                 </div>
-                <button type="button" class="pix-copy-btn" @click="copyPixCode()">
-                    <span x-show="!pixCopied"><i class="fas fa-copy"></i> <span x-text="payBtnLabel + ' ' + formatPrice({{ $transaction->amount }})"></span></span>
-                    <span x-show="pixCopied"><i class="fas fa-check"></i> Copiado!</span>
-                </button>
-                <div class="pix-info">
-                    <i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Pagamento instantâneo' : 'Instant payment'"></span>
-                </div>
-            </div>
             </template>
             
-            <!-- Accepted Cards - Only show for Credit Card -->
+            <!-- Form -->
             <template x-if="billingType === 'CREDIT_CARD'">
-            <div class="accepted-cards">
-                <svg viewBox="0 0 40 28" title="Visa"><rect width="40" height="28" rx="3" fill="#fff"/><text x="20" y="19" font-size="10" font-weight="bold" fill="#1A1F71" text-anchor="middle">VISA</text></svg>
-                <svg viewBox="0 0 40 28" title="Mastercard"><circle cx="15" cy="14" r="8" fill="#EB001B"/><circle cx="25" cy="14" r="8" fill="#F79E1B"/><path d="M20 8a8 8 0 0 1 0 12 8 8 0 0 1 0-12z" fill="#FF5F00"/></svg>
-                <svg viewBox="0 0 40 28" title="Elo"><rect width="40" height="28" rx="3" fill="#FFCB05"/><text x="20" y="19" font-size="10" fill="#0047BB" text-anchor="middle" font-weight="bold">ELO</text></svg>
-                <svg viewBox="0 0 40 28" title="Hipercard"><rect width="40" height="28" rx="3" fill="#fff"/><text x="20" y="19" font-size="8" fill="#ef4444" text-anchor="middle" font-weight="bold">HIPER</text></svg>
-            </div>
+                <form method="POST" action="{{ route('checkout.process', $resource->uuid) }}">
+                    @csrf
+                    <div class="form-group">
+                        <label class="form-label">Número do Cartão</label>
+                        <input type="text" name="card_number" class="form-input" maxlength="19" required x-model="cardNumber" @input="cardNumber = $event.target.value.replace(/\D/g, '').replace(/(\d{4})/g, '$1 ').trim(); updateCard()">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Validade</label><input type="text" name="expiry" class="form-input" placeholder="MM/AA" maxlength="5" required x-model="cardExpiry" @input="cardExpiry = $event.target.value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2')"></div>
+                        <div class="form-group" style="grid-column: span 2;"><label class="form-label">CVC</label><input type="text" name="cvv" class="form-input" maxlength="4" required x-ref="cvvInput" @focus="showCvv = true" @blur="showCvv = false"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nome do Titular</label>
+                        <input type="text" name="holder_name" class="form-input" required x-model="cardHolder">
+                    </div>
+                    <button type="submit" class="cta-button">Pagar</button>
+                </form>
+            </template>
+
+            <template x-if="billingType === 'PIX'">
+                <div style="text-align: center;">
+                    <button @click="copyPixCode()" class="cta-button">
+                        <span x-show="!pixCopied">Copiar Código PIX</span>
+                        <span x-show="pixCopied">Copiado!</span>
+                    </button>
+                </div>
             </template>
             
-            <div class="security-footer">
-                <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-                Pagamento 100% Seguro
-            </div>
+            <div class="security-footer">Pagamento 100% Seguro</div>
         </div>
     </div>
 </body>

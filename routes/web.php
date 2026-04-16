@@ -181,15 +181,8 @@ Route::get('/demo-criar/{metodo}', function ($metodo) {
         ]
     );
 
-    $uuid = 'demo-'.$metodo.'-'.Str::uuid();
+    $uuid = (string) Str::uuid();
     $asaasId = 'pay_demo_'.time();
-
-    $metodoMap = [
-        'pix' => 'pix',
-        'cartao' => 'credit_card',
-        'boleto' => 'boleto',
-    ];
-    $paymentMethod = $metodoMap[$metodo] ?? 'credit_card';
 
     $metodoMap = [
         'pix' => 'pix',
