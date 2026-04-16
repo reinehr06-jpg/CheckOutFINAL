@@ -28,6 +28,7 @@ use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\EventController;
 use App\Http\Controllers\Dashboard\GatewayController;
 use App\Http\Controllers\Dashboard\IntegrationController;
+use App\Http\Controllers\Dashboard\LabController;
 use App\Http\Controllers\Dashboard\PasswordController;
 use App\Http\Controllers\Dashboard\ProfileController;
 use App\Http\Controllers\Dashboard\ReceiptController;
@@ -74,6 +75,9 @@ Route::post('/profile/2fa/disable', [ProfileController::class, 'disable2FA'])->n
 // Dashboard (authenticated)
 Route::prefix('/dashboard')->middleware(['auth', 'password.expiry', 'enforce.2fa', '2fa'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
+
+    // Lab
+    Route::get('/lab', [LabController::class, 'index'])->name('dashboard.lab');
 
     // Checkout Builder
     Route::get('/checkout-configs', [CheckoutConfigController::class, 'index'])->name('dashboard.checkout-configs');
