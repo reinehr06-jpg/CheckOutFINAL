@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Subscription;
 use App\Models\Transaction;
 use App\Services\WebhookNotifierService;
 use Illuminate\Http\Request;
@@ -18,8 +19,9 @@ class AsaasWebhookController extends Controller
         $event = $request->input('event');
         $data = $request->input('payment') ?? $request->input('subscription');
 
-        if (!$event || !$data) {
+        if (! $event || ! $data) {
             Log::warning('AsaasWebhook: Missing data in payload', ['payload' => $request->all()]);
+
             return response()->json(['error' => 'Invalid payload'], 400);
         }
 
@@ -32,13 +34,14 @@ class AsaasWebhookController extends Controller
 
         // Search in both Transactions and Subscriptions
         $transaction = Transaction::where('asaas_payment_id', $paymentId)->first()
-                    ?? Transaction::where('gateway_id', $paymentId)->first()
-                    ?? \App\Models\Subscription::where('gateway_subscription_id', $paymentId)->first();
+                    ?? Transaction::where('gateway_transaction_id', $paymentId)->first()
+                    ?? Subscription::where('gateway_subscription_id', $paymentId)->first();
 
-        if (!$transaction) {
+        if (! $transaction) {
             Log::warning('AsaasWebhook: Resource not found locally', [
                 'asaas_id' => $paymentId,
             ]);
+
             return response()->json(['ok' => true]);
         }
 
@@ -48,9 +51,10 @@ class AsaasWebhookController extends Controller
         $receivedToken = $request->header('asaas-access-token');
 
         if ($expectedToken && $receivedToken !== $expectedToken) {
-            Log::warning('AsaasWebhook: Invalid token for gateway ' . ($gateway->id ?? 'unknown'), [
+            Log::warning('AsaasWebhook: Invalid token for gateway '.($gateway->id ?? 'unknown'), [
                 'received' => $receivedToken,
             ]);
+
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         // ------------------------------------
