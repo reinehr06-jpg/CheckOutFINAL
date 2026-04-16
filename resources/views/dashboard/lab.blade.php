@@ -1,12 +1,15 @@
 @extends('dashboard.layouts.app')
-@section('title', '🧪 Lab - Testes & Desenvolvimento')
+@section('title', '🧪 Lab Test')
 
 @section('content')
 <style>
 .lab-container { padding: 30px; }
-.lab-header { margin-bottom: 30px; }
+.lab-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
 .lab-header h1 { font-size: 1.75rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
 .lab-header p { color: var(--text-secondary); }
+
+.btn-new { background: var(--primary); color: white; padding: 12px 24px; border-radius: 10px; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.btn-new:hover { background: var(--primary-hover); }
 
 .lab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
 
@@ -27,37 +30,66 @@
 .lab-btn { flex: 1; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-align: center; cursor: pointer; text-decoration: none; display: inline-block; }
 .lab-btn-primary { background: var(--primary); color: white; border: none; }
 .lab-btn-secondary { background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-light); }
-.lab-btn-warning { background: #f59e0b; color: white; border: none; }
+.lab-btn-edit { background: #f59e0b; color: white; border: none; }
+
+.status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+.status-active { background: #10b981; color: white; }
+.status-inactive { background: #e2e8f0; color: #64748b; }
 
 .section-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; margin-top: 30px; }
 </style>
 
 <div class="lab-container">
     <div class="lab-header">
-        <h1>🧪 Lab - Testes & Desenvolvimento</h1>
-        <p>Crie checkouts customizados, teste pagamentos e publique em produção</p>
+        <div>
+            <h1>🧪 Lab Test</h1>
+            <p>Crie checkouts customizados, teste pagamentos e publique em produção</p>
+        </div>
+        <form method="POST" action="{{ route('dashboard.lab.checkout.create') }}">
+            @csrf
+            <button type="submit" class="btn-new">
+                ➕ Novo Checkout
+            </button>
+        </form>
     </div>
 
-    <div class="section-title">Checkout Builder</div>
+    @if($configs->isNotEmpty())
+    <div class="section-title">Meus Checkouts</div>
     <div class="lab-grid">
+        @foreach($configs as $config)
         <div class="lab-card">
             <div class="lab-card-header">
                 <div class="lab-card-icon builder">🎨</div>
-                <div>
-                    <h3>Checkout Builder</h3>
-                    <span>Editor visual de checkout</span>
+                <div style="flex: 1;">
+                    <h3>{{ $config->name }}</h3>
+                    <span>{{ $config->updated_at->format('d/m/Y H:i') }}</span>
                 </div>
+                @if($config->is_active)
+                <span class="status-badge status-active">ATIVO</span>
+                @else
+                <span class="status-badge status-inactive">INATIVO</span>
+                @endif
             </div>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">
-                Customize cores, campos, métodos de pagamento e layout. Visualize em tempo real e publique.
+                Checkout #{{ $config->id }}
             </p>
             <div class="lab-card-actions">
-                <a href="{{ route('dashboard.checkout-configs') }}" class="lab-btn lab-btn-primary">
-                    ➕ Novo Checkout
+                <a href="{{ route('dashboard.checkout-configs.edit', $config->id) }}" class="lab-btn lab-btn-edit">
+                    ✏️ Editar
                 </a>
+                @if(!$config->is_active)
+                <form method="POST" action="{{ route('dashboard.checkout-configs.publish', $config->id) }}">
+                    @csrf
+                    <button type="submit" class="lab-btn lab-btn-primary">
+                        🚀 Publicar
+                    </button>
+                </form>
+                @endif
             </div>
         </div>
+        @endforeach
     </div>
+    @endif
 
     <div class="section-title">Testes de Pagamento</div>
     <div class="lab-grid">
@@ -70,7 +102,7 @@
                 </div>
             </div>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">
-                Crie uma transação de teste com método PIX e visualize o checkout.
+                Visualize como fica o checkout PIX com as configurações ativas.
             </p>
             <div class="lab-card-actions">
                 <a href="{{ url('/demo-criar/pix') }}" target="_blank" class="lab-btn lab-btn-primary">
@@ -88,7 +120,7 @@
                 </div>
             </div>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">
-                Crie uma transação de teste com método cartão e visualize o checkout.
+                Visualize como fica o checkout de cartão com as configurações ativas.
             </p>
             <div class="lab-card-actions">
                 <a href="{{ url('/demo-criar/cartao') }}" target="_blank" class="lab-btn lab-btn-primary">
@@ -106,7 +138,7 @@
                 </div>
             </div>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">
-                Crie uma transação de teste com método boleto e visualize o checkout.
+                Visualize como fica o checkout de boleto com as configurações ativas.
             </p>
             <div class="lab-card-actions">
                 <a href="{{ url('/demo-criar/boleto') }}" target="_blank" class="lab-btn lab-btn-primary">
@@ -118,12 +150,12 @@
 
     <div class="section-title">Fluxo de Trabalho</div>
     <div class="lab-card" style="max-width: 600px;">
-        <h3 style="margin-bottom: 16px;">🚀 Como usar o Lab</h3>
+        <h3 style="margin-bottom: 16px;">🚀 Como usar o Lab Test</h3>
         <ol style="padding-left: 20px; line-height: 2; color: var(--text-secondary);">
             <li>Clique em <strong>"Novo Checkout"</strong> para criar uma configuração</li>
-            <li>Use o editor visual para customizear cores, campos e métodos</li>
-            <li>Visualize o resultado em tempo real no painel direito</li>
-            <li>Clique em <strong>"Publicar em Produção"</strong> para ativar</li>
+            <li>Use o editor visual para customizar cores, campos e métodos</li>
+            <li>Clique em <strong>"Editar"</strong> para modificar um checkout existente</li>
+            <li>Clique em <strong>"Publicar"</strong> para ativar em produção</li>
             <li>Use os <strong>Testes de Pagamento</strong> para validar o checkout</li>
         </ol>
     </div>

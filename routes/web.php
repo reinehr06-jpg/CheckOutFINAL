@@ -78,6 +78,7 @@ Route::prefix('/dashboard')->middleware(['auth', 'password.expiry', 'enforce.2fa
 
     // Lab
     Route::get('/lab', [LabController::class, 'index'])->name('dashboard.lab');
+    Route::post('/lab/checkout/new', [LabController::class, 'createAndEdit'])->name('dashboard.lab.checkout.create');
 
     // Checkout Builder
     Route::get('/checkout-configs', [CheckoutConfigController::class, 'index'])->name('dashboard.checkout-configs');
