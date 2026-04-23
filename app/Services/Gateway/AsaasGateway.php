@@ -26,6 +26,11 @@ class AsaasGateway implements GatewayInterface
 
     public function request(string $method, string $endpoint, array $data = []): array
     {
+        if (empty($this->apiKey)) {
+            Log::warning('AsaasGateway: ASAAS_API_KEY not configured - skipping request');
+            return ['error' => 'Gateway not configured', 'code' => 'GATEWAY_NOT_CONFIGURED'];
+        }
+
         $response = Http::withHeaders([
             'access_token' => $this->apiKey,
             'Content-Type' => 'application/json',

@@ -31,7 +31,8 @@ class AsaasPaymentService
 
         try {
             if (empty($this->apiKey)) {
-                throw new \RuntimeException('Asaas API Key is not configured in .env (ASAAS_API_KEY)');
+                Log::warning('AsaasPaymentService: ASAAS_API_KEY not configured - skipping request');
+                return ['error' => 'Gateway not configured', 'code' => 'GATEWAY_NOT_CONFIGURED'];
             }
 
             $response = Http::withHeaders([

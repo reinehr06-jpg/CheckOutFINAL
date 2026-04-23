@@ -46,6 +46,10 @@ class PaymentApiController extends Controller
             // Fetch payment details from Asaas to sync local data
             $asaasData = $this->asaas->getPayment($request->input('asaas_id'));
 
+            if (isset($asaasData['error']) && $asaasData['error'] === 'Gateway not configured') {
+                return response()->json(['error' => 'Gateway not configured. Please configure ASAAS_API_KEY.'], 503);
+            }
+
             $transaction = Transaction::create([
                 'uuid' => (string) Str::uuid(),
                 'company_id' => $integration->company_id,
