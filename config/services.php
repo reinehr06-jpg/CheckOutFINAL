@@ -5,7 +5,7 @@ return [
         'api_key' => env('ASAAS_API_KEY'),
         'environment' => env('ASAAS_ENVIRONMENT', env('APP_ENV', 'sandbox')),
         'webhook_token' => env('ASAAS_WEBHOOK_TOKEN'),
-        'base_url_production' => 'https://api.asaas.com/v3',
+        'base_url_production' => 'https://api.asaas.com/api/v3',
         'base_url_sandbox' => 'https://sandbox.asaas.com/api/v3',
     ],
     'stripe' => [
