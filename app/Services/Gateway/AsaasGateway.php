@@ -19,7 +19,7 @@ class AsaasGateway implements GatewayInterface
 
         return $environment === 'sandbox'
             ? config('services.asaas.base_url_sandbox', 'https://sandbox.asaas.com/api/v3')
-            : config('services.asaas.base_url_production', 'https://api.asaas.com/api/v3');
+            : config('services.asaas.base_url_production', 'https://api.asaas.com/v3');
     }
 
     public function request(string $method, string $endpoint, array $data = []): array

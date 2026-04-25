@@ -228,7 +228,7 @@ class GatewayController extends Controller
 
             $baseUrl = $environment === 'sandbox'
                 ? 'https://sandbox.asaas.com/api/v3'
-                : 'https://api.asaas.com/api/v3';
+                : 'https://api.asaas.com/v3';
 
             $headers = [
                 'access_token' => $apiKey,
