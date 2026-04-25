@@ -8,38 +8,60 @@ fi
 echo "=== Starting Basileia Checkout ==="
 echo "DB_HOST=$DB_HOST"
 
-# Respect the APP_KEY from environment, or use a valid 32-byte fallback (AES-256)
-if [ -z "$APP_KEY" ]; then
+# Ensure .env exists
+if [ ! -f .env ]; then
+    if [ -f .env.example ]; then
+        cp .env.example .env
+        echo ".env created from .env.example"
+    else
+        touch .env
+        echo "Empty .env created"
+    fi
+fi
+
+# Function to safely update .env values
+# Usage: update_env KEY VALUE
+update_env() {
+    local key=$1
+    local value=$2
+    if [ -n "$value" ]; then
+        # Remove any existing line for this key
+        sed -i "/^${key}=/d" .env
+        # Append the new value safely quoted
+        echo "${key}='${value}'" >> .env
+    fi
+}
+
+# Respect the APP_KEY from environment, or use a valid fallback if missing from both env and .env
+if [ -z "$APP_KEY" ] && ! grep -q "^APP_KEY=" .env; then
     export APP_KEY="base64:YmFzaWxlaWEtY2hlY2tvdXQtc2VjcmV0LWtleS0yMDI="
 fi
 
-# Write .env file
-cat > .env << EOF
-APP_NAME=Basileia
-APP_ENV=production
-APP_KEY=$APP_KEY
-APP_DEBUG=${APP_DEBUG:-false}
-APP_URL=http://localhost:8000
-DB_CONNECTION=pgsql
-DB_HOST=$DB_HOST
-DB_PORT=${DB_PORT:-5432}
-DB_DATABASE=${DB_DATABASE:-checkout}
-DB_USERNAME=${DB_USERNAME:-postgres}
-DB_PASSWORD=${DB_PASSWORD:-secret}
-SESSION_DRIVER=file
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-DEFAULT_GATEWAY=asaas
-ASAAS_API_KEY=${ASAAS_API_KEY}
-ASAAS_ENVIRONMENT=${ASAAS_ENVIRONMENT:-production}
-ASAAS_WEBHOOK_TOKEN=${ASAAS_WEBHOOK_TOKEN}
-EOF
+# Update .env with environment variables (if provided)
+update_env "APP_NAME" "Basileia"
+update_env "APP_ENV" "${APP_ENV:-production}"
+update_env "APP_KEY" "$APP_KEY"
+update_env "APP_DEBUG" "${APP_DEBUG:-false}"
+update_env "APP_URL" "${APP_URL:-http://localhost:8000}"
+update_env "DB_CONNECTION" "pgsql"
+update_env "DB_HOST" "$DB_HOST"
+update_env "DB_PORT" "${DB_PORT:-5432}"
+update_env "DB_DATABASE" "${DB_DATABASE:-checkout}"
+update_env "DB_USERNAME" "${DB_USERNAME:-postgres}"
+update_env "DB_PASSWORD" "${DB_PASSWORD:-secret}"
+update_env "SESSION_DRIVER" "file"
+update_env "CACHE_STORE" "file"
+update_env "QUEUE_CONNECTION" "sync"
+update_env "DEFAULT_GATEWAY" "asaas"
+update_env "ASAAS_API_KEY" "$ASAAS_API_KEY"
+update_env "ASAAS_ENVIRONMENT" "${ASAAS_ENVIRONMENT:-production}"
+update_env "ASAAS_WEBHOOK_TOKEN" "$ASAAS_WEBHOOK_TOKEN"
 
-echo "APP_KEY set"
+echo "Environment configuration updated"
 
 # Clear config cache and set total permissions
-find storage -type d -exec chmod 777 {} +
-find storage -type f -exec chmod 666 {} +
+find storage -type d -exec chmod 777 {} + 2>/dev/null || true
+find storage -type f -exec chmod 666 {} + 2>/dev/null || true
 echo "Permissions set"
 rm -rf bootstrap/cache/*.php 2>/dev/null || true
 
@@ -54,16 +76,20 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-# Create admin user via direct SQL to avoid tinker issues
+# Create admin user safely
 echo "Creating admin user..."
-php artisan db:table users 2>&1 | head -1
-ADMIN_PASS=$(php -r "echo password_hash('BasileiaCheck@2026!99[]09', PASSWORD_BCRYPT);")
+# Generate hash first
+ADMIN_PASS_HASH=$(php -r "echo password_hash('BasileiaCheck@2026!99[]09', PASSWORD_BCRYPT);")
+export ADMIN_PASS_HASH
+
+# Use tinker to update or insert admin user, using environment variable to avoid bash expansion issues
 php artisan tinker --execute="
-    DB::table('users')->updateOrInsert(
+    \$hash = getenv('ADMIN_PASS_HASH');
+    \DB::table('users')->updateOrInsert(
         ['email' => 'admin@checkout.com'],
         [
             'name' => 'Admin',
-            'password' => '$ADMIN_PASS',
+            'password' => \$hash,
             'role' => 'super_admin',
             'status' => 'active',
             'email_verified_at' => now(),
@@ -74,7 +100,6 @@ php artisan tinker --execute="
             'updated_at' => now(),
         ]
     );
-    echo 'Admin user created/updated' . PHP_EOL;
 " 2>&1 || echo "WARNING: Could not create admin user"
 
 # Start server
