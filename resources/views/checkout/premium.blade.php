@@ -285,8 +285,6 @@
             <!-- LAYER 1: PAYMENT -->
             <div class="layer" x-show="step === 1" x-transition:enter="layer-enter" x-transition:leave="layer-exit">
                 <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; gap: 15px;">
-                    <img src="https://basileia.global/wp-content/uploads/2024/01/Basileia-1.png" alt="Basileia" style="height: 40px; width: auto;">
-                    
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <div>
                             <div class="summary-label" style="font-size: 10px; margin-bottom: 4px;" x-text="locale === 'pt-BR' ? 'EXPIRA EM' : 'EXPIRES IN'"></div>
