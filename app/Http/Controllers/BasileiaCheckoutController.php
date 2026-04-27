@@ -128,8 +128,17 @@ class BasileiaCheckoutController extends Controller
             }
         }
 
+        // Compatibilidade com o front original do usuário
+        $transaction->pix_payload = $pixData['payload'] ?? null;
+        $transaction->pix_qr_code = $pixData['encodedImage'] ?? null;
+        $paymentMethod = $request->get('metodo', $request->get('forma_pagamento', $asaasPayment['billingType'] ?? 'pix'));
+        $paymentMethod = strtolower($paymentMethod === 'CREDIT_CARD' ? 'card' : ($paymentMethod === 'PIX' ? 'pix' : $paymentMethod));
+        $installments = $request->get('parcelas', 1);
+
         return view('checkout.basileia', [
             'transaction' => $transaction,
+            'paymentMethod' => $paymentMethod,
+            'installments' => $installments,
             'asaasPayment' => $asaasPayment,
             'customerData' => $customerData,
             'plano' => $plano,
