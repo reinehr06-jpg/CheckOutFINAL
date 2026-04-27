@@ -170,13 +170,9 @@
             font-weight: 900; 
         }
 
-        /* i18n Switcher */
-        .locale-switcher {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 20px;
-        }
-        .locale-btn {
+        /* Custom Selector */
+        .custom-select-container { position: relative; width: 140px; }
+        .custom-select-trigger {
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
             padding: 8px 12px;
@@ -187,8 +183,34 @@
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
         }
+        .custom-select-options {
+            position: absolute;
+            top: calc(100% + 5px);
+            right: 0;
+            width: 180px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+        }
+        .custom-select-options.show { display: block; }
+        .custom-select-option {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+        .custom-select-option:hover { background: #f8fafc; }
 
         /* FORMS */
         .form-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
@@ -260,7 +282,7 @@
             <h1 class="plan-title">{{ $plano }}</h1>
             
             <div class="price-row">
-                <span class="price-value" x-text="formatPrice({{ $transaction->amount }})"></span>
+                <span class="price-value" x-text="formatPrice({{ $transaction->amount * 100 }})"></span>
                 <span class="price-period">/{{ $ciclo }}</span>
             </div>
 
@@ -284,18 +306,24 @@
 
             <!-- LAYER 1: PAYMENT -->
             <div class="layer" x-show="step === 1" x-transition:enter="layer-enter" x-transition:leave="layer-exit">
-                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; gap: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <div>
-                            <div class="summary-label" style="font-size: 10px; margin-bottom: 4px;" x-text="locale === 'pt-BR' ? 'EXPIRA EM' : 'EXPIRES IN'"></div>
-                            <div style="font-size: 14px; font-weight: 800; background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 10px; display: inline-block; letter-spacing: 1px;" x-text="timeLeft"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <div>
+                        <div class="summary-label" style="font-size: 10px; margin-bottom: 4px;" x-text="locale === 'pt-BR' ? 'EXPIRA EM' : 'EXPIRES IN'"></div>
+                        <div style="font-size: 14px; font-weight: 800; background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 10px; display: inline-block; letter-spacing: 1px;" x-text="timeLeft"></div>
+                    </div>
+                    
+                    <div class="custom-select-container" @click.away="showSelector = false">
+                        <div class="custom-select-trigger" @click="showSelector = !showSelector">
+                            <span x-text="countries.find(x => x.code === country).flag + ' ' + country"></span>
+                            <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
                         </div>
-                        <div class="locale-switcher" style="margin-bottom: 0;">
-                            <select x-model="country" @change="changeCountry($event.target.value)" class="locale-btn" style="appearance: none; padding-right: 30px; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23475569%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 8px center; background-size: 16px; width: 140px;">
-                                <template x-for="c in countries" :key="c.code">
-                                    <option :value="c.code" x-text="c.flag + ' ' + c.name"></option>
-                                </template>
-                            </select>
+                        <div class="custom-select-options" :class="{ 'show': showSelector }">
+                            <template x-for="c in countries" :key="c.code">
+                                <div class="custom-select-option" @click="changeCountry(c.code); showSelector = false">
+                                    <span x-text="c.flag"></span>
+                                    <span x-text="c.name"></span>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -314,7 +342,7 @@
                         
                         <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 25px; text-align: center;">
                             <div class="summary-label" style="font-size: 12px;" x-text="locale === 'pt-BR' ? 'VALOR' : 'VALUE'"></div>
-                            <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice({{ $transaction->amount }})"></div>
+                            <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice({{ $transaction->amount * 100 }})"></div>
                         </div>
 
                         <div class="pix-payload" id="pixPayload" style="text-align: left;">{{ $pixData['payload'] ?? '' }}</div>
@@ -356,6 +384,11 @@
                                 <div style="padding: 20px; font-size: 10px; opacity: 0.5;">Assinatura Autorizada</div>
                             </div>
                         </div>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div class="summary-label" style="font-size: 12px;" x-text="locale === 'pt-BR' ? 'VALOR' : 'VALUE'"></div>
+                        <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice({{ $transaction->amount * 100 }})"></div>
                     </div>
 
                     <form id="paymentForm" @submit.prevent="goToStep2()">
@@ -463,6 +496,7 @@
                 step: {{ $step ?? 1 }},
                 isFlipped: false,
                 processing: false,
+                showSelector: false,
                 
                 // i18n and Currency
                 country: 'BR',
