@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('source')->nullable()->after('asaas_payment_id');
             $table->string('callback_url')->nullable()->after('source');
             $table->string('asaas_customer_id')->nullable()->after('customer_document');
-            $table->text('customer_address')->nullable()->after('customer_phone');
+            $table->text('customer_address')->nullable()->after('asaas_customer_id');
         });
     }
 
