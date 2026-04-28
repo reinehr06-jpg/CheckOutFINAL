@@ -194,4 +194,3 @@ class DashboardController extends Controller
             ->with('success', 'Link tokenizado com sucesso!');
     }
 }
-}
