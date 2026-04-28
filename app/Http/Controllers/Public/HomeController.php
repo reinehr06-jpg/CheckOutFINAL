@@ -11,34 +11,38 @@ class HomeController extends Controller
 {
     public function index(Request $request)
     {
-        // Se vier asaas_payment_id, redireciona para o checkout da Basileia
-        if ($request->has('asaas_payment_id')) {
-            return redirect()->route('basileia.checkout.show', array_merge(
-                ['asaasPaymentId' => $request->get('asaas_payment_id')],
-                $request->except('asaas_payment_id')
-            ));
-        }
+        try {
+            // Se vier asaas_payment_id, redireciona para o checkout da Basileia
+            if ($request->has('asaas_payment_id')) {
+                return redirect()->route('basileia.checkout.show', array_merge(
+                    ['asaasPaymentId' => $request->get('asaas_payment_id')],
+                    $request->except('asaas_payment_id')
+                ));
+            }
 
-        $uuid = $request->get('uuid');
-        
-        if ($uuid) {
-            $transaction = Transaction::where('uuid', $uuid)->first();
-            $subscription = Subscription::where('uuid', $uuid)->first();
+            $uuid = $request->get('uuid');
             
-            if ($transaction) {
-                return redirect()->route('checkout.pay', $uuid);
+            if ($uuid) {
+                $transaction = Transaction::where('uuid', $uuid)->first();
+                $subscription = Subscription::where('uuid', $uuid)->first();
+                
+                if ($transaction) {
+                    return redirect()->route('checkout.pay', $uuid);
+                }
+                
+                if ($subscription) {
+                    return redirect()->route('checkout.pay', $uuid);
+                }
+                
+                return view('home', [
+                    'error' => 'Checkout não encontrado. Verifique o código e tente novamente.',
+                    'uuid' => $uuid
+                ]);
             }
             
-            if ($subscription) {
-                return redirect()->route('checkout.pay', $uuid);
-            }
-            
-            return view('home', [
-                'error' => 'Checkout não encontrado. Verifique o código e tente novamente.',
-                'uuid' => $uuid
-            ]);
+            return view('home');
+        } catch (\Exception $e) {
+            return "Erro no Home: " . $e->getMessage() . " em " . $e->getFile() . ":" . $e->getLine();
         }
-        
-        return view('home');
     }
 }
