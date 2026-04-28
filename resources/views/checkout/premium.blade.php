@@ -261,43 +261,97 @@
         .btn-secondary:hover { background: #e2e8f0; }
 
         @media (max-width: 900px) {
-            .checkout-wrapper { grid-template-columns: 1fr; gap: 40px; }
-            .order-summary { text-align: center; }
-            .brand-logo { justify-content: center; }
-            .features-grid { max-width: 500px; margin: 0 auto 40px; }
-            .book-container { margin: 0 auto; }
+            body { padding: 10px; align-items: flex-start; }
+            .checkout-wrapper { grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
+            
+            .order-summary { 
+                background: rgba(255, 255, 255, 0.05); 
+                padding: 20px; 
+                border-radius: 20px; 
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                text-align: left;
+                cursor: pointer;
+                order: -1;
+                transition: all 0.3s ease;
+            }
+            .order-summary:hover { background: rgba(255, 255, 255, 0.08); }
+            
+            .brand-logo { margin-bottom: 0; flex-direction: row; justify-content: flex-start; gap: 10px; }
+            .brand-logo img { height: 40px; }
+            .brand-logo span { font-size: 20px; }
+            
+            .plan-title { font-size: 28px; margin: 15px 0 5px; }
+            .price-row { margin-bottom: 20px; }
+            .price-value { font-size: 32px; }
+            
+            .mobile-collapse-content { 
+                max-height: 0; 
+                overflow: hidden; 
+                transition: max-height 0.5s ease-out, opacity 0.3s ease;
+                opacity: 0;
+            }
+            .mobile-collapse-content.expanded { 
+                max-height: 1000px; 
+                opacity: 1;
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .features-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 30px; }
+            .trust-footer { flex-direction: column; gap: 15px; }
+            
+            .book-container { max-width: 100%; }
+            .layer { padding: 30px 20px; border-radius: 20px; }
+            
+            /* Toggle indicator */
+            .expand-indicator {
+                margin-left: auto;
+                transition: transform 0.3s;
+            }
+            .expanded .expand-indicator { transform: rotate(180deg); }
+        }
+        
+        @media (min-width: 901px) {
+            .expand-indicator { display: none; }
+            .mobile-collapse-content { max-height: none !important; opacity: 1 !important; }
         }
     </style>
 </head>
 <body x-data="checkoutFlow()">
     <div class="checkout-wrapper">
         <!-- SUMMARY PANEL -->
-        <div class="order-summary">
-            <div class="brand-logo">
-                <img src="https://basileia.global/wp-content/uploads/2024/01/Basileia-1.png" alt="Basileia">
-                <span style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">Basiléia</span>
+        <div class="order-summary" @click="summaryExpanded = !summaryExpanded">
+            <div style="display: flex; align-items: center; width: 100%;">
+                <div class="brand-logo" style="margin-bottom: 0;">
+                    <img src="https://basileia.global/wp-content/uploads/2024/01/Basileia-1.png" alt="Basileia">
+                    <span style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">Basiléia</span>
+                </div>
+                <i class="fas fa-chevron-down expand-indicator" :class="{ 'expanded': summaryExpanded }"></i>
             </div>
             
-            <div class="summary-label" x-text="locale === 'pt-BR' ? 'Resumo do pedido' : 'Order summary'"></div>
-            <h1 class="plan-title">{{ $plano }}</h1>
-            
-            <div class="price-row">
-                <span class="price-value" x-text="formatPrice({{ $transaction->amount }})"></span>
-                <span class="price-period">/{{ $ciclo }}</span>
-            </div>
+            <div class="mobile-collapse-content" :class="{ 'expanded': summaryExpanded }">
+                <div class="summary-label" x-text="locale === 'pt-BR' ? 'Resumo do pedido' : 'Order summary'"></div>
+                <h1 class="plan-title">{{ $plano }}</h1>
+                
+                <div class="price-row">
+                    <span class="price-value" x-text="formatPrice({{ $transaction->amount }})"></span>
+                    <span class="price-period">/{{ $ciclo }}</span>
+                </div>
 
-            <div class="features-grid">
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'IA via WhatsApp' : 'AI via WhatsApp'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Gestão de Células (CGs)' : 'Cell/Small Group Management'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Conformidade LGPD' : 'GDPR/LGPD Compliance'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Suporte Humanizado' : 'Humanized Support'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Múltiplas Igrejas' : 'Multiple Churches'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Implantação Rápida' : 'Quick Implementation'"></span></div>
-            </div>
+                <div class="features-grid">
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'IA via WhatsApp' : 'AI via WhatsApp'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Gestão de Células (CGs)' : 'Cell/Small Group Management'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Conformidade LGPD' : 'GDPR/LGPD Compliance'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Suporte Humanizado' : 'Humanized Support'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Múltiplas Igrejas' : 'Multiple Churches'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Implantação Rápida' : 'Quick Implementation'"></span></div>
+                </div>
 
-            <div class="trust-footer">
-                <div class="trust-item"><i class="fas fa-lock"></i> <span x-text="locale === 'pt-BR' ? 'Pagamento 100% seguro' : '100% secure payment'"></span></div>
-                <div class="trust-item"><i class="fas fa-shield-alt"></i> <span x-text="locale === 'pt-BR' ? 'Garantia de 7 dias' : '7-day guarantee'"></span></div>
+                <div class="trust-footer">
+                    <div class="trust-item"><i class="fas fa-lock"></i> <span x-text="locale === 'pt-BR' ? 'Pagamento 100% seguro' : '100% secure payment'"></span></div>
+                    <div class="trust-item"><i class="fas fa-shield-alt"></i> <span x-text="locale === 'pt-BR' ? 'Garantia de 7 dias' : '7-day guarantee'"></span></div>
+                </div>
             </div>
         </div>
 
@@ -499,6 +553,7 @@
                 isFlipped: false,
                 processing: false,
                 showSelector: false,
+                summaryExpanded: false,
                 
                 // i18n and Currency
                 country: 'BR',
