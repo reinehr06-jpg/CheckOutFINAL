@@ -53,7 +53,7 @@
         }
         .brand-logo img { height: 50px; width: auto; filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.3)); }
         .summary-label { font-size: 13px; color: #a99fbb; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .plan-title { font-size: 42px; font-weight: 800; margin-bottom: 20px; line-height: 1.1; }
+        .plan-title { font-size: 32px; font-weight: 800; margin-bottom: 15px; line-height: 1.1; }
         .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 30px; }
         .price-currency { font-size: 20px; color: #a99fbb; }
         .price-value { font-size: 40px; font-weight: 800; }
@@ -90,7 +90,7 @@
             position: relative;
             background: white;
             border-radius: 20px;
-            padding: 30px;
+            padding: 20px;
             color: #1e293b;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -104,7 +104,7 @@
             left: 8px;
             right: -8px;
             bottom: -8px;
-            background: #f5f3ff; /* Very light purple */
+            background: #e9e5ff; /* More visible roxinho */
             border: 1px solid #ddd6fe;
             border-radius: 20px;
             z-index: 5;
@@ -116,8 +116,8 @@
             left: 16px;
             right: -16px;
             bottom: -16px;
-            background: #ede9fe; /* Slightly darker light purple */
-            border: 1px solid #ddd6fe;
+            background: #ddd6fe; /* Darker roxinho */
+            border: 1px solid #c4b5fd;
             border-radius: 20px;
             z-index: 2;
             transform: rotate(-4deg);
@@ -206,22 +206,12 @@
 
         /* UTILS */
         [x-cloak] { display: none !important; }
-        .layer-enter { 
-            opacity: 0; 
-            transform: rotateY(-90deg) scale(0.9); 
-            transform-origin: left center;
-        }
-        .layer-enter-active {
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .layer-exit { 
-            opacity: 0; 
-            transform: rotateY(90deg) scale(0.9); 
-            transform-origin: right center;
-        }
-        .layer-exit-active {
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .flip-enter-active { transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .flip-enter-start { opacity: 0; transform: rotateY(-90deg) scale(0.9); transform-origin: left center; }
+        .flip-enter-end { opacity: 1; transform: rotateY(0) scale(1); }
+        .flip-leave-active { transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .flip-leave-start { opacity: 1; transform: rotateY(0) scale(1); }
+        .flip-leave-end { opacity: 0; transform: rotateY(90deg) scale(0.9); transform-origin: right center; }
 
         /* COUNTRY SELECTOR */
         .custom-select-container { position: relative; width: 110px; }
@@ -296,11 +286,13 @@
 
             <!-- LAYER 1 & 2: PAYMENT FLOW -->
             <div class="layer" x-show="step === 1 || step === 2" 
-                 x-transition:enter="layer-enter-active"
-                 x-transition:enter-start="layer-enter"
-                 x-transition:leave="layer-exit-active"
-                 x-transition:leave-start="layer-exit">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                 x-transition:enter="flip-enter-active"
+                 x-transition:enter-start="flip-enter-start"
+                 x-transition:enter-end="flip-enter-end"
+                 x-transition:leave="flip-leave-active"
+                 x-transition:leave-start="flip-leave-start"
+                 x-transition:leave-end="flip-leave-end">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <div>
                         <div class="summary-label" style="font-size: 10px; margin-bottom: 4px;" x-text="locale === 'pt-BR' ? 'EXPIRA EM' : 'EXPIRES IN'"></div>
                         <div style="font-size: 14px; font-weight: 800; background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 10px; display: inline-block; letter-spacing: 1px;" x-text="timeLeft"></div>
@@ -322,7 +314,7 @@
                     </div>
                 </div>
 
-                <div style="text-align: center; margin-bottom: 25px;">
+                <div style="text-align: center; margin-bottom: 15px;">
                     <h2 class="form-title" x-text="locale === 'pt-BR' ? 'Dados de Pagamento' : 'Payment Details'" style="margin-bottom: 5px;"></h2>
                 </div>
 
@@ -379,7 +371,7 @@
                         </div>
                     </div>
 
-                    <div style="text-align: center; margin-bottom: 20px;" x-show="step === 1">
+                    <div style="text-align: center; margin-bottom: 10px;" x-show="step === 1">
                         <div class="summary-label" style="font-size: 12px;" x-text="locale === 'pt-BR' ? 'VALOR' : 'VALUE'"></div>
                         <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice(originalAmount)"></div>
                     </div>
@@ -454,10 +446,12 @@
 
             <!-- LAYER 3: SUCCESS -->
             <div class="layer" x-show="step === 3" 
-                 x-transition:enter="layer-enter-active"
-                 x-transition:enter-start="layer-enter"
-                 x-transition:leave="layer-exit-active"
-                 x-transition:leave-start="layer-exit"
+                 x-transition:enter="flip-enter-active"
+                 x-transition:enter-start="flip-enter-start"
+                 x-transition:enter-end="flip-enter-end"
+                 x-transition:leave="flip-leave-active"
+                 x-transition:leave-start="flip-leave-start"
+                 x-transition:leave-end="flip-leave-end"
                  x-cloak>
                 <div class="success-icon">
                     <i class="fas fa-check"></i>
