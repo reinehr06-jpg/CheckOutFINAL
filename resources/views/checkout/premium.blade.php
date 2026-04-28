@@ -447,9 +447,9 @@
                             <div class="card-face card-front">
                                 <div class="card-chip"></div>
                                 <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
-                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" style="top: 22px; right: 22px;">
-                                    <svg viewBox="0 0 48 24" width="48" height="24">
-                                        <path d="M18.2 18.5l2.8-13h2.1l-2.8 13h-2.1zm11.7-12.7c-0.5-0.2-1.3-0.4-2.2-0.4-2.4 0-4.1 1.3-4.1 3.1 0 1.4 1.2 2.1 2.2 2.6 1 0.5 1.4 0.8 1.4 1.2 0 0.7-0.8 1-1.5 1-1 0-1.7-0.2-2.7-0.6l-0.4 1.8c0.5 0.2 1.5 0.4 2.5 0.4 2.4 0 4-1.2 4-3 0-1-0.6-1.8-1.9-2.4-0.8-0.4-1.3-0.7-1.3-1.2 0-0.4 0.5-0.9 1.5-0.9 0.9 0 1.5 0.2 2 0.4l0.4-1.8zm6.5 12.7h2l-1.8-13h-1.8c-0.6 0-1 0.3-1.2 0.9l-4.4 10.6h2.2l0.4-1.2h2.7l0.3 1.2zm-2-3.1l1.1-3 0.6 3h-1.7zm-26.6-9.6l-0.2 1.1c1.2 0.3 2.5 0.8 3.3 1.3l1.8 7.2h2.2l3.4-13h-2.2l-2.1 8.3-0.9-4.3c-0.3-1-1.1-1.8-2.1-2.2-1.2-0.6-2.4-1-3.2-1.4" fill="#fff"/>
+                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" style="top: 22px; right: 22px; width: 45px; height: 25px;">
+                                    <svg viewBox="0 0 120 40" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+                                        <path fill="#FFFFFF" d="M45.2,27.9l2.8-12.8h2.1l-2.8,12.8H45.2z M56.9,15.1c-0.5-0.2-1.3-0.4-2.2-0.4c-2.4,0-4.1,1.3-4.1,3.1 c0,1.4,1.2,2.1,2.2,2.6c1,0.5,1.4,0.8,1.4,1.2c0,0.7-0.8,1-1.5,1c-1,0-1.7-0.2-2.7-0.6l-0.4,1.8c0.5,0.2,1.5,0.4,2.5,0.4 c2.4,0,4-1.2,4-3c0-1-0.6-1.8-1.9-2.4c-0.8-0.4-1.3-0.7-1.3-1.2c0-0.4,0.5-0.9,1.5-0.9c0.9,0,1.5,0.2,2,0.4L56.9,15.1z M63.4,15.1 h-1.8c-0.6,0-1,0.3-1.2,0.9l-4.4,10.6h2.2l0.4-1.2h2.7l0.3,1.2h2L63.4,15.1z M61.4,22l-1.1-3l-0.6,3H61.4z M36.8,15.1l-0.2,1.1 c1.2,0.3,2.5,0.8,3.3,1.3l1.8,7.2h2.2l3.4-13h-2.2l-2.1,8.3l-0.9-4.3c-0.3-1-1.1-1.8-2.1-2.2C39.2,15.9,38,15.5,36.8,15.1z"/>
                                     </svg>
                                 </div>
                                 <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" style="top: 22px; right: 22px;">
@@ -602,7 +602,7 @@
     <script>
         function checkoutFlow() {
             return {
-                step: parseInt(localStorage.getItem('checkout_step_' + '{{ $transaction->uuid }}')) || {{ $step ?? 1 }},
+                step: parseInt(localStorage.getItem('checkout_step_' + '{{ $transaction->uuid }}')) || 1,
                 isFlipped: false,
                 processing: false,
                 showSelector: false,
@@ -702,7 +702,7 @@
                 currency: 'BRL',
                 isExpired: false,
                 isFlipped: false,
-                step: {{ $step }},
+
                 showSelector: false,
                 processing: false,
                 timeLeft: '30:00',
