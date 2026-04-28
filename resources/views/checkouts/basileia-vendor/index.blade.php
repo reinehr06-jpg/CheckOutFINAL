@@ -329,7 +329,7 @@
         .mobile-summary-toggle { display: none; }
     </style>
 </head>
-<body x-data="checkoutFlow()" x-init="init()">
+<body class="bg-dark text-white font-sans overflow-x-hidden" x-data="checkoutFlow()" x-init="init()">
 
     <div class="checkout-wrapper">
         
@@ -657,7 +657,7 @@
                 vendorDoc: {!! json_encode($transaction->customer_document ?? '') !!},
                 mobileSummaryOpen: false,
 
-                originalAmount: {{ $transaction->amount ?? 0 }},
+                originalAmount: {{ number_format($transaction->amount ?? 0, 2, '.', '') }},
                 selectedCountry: {code:'BR',name:'Brasil',flag:'🇧🇷',locale:'pt-BR',currency:'BRL',symbol:'R$',rate:1},
                 
                 countries: [

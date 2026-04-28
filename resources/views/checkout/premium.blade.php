@@ -333,7 +333,7 @@
         }
     </style>
 </head>
-<body x-data="checkoutFlow()">
+<body class="bg-dark text-white font-sans overflow-x-hidden" x-data="checkoutFlow()" x-init="init()">
     <div class="checkout-wrapper">
         <!-- SUMMARY PANEL -->
         <div class="order-summary" @click="summaryExpanded = !summaryExpanded">
@@ -630,7 +630,7 @@
                 vendorEmail: {!! json_encode($customerData['email'] ?? '') !!},
                 vendorDoc: {!! json_encode($customerData['document'] ?? '') !!},
 
-                originalAmount: {{ $transaction->amount ?? 0 }},
+                originalAmount: {{ number_format($transaction->amount ?? 0, 2, '.', '') }},
                 selectedCountry: {code:'BR',name:'Brasil',flag:'🇧🇷',locale:'pt-BR',currency:'BRL',symbol:'R$',rate:1},
                 
                 countries: [
