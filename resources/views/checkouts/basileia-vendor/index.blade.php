@@ -652,12 +652,12 @@
                 cardBrand: 'default',
 
                 // Vendor Data
-                vendorName: '{{ $transaction->vendor->name ?? '' }}',
-                vendorEmail: '{{ $transaction->customer_email ?? '' }}',
-                vendorDoc: '{{ $transaction->customer_document ?? '' }}',
+                vendorName: @js($transaction->vendor->name ?? ''),
+                vendorEmail: @js($transaction->customer_email ?? ''),
+                vendorDoc: @js($transaction->customer_document ?? ''),
                 mobileSummaryOpen: false,
 
-                originalAmount: {{ $transaction->amount }},
+                originalAmount: {{ $transaction->amount ?? 0 }},
                 selectedCountry: {code:'BR',name:'Brasil',flag:'🇧🇷',locale:'pt-BR',currency:'BRL',symbol:'R$',rate:1},
                 
                 countries: [

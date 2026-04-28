@@ -626,11 +626,11 @@
                 cardBrand: 'default',
 
                 // Vendor Data
-                vendorName: '{{ $customerData['name'] ?? '' }}',
-                vendorEmail: '{{ $customerData['email'] ?? '' }}',
-                vendorDoc: '{{ $customerData['document'] ?? '' }}',
+                vendorName: @js($customerData['name'] ?? ''),
+                vendorEmail: @js($customerData['email'] ?? ''),
+                vendorDoc: @js($customerData['document'] ?? ''),
 
-                originalAmount: {{ $transaction->amount }},
+                originalAmount: {{ $transaction->amount ?? 0 }},
                 selectedCountry: {code:'BR',name:'Brasil',flag:'🇧🇷',locale:'pt-BR',currency:'BRL',symbol:'R$',rate:1},
                 
                 countries: [
