@@ -55,7 +55,7 @@ Route::get('/checkout/asaas/success/{uuid}', [AsaasCheckoutController::class, 's
 
 // Basileia branded checkout
 Route::get('/checkout/{uuid}', [BasileiaCheckoutController::class, 'show'])->name('checkout.show');
-Route::get('/checkout/basileia/{asaasPaymentId}', [BasileiaCheckoutController::class, 'handle'])->name('basileia.checkout.handle');
+Route::get('/c/{asaasPaymentId}', [BasileiaCheckoutController::class, 'handle'])->name('basileia.checkout.show');
 Route::post('/checkout/process/{uuid}', [BasileiaCheckoutController::class, 'process'])->name('checkout.process');
 Route::get('/checkout/success/{uuid}', [BasileiaCheckoutController::class, 'success'])->name('checkout.success');
 

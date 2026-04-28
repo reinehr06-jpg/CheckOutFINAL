@@ -105,7 +105,7 @@ class BasileiaCheckoutController extends Controller
                 $pixData = $this->asaasService->getPixQrCode($asaasPaymentId) ?? [];
             }
 
-            return view('checkout.premium', [
+            return view('checkouts.basileia-vendor.index', [
                 'step' => $request->get('success') ? 3 : 1,
                 'transaction' => $transaction,
                 'paymentMethod' => strtolower($asaasPayment['billingType'] ?? 'pix'),
