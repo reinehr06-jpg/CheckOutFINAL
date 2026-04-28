@@ -38,45 +38,100 @@
             align-items: center;
         }
 
-        /* LEFT PANEL */
+        /* LEFT PANEL - SUMMARY CARD */
         .order-summary {
-            padding-right: 10px;
-        }
-        .brand-logo {
+            padding-right: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            text-align: center;
+            gap: 25px;
         }
-        .brand-logo img { height: 50px; width: auto; filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.3)); }
-        .summary-label { font-size: 13px; color: #a99fbb; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .plan-title { font-size: 32px; font-weight: 800; margin-bottom: 15px; line-height: 1.1; }
-        .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 30px; }
-        .price-currency { font-size: 20px; color: #a99fbb; }
-        .price-value { font-size: 40px; font-weight: 800; }
+        
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        .brand-logo img { height: 35px; width: auto; filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.3)); }
+        
+        .badge-secure {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(34, 197, 94, 0.1);
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #4ade80;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .summary-label { font-size: 13px; color: #a99fbb; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+        .plan-title { font-size: 38px; font-weight: 900; margin: 5px 0 15px; line-height: 1; letter-spacing: -1px; }
+        
+        .price-container {
+            background: rgba(124, 58, 237, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(124, 58, 237, 0.1);
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .price-currency { font-size: 18px; font-weight: 600; color: var(--primary-light); }
+        .price-value { font-size: 44px; font-weight: 900; color: white; line-height: 1; }
         .price-period { font-size: 14px; color: #a99fbb; }
         
-        .features-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 40px;
+        .features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 5px;
         }
-        .feature-item { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .feature-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            font-size: 14px; 
+            color: #e2e8f0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .feature-item:last-child { border-bottom: none; }
         .feature-item i { color: #22c55e; font-size: 16px; }
 
-        .trust-footer {
+        .trust-row {
             display: flex;
-            gap: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            justify-content: space-between;
+            margin-top: 10px;
             color: #a99fbb;
-            font-size: 13px;
+            font-size: 12px;
+            font-weight: 500;
         }
-        .trust-item { display: flex; align-items: center; gap: 8px; }
+        .trust-item { display: flex; align-items: center; gap: 6px; }
+        .trust-item i { font-size: 14px; opacity: 0.7; }
 
         /* RIGHT PANEL - THE BOOK */
         .book-container {
@@ -239,34 +294,41 @@
 
     <div class="checkout-wrapper">
         <div style="position: fixed; bottom: 10px; right: 10px; font-size: 8px; opacity: 0.1; color: white; pointer-events: none;">v1.1.2</div>
-        <!-- LEFT PANEL -->
+        <!-- LEFT PANEL (Order Summary) -->
         <div class="order-summary">
             <div class="brand-logo">
                 <img src="https://dash.basileia.global/assets/logo-basileia-horizontal.png" alt="Basiléia Logo">
-                <div style="background: rgba(124, 58, 237, 0.1); padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--primary-light); text-transform: uppercase; letter-spacing: 1px;">
-                    Checkout 100% Seguro
+            </div>
+
+            <div class="summary-card">
+                <div class="badge-secure">
+                    <i class="fas fa-shield-alt"></i> Checkout 100% Seguro
+                </div>
+
+                <div class="summary-label" x-text="locale === 'pt-BR' ? 'Plano Selecionado' : 'Selected Plan'"></div>
+                <h1 class="plan-title" style="color: white;">{{ $plano }}</h1>
+
+                <div class="price-container">
+                    <span class="price-currency" x-text="currencySymbol"></span>
+                    <span class="price-value" x-text="formatPrice(originalAmount).replace(/[^0-9,.]/g, '')"></span>
+                    <span class="price-period" x-text="locale === 'pt-BR' ? '/ mês' : '/ month'"></span>
+                </div>
+
+                <div class="features-list">
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Conformidade LGPD' : 'GDPR/LGPD Compliance'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Suporte Humanizado' : 'Human Support'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Múltiplas Igrejas' : 'Multiple Churches'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Implantação Rápida' : 'Quick Deployment'"></span></div>
+                </div>
+
+                <div class="trust-row">
+                    <div class="trust-item"><i class="fas fa-lock"></i> <span x-text="locale === 'pt-BR' ? 'Garantia total' : 'Full Guarantee'"></span></div>
+                    <div class="trust-item"><i class="fas fa-certificate"></i> <span x-text="locale === 'pt-BR' ? '7 dias grátis' : '7 days free'"></span></div>
                 </div>
             </div>
 
-            <div class="summary-label" x-text="locale === 'pt-BR' ? 'Você selecionou o plano' : 'You selected the plan'"></div>
-            <h1 class="plan-title" style="color: white;">{{ $plano }}</h1>
-
-            <div class="price-row">
-                <span class="price-currency" x-text="currencySymbol"></span>
-                <span class="price-value" x-text="formatPrice(originalAmount).replace(/[^0-9,.]/g, '')"></span>
-                <span class="price-period" x-text="locale === 'pt-BR' ? '/ mês' : '/ month'"></span>
-            </div>
-
-            <div class="features-grid">
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Conformidade LGPD' : 'GDPR/LGPD Compliance'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Suporte Humanizado' : 'Human Support'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Múltiplas Igrejas' : 'Multiple Churches'"></span></div>
-                <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Implantação Rápida' : 'Quick Deployment'"></span></div>
-            </div>
-
-            <div class="trust-footer">
-                <div class="trust-item"><i class="fas fa-lock"></i> <span x-text="locale === 'pt-BR' ? 'Pagamento 100% seguro' : '100% secure payment'"></span></div>
-                <div class="trust-item"><i class="fas fa-shield-alt"></i> <span x-text="locale === 'pt-BR' ? 'Garantia de 7 dias' : '7-day guarantee'"></span></div>
+            <div style="text-align: center; color: #a99fbb; font-size: 11px; opacity: 0.5;">
+                Basiléia Church &copy; {{ date('Y') }} - Todos os direitos reservados
             </div>
         </div>
 
