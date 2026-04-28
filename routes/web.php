@@ -329,3 +329,12 @@ Route::get('/demo-checkout/{type}/{uuid}', function ($type, $uuid) {
 });
 
 // Duplicate removed or renamed
+
+Route::get('/test-db', function () {
+    try {
+        \DB::connection()->getPdo();
+        return "Conexão com o Banco de Dados: OK!";
+    } catch (\Exception $e) {
+        return "Erro de Conexão: " . $e->getMessage();
+    }
+});
