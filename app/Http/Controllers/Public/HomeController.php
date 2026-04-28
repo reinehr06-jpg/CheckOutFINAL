@@ -11,6 +11,7 @@ class HomeController extends Controller
 {
     public function index(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Home Hit', ['params' => $request->all()]);
         try {
             // Se vier asaas_payment_id, redireciona para o checkout seguro da Basileia
             if ($request->has('asaas_payment_id')) {

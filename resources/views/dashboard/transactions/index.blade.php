@@ -108,6 +108,9 @@
                                 $cur = $statusStyle[$tx->status] ?? ['bg' => '#f1f5f9', 'text' => '#64748b', 'label' => strtoupper($tx->status)];
                             @endphp
                             <span style="background: {{ $cur['bg'] }}; color: {{ $cur['text'] }}; padding: 5px 12px; border-radius: 8px; font-size: 0.65rem; font-weight: 900; letter-spacing: 0.5px;">{{ $cur['label'] }}</span>
+                            <button onclick="copyToClipboard('{{ route('checkout.show', $tx->uuid) }}', this)" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.7rem; font-weight: 700; margin-left: 8px; vertical-align: middle;" title="Copiar Link Seguro">
+                                <i class="fas fa-copy"></i> LINK
+                            </button>
                         </td>
                         <td style="padding: 16px 24px;">
                             <div style="font-weight: 900; color: var(--bg-sidebar); font-size: 0.95rem;">R$ {{ number_format($tx->amount, 2, ',', '.') }}</div>
@@ -147,4 +150,26 @@
     </div>
     @endif
 </div>
+@endsection
+
+@section('scripts')
+<script>
+function copyToClipboard(text, btn) {
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> OK!';
+    btn.style.color = '#10b981';
+    
+    setTimeout(() => {
+        btn.innerHTML = originalContent;
+        btn.style.color = 'var(--primary)';
+    }, 2000);
+}
+</script>
 @endsection

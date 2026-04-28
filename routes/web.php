@@ -84,6 +84,10 @@ Route::prefix('/dashboard')->middleware(['auth', 'password.expiry', 'enforce.2fa
     Route::get('/lab', [LabController::class, 'index'])->name('dashboard.lab');
     Route::post('/lab/checkout/new', [LabController::class, 'createAndEdit'])->name('dashboard.lab.checkout.create');
 
+    // Tokenizer Tool
+    Route::get('/tokenizer', [DashboardController::class, 'tokenizer'])->name('dashboard.tokenizer');
+    Route::post('/tokenizer', [DashboardController::class, 'tokenize'])->name('dashboard.tokenizer.post');
+
     // Checkout Builder
     Route::get('/checkout-configs', [CheckoutConfigController::class, 'index'])->name('dashboard.checkout-configs');
     Route::get('/checkout-configs/create', [CheckoutConfigController::class, 'create'])->name('dashboard.checkout-configs.create');

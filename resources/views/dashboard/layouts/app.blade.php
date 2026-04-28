@@ -61,6 +61,7 @@
                 <ul class="sidebar-nav">
                     <li><a href="{{ route('dashboard.index') }}" class="{{ request()->routeIs('dashboard.index') ? 'active' : '' }}"><i class="fas fa-chart-line"></i><span>Início</span></a></li>
                     <li><a href="{{ route('dashboard.transactions') }}" class="{{ request()->routeIs('dashboard.transactions*') ? 'active' : '' }}"><i class="fas fa-exchange-alt"></i><span>Transações</span></a></li>
+                    <li><a href="{{ route('dashboard.tokenizer') }}" class="{{ request()->routeIs('dashboard.tokenizer') ? 'active' : '' }}"><i class="fas fa-shield-halved"></i><span>Gerador de Link</span></a></li>
                     <li><a href="{{ route('dashboard.events.index') }}" class="{{ request()->routeIs('dashboard.events*') ? 'active' : '' }}"><i class="fas fa-link"></i><span>Links de Pagto</span></a></li>
                 </ul>
             </div>

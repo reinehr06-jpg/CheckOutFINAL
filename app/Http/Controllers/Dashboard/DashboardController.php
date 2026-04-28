@@ -142,4 +142,56 @@ class DashboardController extends Controller
             'recentTransactions' => $recentTransactions,
         ]);
     }
+
+    public function tokenizer(Request $request)
+    {
+        return view('dashboard.tokenizer', [
+            'shortUrl' => $request->get('shortUrl')
+        ]);
+    }
+
+    public function tokenize(Request $request)
+    {
+        $url = $request->input('url');
+        
+        // Parse parameters from URL
+        $queryParams = [];
+        $parts = parse_url($url);
+        if (isset($parts['query'])) {
+            parse_str($parts['query'], $queryParams);
+        } else {
+            // Maybe it's just the params?
+            parse_str($url, $queryParams);
+        }
+
+        $asaasPaymentId = $queryParams['asaas_payment_id'] ?? null;
+        if (!$asaasPaymentId) {
+            return back()->with('error', 'O link deve conter um asaas_payment_id válido.');
+        }
+
+        $transaction = Transaction::where('asaas_payment_id', $asaasPaymentId)->first();
+
+        if (!$transaction) {
+            $transaction = Transaction::create([
+                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'company_id' => Auth::user()->company_id ?? 1,
+                'asaas_payment_id' => $asaasPaymentId,
+                'source' => 'tokenizer_tool',
+                'amount' => $queryParams['valor'] ?? 0,
+                'description' => $queryParams['plano'] ?? 'Pagamento Basiléia',
+                'payment_method' => 'credit_card',
+                'status' => 'pending',
+                'customer_name' => $queryParams['cliente'] ?? '',
+                'customer_email' => $queryParams['email'] ?? '',
+                'customer_document' => $queryParams['documento'] ?? '',
+                'customer_phone' => $queryParams['whatsapp'] ?? '',
+            ]);
+        }
+
+        $shortUrl = route('checkout.show', $transaction->uuid);
+
+        return redirect()->route('dashboard.tokenizer', ['shortUrl' => $shortUrl])
+            ->with('success', 'Link tokenizado com sucesso!');
+    }
+}
 }

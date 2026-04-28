@@ -463,21 +463,21 @@
                     <form id="paymentForm" method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
                         @csrf
                         <div class="form-group">
-                            <label class="form-label">Número do Cartão</label>
+                            <label class="form-label" x-text="locale === 'pt-BR' ? 'Número do Cartão' : 'Card Number'"></label>
                             <input type="text" class="form-input" x-model="cardNumber" @input="updateCardNumber($event)" placeholder="0000 0000 0000 0000" maxlength="19" required>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">Validade</label>
+                                <label class="form-label" x-text="locale === 'pt-BR' ? 'Validade' : 'Expiry'"></label>
                                 <input type="text" class="form-input" x-model="cardExpiry" @input="updateCardExpiry($event)" placeholder="MM/AA" maxlength="5" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">CVV</label>
+                                <label class="form-label" x-text="locale === 'pt-BR' ? 'CVV' : 'CVV'"></label>
                                 <input type="text" class="form-input" x-model="cardCvv" @focus="isFlipped = true" @blur="isFlipped = false" placeholder="000" maxlength="4" required>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Nome no Cartão</label>
+                            <label class="form-label" x-text="locale === 'pt-BR' ? 'Nome no Cartão' : 'Cardholder Name'"></label>
                             <input type="text" class="form-input" x-model="cardHolder" placeholder="Como impresso no cartão" required>
                         </div>
                         <button type="submit" class="btn-pay">
