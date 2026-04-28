@@ -170,7 +170,7 @@
         .card-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
         .card-label { font-size: 9px; text-transform: uppercase; opacity: 0.7; margin-bottom: 3px; }
         .card-value { font-size: 13px; font-weight: 600; text-transform: uppercase; }
-        .card-brand-logo { position: absolute; top: 20px; right: 20px; height: 25px; opacity: 0; transition: opacity 0.3s; }
+        .card-brand-logo { position: absolute; top: 20px; right: 20px; height: 25px; width: auto; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
         .card-brand-logo.visible { opacity: 1; }
         .card-brand-logo.default { font-weight: 900; font-size: 20px; color: white; opacity: 0; }
         .card-brand-logo.default.visible { opacity: 0.3; }
@@ -348,8 +348,12 @@
                             <div class="card-face card-front">
                                 <div class="card-chip"></div>
                                 <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" alt="Visa">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" alt="Mastercard">
+                                <img src="https://cdn.jsdelivr.net/gh/muhamad-f-m/payment-icons/svg/flat/visa.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" alt="Visa">
+                                <img src="https://cdn.jsdelivr.net/gh/muhamad-f-m/payment-icons/svg/flat/mastercard.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" alt="Mastercard">
+                                <img src="https://cdn.jsdelivr.net/gh/muhamad-f-m/payment-icons/svg/flat/amex.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'amex' }" alt="Amex">
+                                <img src="https://cdn.jsdelivr.net/gh/muhamad-f-m/payment-icons/svg/flat/elo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'elo' }" alt="Elo">
+                                <img src="https://cdn.jsdelivr.net/gh/muhamad-f-m/payment-icons/svg/flat/hipercard.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'hipercard' }" alt="Hipercard">
+                                <img src="https://cdn.jsdelivr.net/gh/muhamad-f-m/payment-icons/svg/flat/diners.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'diners' }" alt="Diners">
                                 
                                 <div class="card-number-display" x-text="formatCardNumber(cardNumber)"></div>
                                 <div class="card-bottom">
@@ -673,9 +677,16 @@
 
                 updateCardBrand() {
                     const num = this.cardNumber.replace(/\D/g, '');
-                    if (num.length >= 4) {
-                        if (num.startsWith('4')) this.cardBrand = 'visa';
-                        else if (num.match(/^5[1-5]/)) this.cardBrand = 'mastercard';
+                    if (num.length >= 2) {
+                        // Elo patterns (common in Brazil)
+                        const eloRegex = /^(401178|401179|431274|438935|451416|457393|457631|457632|504175|506699|5067|5090|627780|636297|636368|650031|650032|650033|650035|650036|650037|650038|650039|650040|650041|650042|650043|650044|650045|650046|650047|650048|650049|650050|650051|650405|650406|650407|650408|650409|650410|650411|650412|650413|650414|650415|650416|650417|650418|650419|650420|650421|650422|650423|650424|650425|650426|650427|650428|650429|650430|650431|650432|650433|650434|650435|650436|650437|650438|650439|650485|650486|650487|650488|650489|650490|650491|650492|650493|650494|650495|650496|650497|650498|650499|650500|650501|650502|650503|650504|650505|650506|650507|650508|650509|650510|650511|650512|650513|650514|650515|650516|650517|650518|650519|650520|650521|650522|650523|650524|650525|650526|650527|650528|650529|650530|650531|650532|650533|650534|650535|650536|650537|650538|650539|650541|650542|650543|650544|650545|650546|650547|650548|650549|650598|650700|650701|650702|650703|650704|650705|650706|650707|650708|650709|650710|650711|650712|650713|650714|650715|650716|650717|650718|650719|650720|650721|650722|650723|650724|650725|650726|650727|650901|650902|650903|650904|650905|650906|650907|650908|650909|650910|650911|650912|650913|650914|650915|650916|650917|650918|650919|650920|651652|651653|651654|651655|651656|651657|651658|651659|651660|651661|651662|651663|651664|651665|651666|651667|651668|651669|651670|651671|651672|651673|651674|651675|651676|651677|651678|651679|651680|651681|655000|655001)/;
+                        
+                        if (eloRegex.test(num)) this.cardBrand = 'elo';
+                        else if (num.startsWith('4')) this.cardBrand = 'visa';
+                        else if (num.match(/^(5[1-5]|2[2-7])/)) this.cardBrand = 'mastercard';
+                        else if (num.match(/^(34|37)/)) this.cardBrand = 'amex';
+                        else if (num.startsWith('6062')) this.cardBrand = 'hipercard';
+                        else if (num.match(/^(301|305|36|38)/)) this.cardBrand = 'diners';
                         else this.cardBrand = 'default';
                     } else {
                         this.cardBrand = 'default';
