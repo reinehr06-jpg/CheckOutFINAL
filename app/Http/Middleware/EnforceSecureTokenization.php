@@ -38,7 +38,7 @@ class EnforceSecureTokenization
                 }
             }
 
-            return redirect()->route('checkout.show', $transaction->uuid);
+            return redirect()->away(route('checkout.show', $transaction->uuid), 301);
         }
 
         return $next($request);
