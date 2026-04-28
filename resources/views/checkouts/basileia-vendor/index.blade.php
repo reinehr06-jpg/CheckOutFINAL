@@ -248,6 +248,7 @@
 <body x-data="checkoutFlow()" x-init="init()">
 
     <div class="checkout-wrapper">
+        <div style="position: fixed; bottom: 10px; right: 10px; font-size: 8px; opacity: 0.1; color: white; pointer-events: none;">v1.1.2</div>
         <!-- LEFT PANEL -->
         <div class="order-summary">
             <div class="brand-logo">
