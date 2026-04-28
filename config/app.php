@@ -40,7 +40,7 @@ return [
 
     'faker_locale' => 'en_US',
 
-    'key' => env('APP_KEY'),
+    'key' => env('APP_KEY', 'base64:YmFzaWxlaWEtY2hlY2tvdXQtc2VjcmV0LWtleS0yMDI='),
 
     'cipher' => env('APP_CIPHER', $cipher),
 
