@@ -25,11 +25,11 @@ update_env() {
     local key=$1
     local value=$2
     if [ -n "$value" ]; then
-        if grep -q "^${key}=" .env; then
-            sed -i "s|^${key}=.*|${key}='${value}'|" .env
-        else
-            echo "${key}='${value}'" >> .env
-        fi
+        # Create a temp file without the target key
+        grep -v "^${key}=" .env > .env.tmp || true
+        # Append the new key-value pair
+        echo "${key}='${value}'" >> .env.tmp
+        mv .env.tmp .env
     fi
 }
 

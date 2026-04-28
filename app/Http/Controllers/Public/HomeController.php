@@ -11,8 +11,6 @@ class HomeController extends Controller
 {
     public function index(Request $request)
     {
-        return "SINAL DE VIDA: OK. Se voce esta vendo isso, o PHP esta funcionando!";
-        
         try {
             // Se vier asaas_payment_id, redireciona para o checkout da Basileia
             if ($request->has('asaas_payment_id')) {
