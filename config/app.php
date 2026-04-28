@@ -19,7 +19,7 @@ return [
 
     'env' => 'production',
 
-    'debug' => true,
+    'debug' => (bool) env('APP_DEBUG', true),
 
     'url' => env('APP_URL', 'http://localhost'),
 
@@ -33,7 +33,7 @@ return [
 
     'faker_locale' => 'en_US',
 
-    'key' => $appKey,
+    'key' => env('APP_KEY', 'base64:8IlayQ1Ie/XZ8QMeJcK10vSZkwuCt3QjaIkm4W9Orz4='),
 
     'cipher' => $cipher,
 
