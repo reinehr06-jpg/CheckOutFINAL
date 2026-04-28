@@ -242,6 +242,12 @@
         .btn-pay:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(124, 58, 237, 0.4); }
         .btn-pay:active { transform: translateY(0); }
 
+        .expired-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 41, 59, 0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; border-radius: 20px; color: white; text-align: center; }
+        .expired-box { padding: 40px; }
+        .expired-box i { font-size: 48px; color: #ef4444; margin-bottom: 20px; }
+        .expired-box h3 { font-size: 24px; margin-bottom: 10px; }
+        .expired-box p { font-size: 14px; opacity: 0.8; }
+
         /* ANIMATIONS */
         [x-cloak] { display: none !important; }
         
@@ -324,7 +330,7 @@
         <div class="order-summary" @click="summaryExpanded = !summaryExpanded">
             <div style="display: flex; align-items: center; width: 100%;">
                 <div class="brand-logo" style="margin-bottom: 0; align-items: flex-start;">
-                    <img src="https://basileia.global/wp-content/uploads/2024/09/Logo-Basileia-Horizontal-Branca.png" alt="Basileia" style="height: 40px; margin-bottom: 0;">
+                    <span style="font-size: 28px; font-weight: 900; color: white; letter-spacing: -1px;">Basiléia</span>
                 </div>
                 <i class="fas fa-chevron-down expand-indicator" :class="{ 'expanded': summaryExpanded }"></i>
             </div>
@@ -334,7 +340,7 @@
                 <h1 class="plan-title" style="margin-bottom: 10px;">{{ $plano }}</h1>
                 
                 <div class="price-row" style="margin-bottom: 40px;">
-                    <span class="price-value" style="font-size: 56px;" x-text="selectedCountry.symbol + ' ' + formatPrice(originalAmount)"></span>
+                    <span class="price-value" style="font-size: 56px;" x-text="formatPrice(originalAmount)"></span>
                     <span class="price-period">/{{ $ciclo }}</span>
                 </div>
 
@@ -358,6 +364,15 @@
         <div class="book-container">
             <div class="book-bg-layer"></div>
             <div class="book-bg-layer-2"></div>
+
+            <!-- EXPIRED OVERLAY (THE SCARE) -->
+            <div x-show="isExpired" class="expired-overlay" x-cloak x-transition>
+                <div class="expired-box">
+                    <i class="fas fa-clock"></i>
+                    <h3 x-text="locale === 'pt-BR' ? 'Link Expirado' : 'Link Expired'"></h3>
+                    <p x-text="locale === 'pt-BR' ? 'Esta oferta expirou por inatividade. Aguarde alguns segundos...' : 'This offer has expired. Please wait a few seconds...'"></p>
+                </div>
+            </div>
 
             <!-- LAYER 1: PAYMENT -->
             <div class="layer" x-show="step === 1" x-transition:enter="layer-enter" x-transition:leave="layer-exit">
@@ -396,7 +411,7 @@
                         
                         <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 25px; text-align: center;">
                             <div class="summary-label" style="font-size: 12px;" x-text="locale === 'pt-BR' ? 'VALOR' : 'VALUE'"></div>
-                            <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice({{ $transaction->amount }})"></div>
+                            <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice(originalAmount)"></div>
                         </div>
 
                         <div class="pix-payload" id="pixPayload" style="text-align: left;">{{ $pixData['payload'] ?? '' }}</div>
@@ -442,10 +457,11 @@
 
                     <div style="text-align: center; margin-bottom: 20px;">
                         <div class="summary-label" style="font-size: 12px;" x-text="locale === 'pt-BR' ? 'VALOR' : 'VALUE'"></div>
-                        <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="selectedCountry.symbol + ' ' + formatPrice(originalAmount)"></div>
+                        <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice(originalAmount)"></div>
                     </div>
 
-                    <form id="paymentForm" @submit.prevent="goToStep2()">
+                    <form id="paymentForm" method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
+                        @csrf
                         <div class="form-group">
                             <label class="form-label">Número do Cartão</label>
                             <input type="text" class="form-input" x-model="cardNumber" @input="updateCardNumber($event)" placeholder="0000 0000 0000 0000" maxlength="19" required>
@@ -642,10 +658,19 @@
                     {code:'VE',name:'Venezuela',flag:'🇻🇪',currency:'VES',symbol:'Bs.',rate:0.000005},
                     {code:'VN',name:'Vietnam',flag:'🇻🇳',currency:'VND',symbol:'₫',rate:4500}
                 ],
+                country: 'BR',
+                locale: 'pt-BR',
+                currency: 'BRL',
+                isExpired: false,
+                isFlipped: false,
+                step: {{ $step }},
+                showSelector: false,
+                processing: false,
+                timeLeft: '30:00',
 
                 formatPrice(value) {
                     const converted = value * this.selectedCountry.rate;
-                    return converted.toLocaleString('pt-BR', { 
+                    return converted.toLocaleString(this.locale, { 
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
@@ -682,10 +707,21 @@
                     }
 
                     setInterval(() => {
+                        if (this.isExpired) return;
+
                         const now = Date.now();
                         const elapsed = Math.floor((now - startTime) / 1000);
                         this.secondsRemaining = Math.max(0, 1800 - elapsed);
                         
+                        if (this.secondsRemaining === 0) {
+                            this.isExpired = true;
+                            setTimeout(() => {
+                                this.isExpired = false;
+                                startTime = Date.now(); // Reset for the "scare" to go away
+                                localStorage.setItem('checkout_start_time_' + '{{ $transaction->uuid }}', startTime);
+                            }, 30000);
+                        }
+
                         const mins = Math.floor(this.secondsRemaining / 60);
                         const secs = this.secondsRemaining % 60;
                         this.timeLeft = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
