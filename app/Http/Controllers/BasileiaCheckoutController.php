@@ -118,7 +118,7 @@ class BasileiaCheckoutController extends Controller
                 ]);
             }
 
-            // Ativar o FRONT PREMIUM (Layered Book Style)
+            // Ativar o FRONT PREMIUM (Layered Book Style) - Force render to catch Blade errors
             return view('checkout.premium', [
                 'step' => $request->get('success') ? 3 : 1,
                 'transaction' => $transaction,
@@ -128,7 +128,7 @@ class BasileiaCheckoutController extends Controller
                 'plano' => $plano,
                 'ciclo' => $ciclo,
                 'pixData' => $pixData ?? ['payload' => '', 'encodedImage' => ''],
-            ]);
+            ])->render();
         } catch (\Exception $e) {
             Log::error('BasileiaCheckout: FATAL ERROR', [
                 'msg' => $e->getMessage(),
