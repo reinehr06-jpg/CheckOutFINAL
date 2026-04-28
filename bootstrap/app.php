@@ -8,12 +8,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
-// Ensure app key is set early
-config([
-    'app.key' => 'base64:8IlayQ1Ie/XZ8QMeJcK10vSZkwuCt3QjaIkm4W9Orz4=',
-    'app.debug' => true,
-]);
-
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
