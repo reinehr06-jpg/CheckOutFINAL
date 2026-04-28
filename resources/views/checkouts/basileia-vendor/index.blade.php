@@ -281,21 +281,65 @@
         .expired-box i { font-size: 40px; color: #dc2626; margin-bottom: 15px; }
 
         @media (max-width: 900px) {
-            .checkout-wrapper { grid-template-columns: 1fr; gap: 30px; }
-            .order-summary { text-align: center; padding-right: 0; }
-            .plan-title { font-size: 36px; }
-            .price-row { justify-content: center; }
-            .features-grid { justify-content: center; }
-            .book-container { margin: 0 auto; }
+            body { padding: 0; align-items: flex-start; }
+            .checkout-wrapper { grid-template-columns: 1fr; gap: 0; max-width: 100%; }
+            
+            .mobile-summary-toggle {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px 20px;
+                background: rgba(15, 10, 30, 0.95);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+                cursor: pointer;
+                color: white;
+                font-size: 14px;
+            }
+
+            .order-summary { 
+                height: 0;
+                overflow: hidden;
+                padding: 0 20px;
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                background: #0f0a1e;
+                opacity: 0;
+            }
+            .order-summary.mobile-open {
+                height: auto;
+                padding: 20px;
+                opacity: 1;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .plan-title { font-size: 28px; }
+            .book-container { margin: 20px auto; padding: 0 15px; }
+            .layer { padding: 15px; }
         }
+
+        .mobile-summary-toggle { display: none; }
     </style>
 </head>
 <body x-data="checkoutFlow()" x-init="init()">
 
     <div class="checkout-wrapper">
         <div style="position: fixed; bottom: 10px; right: 10px; font-size: 8px; opacity: 0.1; color: white; pointer-events: none;">v1.1.2</div>
+        
+        <!-- MOBILE SUMMARY TOGGLE -->
+        <div class="mobile-summary-toggle" @click="mobileSummaryOpen = !mobileSummaryOpen">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-shopping-cart"></i>
+                <span x-text="mobileSummaryOpen ? (locale === 'pt-BR' ? 'Ocultar Resumo' : 'Hide Summary') : (locale === 'pt-BR' ? 'Ver Resumo' : 'View Summary')"></span>
+                <i class="fas" :class="mobileSummaryOpen ? 'fa-chevron-up' : 'fa-chevron-down'" style="font-size: 10px;"></i>
+            </div>
+            <div style="font-weight: 700;" x-text="formatPrice(originalAmount)"></div>
+        </div>
+
         <!-- LEFT PANEL (Order Summary) -->
-        <div class="order-summary">
+        <div class="order-summary" :class="{ 'mobile-open': mobileSummaryOpen }">
             <div class="brand-logo">
                 <img src="https://dash.basileia.global/assets/logo-basileia-horizontal.png" alt="Basiléia Logo">
             </div>
@@ -584,9 +628,10 @@
                 cardBrand: 'default',
 
                 // Vendor Data
-                vendorName: '{{ $customerData['name'] ?? '' }}',
-                vendorEmail: '{{ $customerData['email'] ?? '' }}',
-                vendorDoc: '{{ $customerData['document'] ?? '' }}',
+                vendorName: '{{ $transaction->vendor->name ?? '' }}',
+                vendorEmail: '{{ $transaction->customer_email ?? '' }}',
+                vendorDoc: '{{ $transaction->customer_document ?? '' }}',
+                mobileSummaryOpen: false,
 
                 originalAmount: {{ $transaction->amount }},
                 selectedCountry: {code:'BR',name:'Brasil',flag:'🇧🇷',locale:'pt-BR',currency:'BRL',symbol:'R$',rate:1},
