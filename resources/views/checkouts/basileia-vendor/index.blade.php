@@ -469,9 +469,9 @@
                             <div class="card-face card-front">
                                 <div class="card-chip"></div>
                                 <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
-                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" style="top: 15px; right: 15px; width: 50px; height: 25px;">
-                                    <svg viewBox="0 0 54 22" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
-                                        <path fill="#FFFFFF" d="M33.4 1.1h-5.2c-.6 0-1 .3-1.2.9l-8.4 19.9h5.6l1.1-3.1h6.8l.6 3.1h5.1L33.4 1.1zm-1.8 13h-4.3l2.1-5.9 2.2 5.9zM52.7 1.1c-1.2-.5-3.1-1.1-5.4-1.1-5.7 0-9.8 3.1-9.8 7.6 0 3.3 2.9 5.1 5.2 6.3 2.3 1.1 3.1 1.9 3.1 2.9 0 1.6-1.9 2.3-3.7 2.3-2.4 0-4.2-.4-6.4-1.4l-.9 4.2c1.2.6 3.5 1.1 5.9 1.1 6.1 0 10.1-3.1 10.1-7.9 0-2.6-1.6-4.6-5-6.2-2.1-1-3.3-1.7-3.3-2.8 0-1 1-2.1 3.3-2.1 2 0 3.4.4 4.5.9l1-4.1zM11.5 1.1L6.7 14.8l-.5-2.5c-.8-2.7-3.3-5.6-6.1-7.1l.1-.3h8.5l5.5 21.2h5.6L28 1.1h-5.3L19.2 13 16.9 1.1h-5.4zM40 1.1h5.3L40 21H34.7z"/>
+                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" style="top: 15px; right: 15px; width: 45px; height: 25px;">
+                                    <svg viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+                                        <path fill="#FFFFFF" d="M10.2 19l2.8-13h2.1l-2.8 13zm11.7-12.7c-.5-.2-1.3-.4-2.2-.4-2.4 0-4.1 1.3-4.1 3.1 0 1.4 1.2 2.1 2.2 2.6 1 .5 1.4.8 1.4 1.2 0 .7-.8 1-1.5 1-1 0-1.7-.2-2.7-.6l-.4 1.8c.5.2 1.5.4 2.5.4 2.4 0 4-1.2 4-3 0-1-.6-1.8-1.9-2.4-.8-.4-1.3-.7-1.3-1.2 0-.4.5-.9 1.5-.9.9 0 1.5.2 2 .4l.4-1.8zm6.5 12.7h2l-1.8-13h-1.8c-.6 0-1 .3-1.2.9l-4.4 10.6h2.2l.4-1.2h2.7l.3 1.2zm-2-3.1l1.1-3 .6 3zm-26.6-9.6l-.2 1.1c1.2.3 2.5.8 3.3 1.3l1.8 7.2h2.2l3.4-13h-2.2l-2.1 8.3-.9-4.3c-.3-1-1.1-1.8-2.1-2.2-1.2-.6-2.4-1-3.2-1.4"/>
                                     </svg>
                                 </div>
                                 <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" style="top: 18px; right: 18px;">
@@ -628,38 +628,29 @@
     <script>
         function checkoutFlow() {
             return {
-                step: parseInt(localStorage.getItem('checkout_step_' + '{{ $transaction->uuid }}')) || 1,
+                step: parseInt(localStorage.getItem('checkout_step_' + {!! json_encode($transaction->uuid) !!})) || 1,
                 isFlipped: false,
                 processing: false,
                 showSelector: false,
                 summaryExpanded: false,
-                
-                // i18n and Currency
                 country: 'BR',
                 locale: 'pt-BR',
                 currency: 'BRL',
                 currencySymbol: 'R$',
-                
-                // Timer
                 timeLeft: '30:00',
                 secondsRemaining: 1800,
-
-                // Card Data
                 cardNumber: '',
                 cardExpiry: '',
                 cardCvv: '',
                 cardHolder: '',
                 cardBrand: 'default',
-
-                // Vendor Data
                 vendorName: {!! json_encode($transaction->vendor->name ?? '') !!},
                 vendorEmail: {!! json_encode($transaction->customer_email ?? '') !!},
                 vendorDoc: {!! json_encode($transaction->customer_document ?? '') !!},
                 mobileSummaryOpen: false,
-
+                isExpired: false,
                 originalAmount: {{ number_format($transaction->amount ?? 0, 2, '.', '') }},
                 selectedCountry: {code:'BR',name:'Brasil',flag:'🇧🇷',locale:'pt-BR',currency:'BRL',symbol:'R$',rate:1},
-                
                 countries: [
                     {code:'AF',name:'Afghanistan',flag:'🇦🇫',currency:'AFN',symbol:'Af',rate:0.015},
                     {code:'AL',name:'Albania',flag:'🇦🇱',currency:'ALL',symbol:'L',rate:0.011},
@@ -724,15 +715,6 @@
                     {code:'VE',name:'Venezuela',flag:'🇻🇪',currency:'VES',symbol:'Bs.',rate:0.000005},
                     {code:'VN',name:'Vietnam',flag:'🇻🇳',currency:'VND',symbol:'₫',rate:4500}
                 ],
-                country: 'BR',
-                locale: 'pt-BR',
-                currency: 'BRL',
-                isExpired: false,
-                isFlipped: false,
-
-                showSelector: false,
-                processing: false,
-                timeLeft: '30:00',
 
                 changeCountry(code) {
                     const c = this.countries.find(x => x.code === code);
