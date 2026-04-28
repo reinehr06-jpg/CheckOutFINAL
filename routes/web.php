@@ -47,7 +47,31 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 
-Route::get('/', [HomeController::class, 'index']);
+Route::get('/', function (\Illuminate\Http\Request $request) {
+    if ($request->has('asaas_payment_id')) {
+        $asaasPaymentId = $request->get('asaas_payment_id');
+        $transaction = \App\Models\Transaction::where('asaas_payment_id', $asaasPaymentId)->first();
+
+        if (!$transaction) {
+            $transaction = \App\Models\Transaction::create([
+                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'company_id' => 1,
+                'asaas_payment_id' => $asaasPaymentId,
+                'source' => 'basileia_vendas_direct',
+                'amount' => $request->get('valor', 0),
+                'description' => $request->get('plano', 'Pagamento Basiléia'),
+                'payment_method' => 'credit_card',
+                'status' => 'pending',
+                'customer_name' => $request->get('cliente', ''),
+                'customer_email' => $request->get('email', ''),
+                'customer_document' => $request->get('documento', ''),
+                'customer_phone' => $request->get('whatsapp', ''),
+            ]);
+        }
+        return redirect()->route('checkout.show', $transaction->uuid);
+    }
+    return app(App\Http\Controllers\Public\HomeController::class)->index($request);
+});
 
 Route::get('/checkout/asaas/{asaasPaymentId}', [AsaasCheckoutController::class, 'show'])->name('checkout.asaas.show');
 Route::post('/checkout/asaas/process/{asaasPaymentId}', [AsaasCheckoutController::class, 'process'])->name('checkout.asaas.process');
@@ -162,7 +186,7 @@ Route::get('/pay/{uuid}', fn ($uuid) => redirect()->route('checkout.show', $uuid
 
 // --- NOVO CHECKOUT PREMIUM BASILEIA (TOKENIZADO) ---
 Route::get('/checkout/{uuid}', [BasileiaCheckoutController::class, 'show'])->name('checkout.show');
-Route::get('/c/{asaasPaymentId}', [BasileiaCheckoutController::class, 'handle'])->name('basileia.checkout.show');
+Route::get('/c/{asaasPaymentId}', [BasileiaCheckoutController::class, 'handle'])->name('checkout.short');
 Route::post('/checkout/process/{uuid}', [BasileiaCheckoutController::class, 'process'])->name('checkout.process');
 Route::get('/checkout/success/{uuid}', [BasileiaCheckoutController::class, 'success'])->name('checkout.success');
 

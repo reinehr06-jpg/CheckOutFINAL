@@ -19,6 +19,12 @@ class BasileiaCheckoutController extends Controller
     public function handle(string $asaasPaymentId, Request $request)
     {
         try {
+            // Se for um slug de evento, delega para o EventCheckoutController
+            $event = \App\Models\Event::where('slug', $asaasPaymentId)->first();
+            if ($event) {
+                return app(\App\Http\Controllers\Public\EventCheckoutController::class)->show($asaasPaymentId);
+            }
+
             Log::info('BasileiaCheckout: Iniciando link vendor', [
                 'asaas_payment_id' => $asaasPaymentId,
             ]);

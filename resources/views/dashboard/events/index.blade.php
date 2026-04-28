@@ -102,8 +102,8 @@
                         </td>
                         <td style="padding: 16px 24px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <code style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--primary); background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-light); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ url("/evento/{$event->slug}") }}</code>
-                                <button type="button" class="btn" style="background: #fff; border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; cursor: pointer; color: var(--text-muted);" onclick="navigator.clipboard.writeText('{{ url("/evento/{$event->slug}") }}'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);">
+                                <code style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--primary); background: #f8fafc; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-light); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ url("/c/{$event->slug}") }}</code>
+                                <button type="button" class="btn" style="background: #fff; border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; cursor: pointer; color: var(--text-muted);" onclick="navigator.clipboard.writeText('{{ url("/c/{$event->slug}") }}'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);">
                                     <i class="fas fa-copy" style="font-size: 0.75rem;"></i>
                                 </button>
                             </div>

@@ -27,14 +27,35 @@
         <div class="animate-up" style="background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 16px; padding: 24px;">
             <div style="display: flex; align-items: center; gap: 12px; color: #166534; margin-bottom: 15px;">
                 <i class="fas fa-check-circle"></i>
-                <span style="font-weight: 800; font-size: 0.9rem;">LINK PRONTO PARA ENVIO</span>
+                <span style="font-weight: 800; font-size: 0.9rem;">LINK SEGURO GERADO!</span>
             </div>
             
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="shortUrlInput" value="{{ $shortUrl }}" readonly style="flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid #bbf7d0; background: white; font-weight: 700; color: #166534; font-size: 0.9rem;">
-                <button onclick="copyLink()" style="background: #166534; color: white; border: none; padding: 0 20px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: all 0.2s;">
-                    <i class="fas fa-copy"></i> COPIAR
-                </button>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 5px;">Link com UUID (Máxima Segurança)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="shortUrlInput" value="{{ $shortUrl }}" readonly style="flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid #bbf7d0; background: white; font-weight: 700; color: #166534; font-size: 0.85rem;">
+                        <button onclick="copyLink('shortUrlInput')" style="background: #166534; color: white; border: none; padding: 0 15px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 0.75rem;">COPIAR</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.7rem; font-weight: 800; color: #166534; text-transform: uppercase; margin-bottom: 5px;">Link Curto Direto (Fácil Memorização)</label>
+                    @php
+                        $paymentId = explode('=', parse_url($shortUrl, PHP_URL_QUERY) ?? '')[1] ?? 'ID';
+                        // If it's a UUID link, we need to extract the payment ID or just use the ID from the shortUrl if we can
+                        // But wait, the easiest is to just show the /c/ID format
+                        $parts = explode('/', $shortUrl);
+                        $uuid = end($parts);
+                        $tx = \App\Models\Transaction::where('uuid', $uuid)->first();
+                        $cid = $tx ? $tx->asaas_payment_id : 'ID';
+                        $manualShort = url("/c/{$cid}");
+                    @endphp
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="manualShortInput" value="{{ $manualShort }}" readonly style="flex: 1; padding: 12px 16px; border-radius: 10px; border: 1px solid #bbf7d0; background: white; font-weight: 700; color: #166534; font-size: 0.85rem;">
+                        <button onclick="copyLink('manualShortInput')" style="background: #065f46; color: white; border: none; padding: 0 15px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 0.75rem;">COPIAR</button>
+                    </div>
+                </div>
             </div>
             
             <div style="margin-top: 15px; display: flex; gap: 10px;">
@@ -61,19 +82,17 @@
 </div>
 
 <script>
-function copyLink() {
-    const input = document.getElementById('shortUrlInput');
+function copyLink(inputId) {
+    const input = document.getElementById(inputId);
     input.select();
     document.execCommand('copy');
     
     const btn = event.currentTarget;
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check"></i> COPIADO!';
-    btn.style.background = '#10b981';
+    btn.innerHTML = 'COPIADO!';
     
     setTimeout(() => {
         btn.innerHTML = originalText;
-        btn.style.background = '#166534';
     }, 2000);
 }
 </script>
