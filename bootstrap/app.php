@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(\App\Http\Middleware\EnforceSecureTokenization::class);
         $middleware->statefulApi();
         $middleware->trustProxies(at: '*');
         $middleware->alias([

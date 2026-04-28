@@ -47,31 +47,7 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 
-Route::get('/', function (\Illuminate\Http\Request $request) {
-    if ($request->has('asaas_payment_id')) {
-        $asaasPaymentId = $request->get('asaas_payment_id');
-        $transaction = \App\Models\Transaction::where('asaas_payment_id', $asaasPaymentId)->first();
-
-        if (!$transaction) {
-            $transaction = \App\Models\Transaction::create([
-                'uuid' => (string) \Illuminate\Support\Str::uuid(),
-                'company_id' => 1,
-                'asaas_payment_id' => $asaasPaymentId,
-                'source' => 'basileia_vendas_direct',
-                'amount' => $request->get('valor', 0),
-                'description' => $request->get('plano', 'Pagamento Basiléia'),
-                'payment_method' => 'credit_card',
-                'status' => 'pending',
-                'customer_name' => $request->get('cliente', ''),
-                'customer_email' => $request->get('email', ''),
-                'customer_document' => $request->get('documento', ''),
-                'customer_phone' => $request->get('whatsapp', ''),
-            ]);
-        }
-        return redirect()->route('checkout.show', $transaction->uuid);
-    }
-    return app(App\Http\Controllers\Public\HomeController::class)->index($request);
-});
+Route::get('/', [HomeController::class, 'index']);
 
 Route::get('/checkout/asaas/{asaasPaymentId}', [AsaasCheckoutController::class, 'show'])->name('checkout.asaas.show');
 Route::post('/checkout/asaas/process/{asaasPaymentId}', [AsaasCheckoutController::class, 'process'])->name('checkout.asaas.process');

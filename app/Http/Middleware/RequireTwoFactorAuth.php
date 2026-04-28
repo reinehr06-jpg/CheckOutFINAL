@@ -33,7 +33,7 @@ class RequireTwoFactorAuth
 
         $verified = $request->session()->get('2fa_verified', false);
 
-        if ($request->is('profile/2fa/*')) {
+        if ($request->routeIs('profile.2fa.*')) {
             return $next($request);
         }
 
