@@ -19,14 +19,23 @@
             --text-muted: #64748b;
             --border: #e2e8f0;
         }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: #0f0a1e;
+        }
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
             background: linear-gradient(135deg, #0f0a1e 0%, #1a103c 50%, #2d1b69 100%);
+            background-attachment: fixed;
         }
         .checkout-container {
             display: grid;
@@ -509,6 +518,7 @@
             this.periodLabel = data.periodLabel;
             this.payBtnLabel = data.payBtn;
             this.features = data.features;
+            localStorage.setItem('selected_country_code', this.country);
         },
         formatPrice(amount) {
             try {
@@ -523,6 +533,9 @@
             return m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
         },
         init() {
+            const savedCode = localStorage.getItem('selected_country_code');
+            if (savedCode) this.country = savedCode;
+
             if (this.billingType === 'PIX') {
                 setInterval(() => { if(this.timeLeft > 0) this.timeLeft--; }, 1000);
             }
@@ -587,7 +600,13 @@
                         <div class="card-chip"></div>
                         <div class="card-brand-logo">
                             <template x-if="cardBrand === 'visa'"><span class="brand-text">VISA</span></template>
-                            <template x-if="cardBrand === 'mastercard'"><span class="brand-text">MC</span></template>
+                            <template x-if="cardBrand === 'mastercard'">
+                                <svg viewBox="0 0 24 18" width="44" height="34">
+                                    <circle cx="7" cy="9" r="7" fill="#eb001b" />
+                                    <circle cx="17" cy="9" r="7" fill="#f79e1b" opacity="0.85" />
+                                    <path d="M12 2.2a7 7 0 0 1 0 13.6 7 7 0 0 1 0-13.6z" fill="#ff5f00" />
+                                </svg>
+                            </template>
                             <template x-if="cardBrand === 'default'"><span class="brand-text">💳</span></template>
                         </div>
                         <div class="card-number" x-text="cardNumber || '•••• •••• •••• ••••'"></div>

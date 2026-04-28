@@ -12,13 +12,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6b3fa0 100%);
+        }
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6b3fa0 100%);
+            background-attachment: fixed;
             padding: 20px;
         }
         .main-card {
@@ -509,7 +518,11 @@
                 <div class="left-security-desc">Seus dados são protegidos por criptografia SSL.</div>
                 <div class="card-brands">
                     <svg viewBox="0 0 80 30"><rect width="80" height="30" rx="4" fill="#fff"/><text x="40" y="21" font-size="16" font-weight="bold" fill="#1A1F71" text-anchor="middle">VISA</text></svg>
-                    <svg viewBox="0 0 80 30"><rect width="80" height="30" rx="4" fill="#fff"/><circle cx="30" cy="15" r="10" fill="#EB001B"/><circle cx="50" cy="15" r="10" fill="#F79E1B"/><path d="M40 7.5a10 10 0 0 1 0 15 10 10 0 0 1 0-15z" fill="#FF5F00"/></svg>
+                    <svg viewBox="0 0 24 18" width="44" height="34">
+                        <circle cx="7" cy="9" r="7" fill="#eb001b" />
+                        <circle cx="17" cy="9" r="7" fill="#f79e1b" opacity="0.85" />
+                        <path d="M12 2.2a7 7 0 0 1 0 13.6 7 7 0 0 1 0-13.6z" fill="#ff5f00" />
+                    </svg>
                     <svg viewBox="0 0 80 30"><rect width="80" height="30" rx="4" fill="#006FCF"/><text x="40" y="19" font-size="11" fill="#fff" text-anchor="middle" font-weight="bold">AMEX</text></svg>
                     <svg viewBox="0 0 60 30"><rect width="60" height="30" rx="4" fill="#FFCB05"/><text x="30" y="20" font-size="14" fill="#0047BB" text-anchor="middle" font-weight="bold">ELO</text></svg>
                 </div>

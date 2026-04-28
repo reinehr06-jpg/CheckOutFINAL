@@ -17,16 +17,24 @@
             --bg-dark: #0f0a1e;
             --purple-glow: rgba(124, 58, 237, 0.5);
         }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: #0f0a1e;
+        }
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
             background: linear-gradient(135deg, #0f0a1e 0%, #1a103c 50%, #2d1b69 100%);
+            background-attachment: fixed;
             color: white;
-            overflow-x: hidden;
         }
 
         .checkout-wrapper {
@@ -433,7 +441,13 @@
                                 <div class="card-chip"></div>
                                 <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" alt="Visa">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" alt="Mastercard">
+                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" style="top: 22px; right: 22px;">
+                                    <svg viewBox="0 0 24 18" width="44" height="34">
+                                        <circle cx="7" cy="9" r="7" fill="#eb001b" />
+                                        <circle cx="17" cy="9" r="7" fill="#f79e1b" opacity="0.85" />
+                                        <path d="M12 2.2a7 7 0 0 1 0 13.6 7 7 0 0 1 0-13.6z" fill="#ff5f00" />
+                                    </svg>
+                                </div>
                                 
                                 <div class="card-number-display" x-text="formatCardNumber(cardNumber)"></div>
                                 <div class="card-bottom">
@@ -563,7 +577,7 @@
     <script>
         function checkoutFlow() {
             return {
-                step: {{ $step ?? 1 }},
+                step: parseInt(localStorage.getItem('checkout_step_' + '{{ $transaction->uuid }}')) || {{ $step ?? 1 }},
                 isFlipped: false,
                 processing: false,
                 showSelector: false,
@@ -680,7 +694,16 @@
                     const found = this.countries.find(c => c.code === code);
                     if (found) {
                         this.selectedCountry = found;
-                        this.locale = found.currency === 'BRL' ? 'pt-BR' : 'en-US';
+                        this.country = found.code;
+                        this.currency = found.currency;
+                        this.currencySymbol = found.symbol;
+                        
+                        // Improved locale logic
+                        if (found.code === 'BR') this.locale = 'pt-BR';
+                        else if (['PT', 'AO'].includes(found.code)) this.locale = 'pt-PT';
+                        else if (['ES', 'MX', 'AR'].includes(found.code)) this.locale = 'es-ES';
+                        else this.locale = 'en-US';
+
                         localStorage.setItem('selected_country_code', code);
                     }
                     this.showSelector = false;
@@ -728,14 +751,7 @@
                     }, 1000);
                 },
 
-                changeCountry(code) {
-                    const c = this.countries.find(x => x.code === code);
-                    if (!c) return;
-                    this.country = c.code;
-                    this.locale = c.locale;
-                    this.currency = c.currency;
-                    this.currencySymbol = c.symbol;
-                },
+
 
                 formatPrice(amount) {
                     const c = this.countries.find(x => x.code === this.country);
@@ -790,7 +806,11 @@
 
                 processPayment() {
                     this.processing = true;
-                    setTimeout(() => { this.step = 3; this.processing = false; }, 2000);
+                    setTimeout(() => { 
+                        this.step = 3; 
+                        this.processing = false; 
+                        localStorage.setItem('checkout_step_' + '{{ $transaction->uuid }}', 3);
+                    }, 2000);
                 },
 
                 copyPix() {

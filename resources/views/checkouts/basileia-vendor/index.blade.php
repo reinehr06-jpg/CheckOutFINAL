@@ -17,16 +17,24 @@
             --bg-dark: #0f0a1e;
             --purple-glow: rgba(124, 58, 237, 0.5);
         }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: #0f0a1e;
+        }
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
             background: linear-gradient(135deg, #0f0a1e 0%, #1a103c 50%, #2d1b69 100%);
+            background-attachment: fixed;
             color: white;
-            overflow-x: hidden;
         }
 
         .checkout-wrapper {
@@ -70,7 +78,8 @@
             gap: 15px;
             margin-bottom: 10px;
         }
-        .brand-logo img { height: 35px; width: auto; filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.3)); }
+        .brand-logo img { height: 35px; width: auto; filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.3)); display: block; }
+        .brand-logo .fallback-text { font-size: 24px; font-weight: 800; color: white; }
         
         .badge-secure {
             display: inline-flex;
@@ -340,7 +349,8 @@
         <!-- LEFT PANEL (Order Summary) -->
         <div class="order-summary" :class="{ 'mobile-open': mobileSummaryOpen }">
             <div class="brand-logo">
-                <img src="https://dash.basileia.global/assets/logo-basileia-horizontal.png" alt="Basiléia Logo">
+            <img src="https://dash.basileia.global/assets/logo-basileia-horizontal.png" alt="Basiléia Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+            <span class="fallback-text" style="display: none;">Basiléia</span>
             </div>
 
             <div class="summary-card">
@@ -462,8 +472,14 @@
                             <div class="card-face card-front">
                                 <div class="card-chip"></div>
                                 <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
-                                <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.1.0/svg/flat/visa.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" alt="Visa" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg'">
-                                <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.1.0/svg/flat/mastercard.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" alt="Mastercard" style="height: 25px; width: auto; top: 20px;">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" alt="Visa">
+                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" style="top: 18px; right: 18px;">
+                                    <svg viewBox="0 0 24 18" width="44" height="34">
+                                        <circle cx="7" cy="9" r="7" fill="#eb001b" />
+                                        <circle cx="17" cy="9" r="7" fill="#f79e1b" opacity="0.85" />
+                                        <path d="M12 2.2a7 7 0 0 1 0 13.6 7 7 0 0 1 0-13.6z" fill="#ff5f00" />
+                                    </svg>
+                                </div>
                                 <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.1.0/svg/flat/amex.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'amex' }" alt="Amex">
                                 <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.1.0/svg/flat/elo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'elo' }" alt="Elo">
                                 <img src="https://cdn.jsdelivr.net/npm/payment-icons@1.1.0/svg/flat/hipercard.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'hipercard' }" alt="Hipercard">
@@ -514,7 +530,7 @@
                             <label class="form-label" x-text="locale === 'pt-BR' ? 'Nome no Cartão' : 'Cardholder Name'"></label>
                             <input type="text" class="form-input" x-model="cardHolder" placeholder="Como impresso no cartão">
                         </div>
-                        <button type="button" class="btn-pay" @click="step = 2">
+                        <button type="button" class="btn-pay" @click="step = 2; localStorage.setItem('checkout_step_' + '{{ $transaction->uuid }}', 2)">
                             <span x-text="locale === 'pt-BR' ? 'Assinar Agora' : 'Subscribe Now'"></span> <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
@@ -560,7 +576,7 @@
                             </template>
                         </button>
                         
-                        <button type="button" class="btn-secondary" @click="step = 1" style="margin-top: 10px; width: 100%;" x-show="!processing">
+                        <button type="button" class="btn-secondary" @click="step = 1; localStorage.setItem('checkout_step_' + '{{ $transaction->uuid }}', 1)" style="margin-top: 10px; width: 100%;" x-show="!processing">
                             <i class="fas fa-arrow-left"></i> <span x-text="locale === 'pt-BR' ? 'Voltar' : 'Back'"></span>
                         </button>
                     </form>
@@ -611,7 +627,7 @@
     <script>
         function checkoutFlow() {
             return {
-                step: {{ $step ?? 1 }},
+                step: parseInt(localStorage.getItem('checkout_step_' + '{{ $transaction->uuid }}')) || {{ $step ?? 1 }},
                 isFlipped: false,
                 processing: false,
                 showSelector: false,
@@ -712,7 +728,7 @@
                 currency: 'BRL',
                 isExpired: false,
                 isFlipped: false,
-                step: {{ $step }},
+                step: parseInt(localStorage.getItem('checkout_step_' + '{{ $transaction->uuid }}')) || {{ $step }},
                 showSelector: false,
                 processing: false,
                 timeLeft: '30:00',
@@ -722,7 +738,18 @@
                     if (!c) return;
                     this.country = c.code;
                     this.selectedCountry = c;
-                    this.locale = c.currency === 'BRL' ? 'pt-BR' : 'en-US';
+                    
+                    // Improved locale/currency logic
+                    if (c.code === 'BR') {
+                        this.locale = 'pt-BR';
+                    } else if (['PT', 'AO', 'MZ'].includes(c.code)) {
+                        this.locale = 'pt-PT';
+                    } else if (['ES', 'MX', 'AR', 'CO', 'CL'].includes(c.code)) {
+                        this.locale = 'es-ES';
+                    } else {
+                        this.locale = 'en-US';
+                    }
+                    
                     this.currency = c.currency;
                     this.currencySymbol = c.symbol;
                     localStorage.setItem('selected_country_code', code);
@@ -813,7 +840,10 @@
                     }
                 },
 
-                goToStep2() { this.step = 2; },
+                goToStep2() { 
+                    this.step = 2; 
+                    localStorage.setItem('checkout_step_' + '{{ $transaction->uuid }}', 2);
+                },
                 processPayment() {
                     this.processing = true;
                     // Real form submission happens via button type="submit"
