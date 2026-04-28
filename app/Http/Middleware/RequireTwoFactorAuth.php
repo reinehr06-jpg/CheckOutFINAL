@@ -33,7 +33,7 @@ class RequireTwoFactorAuth
 
         $verified = $request->session()->get('2fa_verified', false);
 
-        if (!$verified) {
+        if (!$verified && !in_array($request->route()?->name, ['profile.2fa.verify', 'profile.2fa.verify.post'])) {
             return redirect()->route('profile.2fa.verify');
         }
 

@@ -336,7 +336,7 @@
             </div>
             
             <div class="mobile-collapse-content" :class="{ 'expanded': summaryExpanded }">
-                <div class="summary-label" x-text="locale === 'pt-BR' ? 'Resumo do pedido' : 'Order summary'" style="margin-top: 30px;"></div>
+                <div class="summary-label" x-text="locale === 'pt-BR' ? 'RESUMO DO PEDIDO' : 'ORDER SUMMARY'" style="margin-top: 30px;"></div>
                 <h1 class="plan-title" style="margin-bottom: 10px;">{{ $plano }}</h1>
                 
                 <div class="price-row" style="margin-bottom: 40px;">
@@ -346,11 +346,11 @@
 
                 <div class="features-grid">
                     <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'IA via WhatsApp' : 'AI via WhatsApp'"></span></div>
-                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Gestão de Células (CGs)' : 'Cell/Small Group Management'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Gestão de Células' : 'Cell Management'"></span></div>
                     <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Conformidade LGPD' : 'GDPR/LGPD Compliance'"></span></div>
-                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Suporte Humanizado' : 'Humanized Support'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Suporte Humanizado' : 'Human Support'"></span></div>
                     <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Múltiplas Igrejas' : 'Multiple Churches'"></span></div>
-                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Implantação Rápida' : 'Quick Implementation'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Implantação Rápida' : 'Quick Deployment'"></span></div>
                 </div>
 
                 <div class="trust-footer">
@@ -369,7 +369,7 @@
             <div x-show="isExpired" class="expired-overlay" x-cloak x-transition>
                 <div class="expired-box">
                     <i class="fas fa-clock"></i>
-                    <h3 x-text="locale === 'pt-BR' ? 'Link Expirado' : 'Link Expired'"></h3>
+                    <h3 x-text="locale === 'pt-BR' ? 'Link Temporariamente Inativo' : 'Link Temporarily Inactive'"></h3>
                     <p x-text="locale === 'pt-BR' ? 'Esta oferta expirou por inatividade. Aguarde alguns segundos...' : 'This offer has expired. Please wait a few seconds...'"></p>
                 </div>
             </div>
@@ -668,38 +668,38 @@
                 processing: false,
                 timeLeft: '30:00',
 
-                formatPrice(value) {
-                    const converted = value * this.selectedCountry.rate;
-                    return converted.toLocaleString(this.locale, { 
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                },
-
                 changeCountry(code) {
-                    const found = this.countries.find(c => c.code === code);
-                    if (found) {
-                        this.selectedCountry = found;
-                        this.locale = found.currency === 'BRL' ? 'pt-BR' : 'en-US';
-                        localStorage.setItem('selected_country_code', code);
-                    }
+                    const c = this.countries.find(x => x.code === code);
+                    if (!c) return;
+                    this.country = c.code;
+                    this.selectedCountry = c;
+                    this.locale = c.currency === 'BRL' ? 'pt-BR' : 'en-US';
+                    this.currency = c.currency;
+                    this.currencySymbol = c.symbol;
+                    localStorage.setItem('selected_country_code', code);
                     this.showSelector = false;
                 },
 
+                formatPrice(amount) {
+                    const finalAmount = amount * (this.selectedCountry.rate || 1);
+                    return new Intl.NumberFormat(this.locale, {
+                        style: 'currency',
+                        currency: this.currency,
+                        minimumFractionDigits: 2
+                    }).format(finalAmount);
+                },
+                
                 init() {
-                    // 1. Try persistence first
                     const savedCode = localStorage.getItem('selected_country_code');
                     if (savedCode) {
                         this.changeCountry(savedCode);
                     } else {
-                        // 2. Fallback to auto-detect
                         const browserLang = navigator.language || 'pt-BR';
-                        if (browserLang.includes('en')) this.changeCountry('US');
-                        else if (browserLang.includes('pt')) this.changeCountry('BR');
+                        if (browserLang.includes('pt')) this.changeCountry('BR');
                         else if (browserLang.includes('es')) this.changeCountry('ES');
+                        else this.changeCountry('US');
                     }
 
-                    // Timer Persistence
                     let startTime = localStorage.getItem('checkout_start_time_' + '{{ $transaction->uuid }}');
                     if (!startTime) {
                         startTime = Date.now();
@@ -708,56 +708,27 @@
 
                     setInterval(() => {
                         if (this.isExpired) return;
-
                         const now = Date.now();
                         const elapsed = Math.floor((now - startTime) / 1000);
                         this.secondsRemaining = Math.max(0, 1800 - elapsed);
-                        
                         if (this.secondsRemaining === 0) {
                             this.isExpired = true;
                             setTimeout(() => {
                                 this.isExpired = false;
-                                startTime = Date.now(); // Reset for the "scare" to go away
+                                startTime = Date.now();
                                 localStorage.setItem('checkout_start_time_' + '{{ $transaction->uuid }}', startTime);
                             }, 30000);
                         }
-
                         const mins = Math.floor(this.secondsRemaining / 60);
                         const secs = this.secondsRemaining % 60;
                         this.timeLeft = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
                     }, 1000);
                 },
 
-                changeCountry(code) {
-                    const c = this.countries.find(x => x.code === code);
-                    if (!c) return;
-                    this.country = c.code;
-                    this.locale = c.locale;
-                    this.currency = c.currency;
-                    this.currencySymbol = c.symbol;
-                },
-
-                formatPrice(amount) {
-                    const c = this.countries.find(x => x.code === this.country);
-                    const finalAmount = amount * (c.rate || 1);
-                    
-                    return new Intl.NumberFormat(this.locale, {
-                        style: 'currency',
-                        currency: this.currency,
-                        minimumFractionDigits: 2
-                    }).format(finalAmount);
-                },
-
                 formatCardNumber(val) {
                     let v = val.replace(/\D/g, '');
-                    let match = v.match(/\d{4,16}/);
-                    let m = match ? match[0] : '';
-                    let parts = [];
-                    for (let i=0, len=m.length; i<len; i+=4) {
-                        parts.push(m.substring(i, i+4));
-                    }
-                    if (parts.length) return parts.join(' ');
-                    return val || '0000 0000 0000 0000';
+                    let masked = v.match(/.{1,4}/g)?.join(' ') || v;
+                    return masked || '0000 0000 0000 0000';
                 },
 
                 updateCardNumber(e) {
@@ -787,12 +758,10 @@
                 },
 
                 goToStep2() { this.step = 2; },
-
                 processPayment() {
                     this.processing = true;
                     setTimeout(() => { this.step = 3; this.processing = false; }, 2000);
                 },
-
                 copyPix() {
                     const el = document.createElement('textarea');
                     el.value = document.getElementById('pixPayload').innerText;
@@ -802,7 +771,6 @@
                     document.body.removeChild(el);
                     alert('Código Pix copiado!');
                 },
-
                 getWhatsappLink() {
                     const msg = encodeURIComponent(`Ola, sou ${this.vendorName} e adquiri o basileia, queria saber os próximos passos!`);
                     return `https://wa.me/5511934924430?text=${msg}`;

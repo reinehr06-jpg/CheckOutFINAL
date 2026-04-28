@@ -138,7 +138,7 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    private function registrarTentativa(?User $user, Request $request, bool $success, string $motivo = null, string $email = null): void
+    private function registrarTentativa(?User $user, Request $request, bool $success, ?string $motivo = null, ?string $email = null): void
     {
         try {
             LoginAttempt::create([
