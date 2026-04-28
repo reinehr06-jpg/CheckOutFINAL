@@ -385,7 +385,6 @@
 
                 <div style="text-align: center; margin-bottom: 25px;">
                     <h2 class="form-title" x-text="locale === 'pt-BR' ? 'Dados de Pagamento' : 'Payment Details'" style="margin-bottom: 5px;"></h2>
-                    <p class="form-subtitle" x-text="locale === 'pt-BR' ? 'Escolha como deseja pagar seu plano' : 'Choose how you want to pay'"></p>
                 </div>
 
                 @if(($asaasPayment['billingType'] ?? 'PIX') === 'PIX')
@@ -417,7 +416,7 @@
                         <div class="card-inner" :class="{ 'is-flipped': isFlipped }">
                             <div class="card-face card-front">
                                 <div class="card-chip"></div>
-                                <div class="card-brand-logo default" :class="{ 'visible': cardBrand === 'default' }">B</div>
+                                <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" alt="Visa">
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" alt="Mastercard">
                                 
@@ -449,12 +448,12 @@
                     <form id="paymentForm" @submit.prevent="goToStep2()">
                         <div class="form-group">
                             <label class="form-label">Número do Cartão</label>
-                            <input type="text" class="form-input" x-model="cardNumber" @input="updateCardBrand()" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                            <input type="text" class="form-input" x-model="cardNumber" @input="updateCardNumber($event)" placeholder="0000 0000 0000 0000" maxlength="19" required>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Validade</label>
-                                <input type="text" class="form-input" x-model="cardExpiry" placeholder="MM/AA" maxlength="5" required>
+                                <input type="text" class="form-input" x-model="cardExpiry" @input="updateCardExpiry($event)" placeholder="MM/AA" maxlength="5" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">CVV</label>
@@ -478,8 +477,8 @@
                     <div class="summary-label" style="font-size: 10px; margin-bottom: 4px;" x-text="locale === 'pt-BR' ? 'EXPIRA EM' : 'EXPIRES IN'"></div>
                     <div style="font-size: 14px; font-weight: 800; background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 10px; display: inline-block; letter-spacing: 1px;" x-text="timeLeft"></div>
                 </div>
-                <h2 class="form-title">Confirme seus dados</h2>
-                <p class="form-subtitle">Quase lá! Verifique se as informações da sua igreja estão corretas.</p>
+                <h2 class="form-title" x-text="locale === 'pt-BR' ? 'Confirme seus dados' : 'Confirm your details'"></h2>
+                <p class="form-subtitle" x-text="locale === 'pt-BR' ? 'Quase lá! Verifique se as informações da sua igreja estão corretas.' : 'Almost there! Check if your information is correct.'"></p>
 
                 <div class="form-group">
                     <label class="form-label">Nome da Igreja / Instituição</label>
@@ -714,6 +713,21 @@
                     }
                     if (parts.length) return parts.join(' ');
                     return val || '0000 0000 0000 0000';
+                },
+
+                updateCardNumber(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    let masked = value.match(/.{1,4}/g)?.join(' ') || value;
+                    this.cardNumber = masked;
+                    this.updateCardBrand();
+                },
+
+                updateCardExpiry(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 2) {
+                        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                    }
+                    this.cardExpiry = value;
                 },
 
                 updateCardBrand() {
