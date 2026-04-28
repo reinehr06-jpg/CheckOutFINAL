@@ -665,9 +665,9 @@
                             <div class="card-face card-front">
                                 <div class="card-chip"></div>
                                 <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
-                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" style="top: 15px; right: 15px; width: 45px; height: 25px;">
-                                    <svg viewBox="0 0 32 24" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
-                                        <path fill="#FFFFFF" d="M10.2 19l2.8-13h2.1l-2.8 13zm11.7-12.7c-.5-.2-1.3-.4-2.2-.4-2.4 0-4.1 1.3-4.1 3.1 0 1.4 1.2 2.1 2.2 2.6 1 .5 1.4.8 1.4 1.2 0 .7-.8 1-1.5 1-1 0-1.7-.2-2.7-.6l-.4 1.8c.5.2 1.5.4 2.5.4 2.4 0 4-1.2 4-3 0-1-.6-1.8-1.9-2.4-.8-.4-1.3-.7-1.3-1.2 0-.4.5-.9 1.5-.9.9 0 1.5.2 2 .4l.4-1.8zm6.5 12.7h2l-1.8-13h-1.8c-.6 0-1 .3-1.2.9l-4.4 10.6h2.2l.4-1.2h2.7l.3 1.2zm-2-3.1l1.1-3 .6 3zm-26.6-9.6l-.2 1.1c1.2.3 2.5.8 3.3 1.3l1.8 7.2h2.2l3.4-13h-2.2l-2.1 8.3-.9-4.3c-.3-1-1.1-1.8-2.1-2.2-1.2-.6-2.4-1-3.2-1.4"/>
+                                <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" style="top: 15px; right: 15px; width: 55px; height: 28px;">
+                                    <svg viewBox="0 0 65 22" preserveAspectRatio="xMidYMid meet" width="100%" height="100%">
+                                        <path fill="#FFFFFF" d="M25.333 1.1c-1.2-.5-3.1-1.1-5.4-1.1-5.7 0-9.8 3.1-9.8 7.6 0 3.3 2.9 5.1 5.2 6.3 2.3 1.1 3.1 1.9 3.1 2.9 0 1.6-1.9 2.3-3.7 2.3-2.4 0-4.2-.4-6.4-1.4l-.9 4.2c1.2.6 3.5 1.1 5.9 1.1 6.1 0 10.1-3.1 10.1-7.9 0-2.6-1.6-4.6-5-6.2-2.1-1-3.3-1.7-3.3-2.8 0-1 1-2.1 3.3-2.1 2 0 3.4.4 4.5.9l1-4.1zm12.3 0h-5.2c-.6 0-1 .3-1.2.9L22.8 21h5.6l1.1-3.1h6.8l.6 3.1h5.1L37.633 1.1zm-1.8 13h-4.3l2.1-5.9 2.2 5.9zm-31.5-13L-.5 21h5.6L11.533 1.1H5.833zm43 0L42.233 14.8l-.5-2.5c-.8-2.7-3.3-5.6-6.1-7.1l.1-.3h8.5l5.5 21.2h5.6l6.8-19.9h-5.3L52.133 13 49.833 1.1h-5.4z"/>
                                     </svg>
                                 </div>
                                 <div class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" style="top: 18px; right: 18px;">
