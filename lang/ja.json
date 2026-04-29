@@ -11,7 +11,7 @@
     "processing": "処理中...",
     "secure_checkout": "100% 安全なチェックアウト",
     "secure_payment": "100% 安全なお支払い",
-    "encryption_notice": "256ビット暗号化",
+    "encryption_notice": "SSL安全接続",
     "immediate_access": "ダッシュボードへの即時アクセス",
     "immediate_access_desc": "認証情報はメールで送信されます。",
     "ai_assistant": "WhatsApp AIアシスタント",
