@@ -161,6 +161,7 @@
             perspective: 2000px;
             width: 100%;
             max-width: 420px;
+            min-height: 580px; /* Estabiliza a quebra no flip */
         }
 
         .layer {
@@ -171,6 +172,8 @@
             color: #1e293b;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             z-index: 10;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
 
         .book-bg-layer {
@@ -261,7 +264,6 @@
         .form-input { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; transition: all 0.3s; background: #f8fafc; color: #1e293b; font-weight: 500; }
         .form-input:focus { border-color: var(--primary); outline: none; background: white; box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
         .btn-pay { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 5px; }
         .btn-pay:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3); }
         .btn-pay:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
@@ -296,8 +298,9 @@
         .custom-select-option:hover { background: #f1f5f9; }
 
         /* EXPIRED OVERLAY */
-        .expired-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 1000; border-radius: 20px; display: flex; align-items: center; justify-content: center; padding: 30px; text-align: center; color: #1e1b4b; }
-        .expired-box i { font-size: 40px; color: #dc2626; margin-bottom: 15px; }
+        .expired-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.98); z-index: 1000; border-radius: 20px; display: flex; align-items: center; justify-content: center; padding: 30px; text-align: center; color: #4c1d95; }
+        .expired-box i { font-size: 40px; color: #7c3aed; margin-bottom: 15px; }
+        .expired-box p { font-weight: 600; }
 
         @media (max-width: 900px) {
             body { padding: 0; align-items: flex-start; }
@@ -340,6 +343,29 @@
         }
 
         .mobile-summary-toggle { display: none; }
+
+        /* ══ BOOK FLIP — transição entre layers ══ */
+        @keyframes flipOut {
+            0%   { transform: rotateY(0deg) scale(1);      opacity: 1; }
+            40%  { transform: rotateY(-75deg) scale(0.97); opacity: 0.5; }
+            100% { transform: rotateY(-90deg);              opacity: 0; }
+        }
+        @keyframes flipIn {
+            0%   { transform: rotateY(90deg);               opacity: 0; }
+            60%  { transform: rotateY(20deg) scale(0.98);   opacity: 0.7; }
+            100% { transform: rotateY(0deg) scale(1);       opacity: 1; }
+        }
+        .layer.flipping-out {
+            animation: flipOut 0.42s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            transform-origin: left center;
+            backface-visibility: hidden;
+        }
+        .layer.flipping-in {
+            animation: flipIn 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform-origin: left center;
+            backface-visibility: hidden;
+        }
+        .book-container { transform-style: preserve-3d; }
     </style>
 </head>
 <body class="bg-dark text-white font-sans overflow-x-hidden" x-data="checkoutFlow()">
@@ -354,6 +380,7 @@
                 summaryExpanded: false,
                 country: 'BR',
                 locale: 'pt-BR',
+                showLangSelector: false,
                 currency: 'BRL',
                 currencySymbol: 'R$',
                 timeLeft: '30:00',
@@ -366,10 +393,234 @@
                 vendorName: {!! json_encode($transaction->vendor->name ?? '') !!},
                 vendorEmail: {!! json_encode($transaction->customer_email ?? '') !!},
                 vendorDoc: {!! json_encode($transaction->customer_document ?? '') !!},
-                mobileSummaryOpen: false,
                 isExpired: false,
                 originalAmount: {!! json_encode(number_format($transaction->amount ?? 0, 2, '.', '')) !!},
                 selectedCountry: {code:'BR',name:'Brasil',flag:'🇧🇷',locale:'pt-BR',currency:'BRL',symbol:'R$',rate:1},
+                translations: {
+                    'pt-BR': {
+                        expires_in: 'EXPIRA EM',
+                        hide_summary: 'Ocultar Resumo',
+                        view_summary: 'Ver Resumo',
+                        selected_plan: 'PLANO SELECIONADO',
+                        per_month: '/ mês',
+                        ai_whatsapp: 'IA via WhatsApp',
+                        cell_mgmt: 'Gestão de Células (CGs)',
+                        lgpd: 'Conformidade LGPD',
+                        support: 'Suporte Humanizado',
+                        multiple_churches: 'Múltiplas Igrejas',
+                        deployment: 'Implantação Rápida',
+                        guarantee: 'Garantia Total',
+                        guarantee_7: 'Garantia de 7 dias',
+                        secure_payment: 'Pagamento Seguro',
+                        rights: 'Todos os direitos reservados',
+                        expired_title: 'Link Temporariamente Inativo',
+                        expired_text: 'Esta oferta expirou por inatividade. Aguarde alguns segundos...',
+                        payment_details: 'Dados de Pagamento',
+                        instant_payment: 'Pagamento Instantâneo',
+                        total_value: 'VALOR TOTAL',
+                        pix_code: 'CÓDIGO PIX',
+                        copy_code: 'Copiar Código',
+                        auto_confirm: 'Confirmação automática em segundos',
+                        titular: 'Titular',
+                        validity: 'Validade',
+                        signature: 'Assinatura Autorizada',
+                        value: 'VALOR',
+                        card_number: 'Número do Cartão',
+                        expiry: 'Validade',
+                        cvv: 'CVV',
+                        holder_name: 'Nome no Cartão',
+                        subscribe: 'Assinar Agora',
+                        confirm_title: 'Confirme seus dados',
+                        confirm_subtitle: 'Quase lá! Verifique se a informação da sua igreja está correta.',
+                        church_name: 'Nome da Igreja / Instituição',
+                        contact_email: 'Email de Contato',
+                        document: 'Documento (CNPJ/CPF)',
+                        validating: 'Enquanto você revisa, nosso sistema está validando sua transação.',
+                        confirm_finish: 'Confirmar e Finalizar',
+                        processing: 'Processando...',
+                        back: 'Voltar',
+                        success_title: 'Pagamento Aprovado!',
+                        success_subtitle: 'Bem-vindo à nova era da sua igreja. Seus recursos já estão liberados.',
+                        transaction: 'Transação',
+                        date: 'Data',
+                        access_dash: 'Acessar Basiléia Church',
+                        whatsapp_support: 'Suporte no WhatsApp',
+                        impl_videos: 'Vídeos de Implementação',
+                        secure_checkout: 'Checkout 100% Seguro',
+                        instant_pay_badge: 'Pagamento Instantâneo',
+                        copy_pix: 'Copiar Código Pix',
+                        pix_auto: 'Após o pagamento, a confirmação é automática.'
+                    },
+                    'es-ES': {
+                        expires_in: 'EXPIRA EN',
+                        hide_summary: 'Ocultar Resumen',
+                        view_summary: 'Ver Resumen',
+                        selected_plan: 'PLAN SELECCIONADO',
+                        per_month: '/ mes',
+                        ai_whatsapp: 'IA vía WhatsApp',
+                        cell_mgmt: 'Gestión de Células',
+                        lgpd: 'Cumplimiento RGPD/LGPD',
+                        support: 'Soporte Humanizado',
+                        multiple_churches: 'Múltiples Iglesias',
+                        deployment: 'Implementación Rápida',
+                        guarantee: 'Garantía Total',
+                        guarantee_7: 'Garantía de 7 días',
+                        secure_payment: 'Pago Seguro',
+                        rights: 'Todos los derechos reservados',
+                        expired_title: 'Enlace Temporalmente Inactivo',
+                        expired_text: 'Esta oferta ha expirado por inactividad. Por favor, espere unos segundos...',
+                        payment_details: 'Datos de Pago',
+                        instant_payment: 'Pago Instantáneo',
+                        total_value: 'VALOR TOTAL',
+                        pix_code: 'CÓDIGO PIX',
+                        copy_code: 'Copiar Código',
+                        auto_confirm: 'Confirmación automática en segundos',
+                        titular: 'Titular',
+                        validity: 'Validez',
+                        signature: 'Firma Autorizada',
+                        value: 'VALOR',
+                        card_number: 'Número de Tarjeta',
+                        expiry: 'Validez',
+                        cvv: 'CVV',
+                        holder_name: 'Nombre en la Tarjeta',
+                        subscribe: 'Suscribirse Ahora',
+                        confirm_title: 'Confirme sus datos',
+                        confirm_subtitle: '¡Casi listo! Verifique si la información de su iglesia es correcta.',
+                        church_name: 'Nombre de la Iglesia / Institución',
+                        contact_email: 'Email de Contacto',
+                        document: 'Documento (ID Fiscal)',
+                        validating: 'Mientras revisa, nuestro sistema está validando su transacción.',
+                        confirm_finish: 'Confirmar y Finalizar',
+                        processing: 'Procesando...',
+                        back: 'Volver',
+                        success_title: '¡Pago Aprobado!',
+                        success_subtitle: 'Bienvenido a la nueva era de su iglesia. Sus recursos ya están liberados.',
+                        transaction: 'Transacción',
+                        date: 'Fecha',
+                        access_dash: 'Acceder Basiléia Church',
+                        whatsapp_support: 'Soporte en WhatsApp',
+                        impl_videos: 'Videos de Implementación',
+                        secure_checkout: 'Checkout 100% Seguro',
+                        instant_pay_badge: 'Pago Instantáneo',
+                        copy_pix: 'Copiar Código Pix',
+                        pix_auto: 'Después del pago, la confirmación es automática.'
+                    },
+                    'en-US': {
+                        expires_in: 'EXPIRES IN',
+                        hide_summary: 'Hide Summary',
+                        view_summary: 'View Summary',
+                        selected_plan: 'SELECTED PLAN',
+                        per_month: '/ month',
+                        ai_whatsapp: 'AI via WhatsApp',
+                        cell_mgmt: 'Cell Management',
+                        lgpd: 'GDPR/LGPD Compliance',
+                        support: 'Human Support',
+                        multiple_churches: 'Multiple Churches',
+                        deployment: 'Quick Deployment',
+                        guarantee: 'Full Guarantee',
+                        guarantee_7: '7-day guarantee',
+                        secure_payment: 'Secure Payment',
+                        rights: 'All rights reserved',
+                        expired_title: 'Link Temporarily Inactive',
+                        expired_text: 'This offer has expired. Please wait a few seconds...',
+                        payment_details: 'Payment Details',
+                        instant_payment: 'Instant Payment',
+                        total_value: 'TOTAL VALUE',
+                        pix_code: 'PIX CODE',
+                        copy_code: 'Copy Code',
+                        auto_confirm: 'Automatic confirmation in seconds',
+                        titular: 'Cardholder',
+                        validity: 'Expiry',
+                        signature: 'Authorized Signature',
+                        value: 'VALUE',
+                        card_number: 'Card Number',
+                        expiry: 'Expiry',
+                        cvv: 'CVV',
+                        holder_name: 'Cardholder Name',
+                        subscribe: 'Subscribe Now',
+                        confirm_title: 'Confirm your details',
+                        confirm_subtitle: 'Almost there! Check if your information is correct.',
+                        church_name: 'Church / Institution Name',
+                        contact_email: 'Contact Email',
+                        document: 'Document (Tax ID)',
+                        validating: 'While you review, our system is validating your transaction.',
+                        confirm_finish: 'Confirm and Finish',
+                        processing: 'Processing...',
+                        back: 'Back',
+                        success_title: 'Payment Approved!',
+                        success_subtitle: 'Welcome to the new era of your church. Your resources are now released.',
+                        transaction: 'Transaction',
+                        date: 'Date',
+                        access_dash: 'Access Basiléia Church',
+                        whatsapp_support: 'WhatsApp Support',
+                        impl_videos: 'Implementation Videos',
+                        secure_checkout: '100% Secure Checkout',
+                        instant_pay_badge: 'Instant Payment',
+                        copy_pix: 'Copy Pix Code',
+                        pix_auto: 'After payment, confirmation is automatic.'
+                    },
+                    'zh-CN': {
+                        expires_in: '到期时间',
+                        hide_summary: '隐藏摘要',
+                        view_summary: '查看摘要',
+                        selected_plan: '已选套餐',
+                        per_month: '/ 月',
+                        ai_whatsapp: 'AI WhatsApp 助手',
+                        cell_mgmt: '小组管理',
+                        lgpd: 'LGPD/GDPR 合规',
+                        support: '人工客服支持',
+                        multiple_churches: '多教会管理',
+                        deployment: '快速部署',
+                        guarantee: '全额保障',
+                        guarantee_7: '7天退款保证',
+                        secure_payment: '安全支付',
+                        rights: '版权所有',
+                        expired_title: '链接暂时失效',
+                        expired_text: '此优惠已因超时而过期，请稍等片刻…',
+                        payment_details: '支付信息',
+                        instant_payment: '即时支付',
+                        total_value: '总金额',
+                        pix_code: 'PIX 代码',
+                        copy_code: '复制代码',
+                        auto_confirm: '秒后自动确认',
+                        titular: '持卡人',
+                        validity: '有效期',
+                        signature: '授权签名',
+                        value: '金额',
+                        card_number: '卡号',
+                        expiry: '有效期',
+                        cvv: '安全码',
+                        holder_name: '持卡人姓名',
+                        subscribe: '立即订阅',
+                        confirm_title: '确认您的信息',
+                        confirm_subtitle: '即将完成！请确认您的机构信息是否正确。',
+                        church_name: '机构名称',
+                        contact_email: '联系邮箱',
+                        document: '证件号码（税号）',
+                        validating: '在您核查时，我们的系统正在验证您的交易。',
+                        confirm_finish: '确认并完成',
+                        processing: '处理中…',
+                        back: '返回',
+                        success_title: '付款成功！',
+                        success_subtitle: '欢迎使用平台，您的资源已释放。',
+                        transaction: '交易编号',
+                        date: '日期',
+                        access_dash: '访问 Basiléia Church',
+                        whatsapp_support: 'WhatsApp 客服',
+                        impl_videos: '实施教程视频',
+                        secure_checkout: '100% 安全结账',
+                        instant_pay_badge: '即时支付',
+                        copy_pix: '复制代码',
+                        pix_auto: '付款后自动确认'
+                    }
+                },
+
+                t(key) {
+                    const lang = this.locale || 'en-US';
+                    const set = this.translations[lang] || this.translations['en-US'];
+                    return set[key] || this.translations['en-US'][key] || key;
+                },
+
                 countries: [
                     {code:'AF',name:'Afghanistan',flag:'🇦🇫',currency:'AFN',symbol:'Af',rate:0.015},
                     {code:'AL',name:'Albania',flag:'🇦🇱',currency:'ALL',symbol:'L',rate:0.011},
@@ -435,15 +686,26 @@
                     {code:'VN',name:'Vietnam',flag:'🇻🇳',currency:'VND',symbol:'₫',rate:4500}
                 ],
 
+                changeLanguage(lang) {
+                    this.locale = lang;
+                    localStorage.setItem('selected_language', lang);
+                    this.showLangSelector = false;
+                },
+
                 changeCountry(code) {
                     const c = this.countries.find(x => x.code === code);
                     if (!c) return;
                     this.country = c.code;
                     this.selectedCountry = c;
-                    if (c.code === 'BR') this.locale = 'pt-BR';
-                    else if (['PT', 'AO', 'MZ'].includes(c.code)) this.locale = 'pt-PT';
-                    else if (['ES', 'MX', 'AR', 'CO', 'CL'].includes(c.code)) this.locale = 'es-ES';
-                    else this.locale = 'en-US';
+                    
+                    if (!localStorage.getItem('selected_language')) {
+                        if (c.code === 'BR' || ['PT','AO','MZ','CV'].includes(c.code)) this.locale = 'pt-BR';
+                        else if (['ES','MX','AR','CO','CL','PE','VE','EC','BO','PY','UY',
+                                   'CR','GT','HN','SV','NI','PA','DO','CU'].includes(c.code)) this.locale = 'es-ES';
+                        else if (c.code === 'CN') this.locale = 'zh-CN';
+                        else this.locale = 'en-US';
+                    }
+                    
                     this.currency = c.currency;
                     this.currencySymbol = c.symbol;
                     localStorage.setItem('selected_country_code', code);
@@ -460,12 +722,19 @@
                 },
                 
                 init() {
+                    const savedLang = localStorage.getItem('selected_language');
+                    if (savedLang) this.locale = savedLang;
+
                     const savedCode = localStorage.getItem('selected_country_code');
-                    if (savedCode) this.changeCountry(savedCode);
+                    if (savedCode) {
+                        this.changeCountry(savedCode);
+                        if (savedLang) this.locale = savedLang;
+                    }
                     else {
                         const browserLang = navigator.language || 'pt-BR';
                         if (browserLang.includes('pt')) this.changeCountry('BR');
                         else if (browserLang.includes('es')) this.changeCountry('ES');
+                        else if (browserLang.includes('zh')) this.changeCountry('CN');
                         else this.changeCountry('US');
                     }
 
@@ -527,11 +796,27 @@
                     } else this.cardBrand = 'default';
                 },
 
-                goToStep2() { 
-                    this.step = 2; 
-                    localStorage.setItem('checkout_step_' + uuid, 2);
+                flipLayer(fromStep, toStep) {
+                    const allLayers = document.querySelectorAll('.layer');
+                    const fromEl = [...allLayers].find(l => parseInt(l.dataset.step) === fromStep);
+                    const toEl   = [...allLayers].find(l => parseInt(l.dataset.step) === toStep);
+                    if (!fromEl || !toEl) { this.step = toStep; return; }
+                    fromEl.classList.add('flipping-out');
+                    fromEl.addEventListener('animationend', () => {
+                        fromEl.classList.remove('flipping-out');
+                        this.step = toStep;
+                        this.$nextTick(() => {
+                            toEl.classList.add('flipping-in');
+                            toEl.addEventListener('animationend', () => {
+                                toEl.classList.remove('flipping-in');
+                            }, { once: true });
+                        });
+                    }, { once: true });
                 },
-                processPayment() { this.processing = true; },
+
+                processPayment() { 
+                    this.processing = true;
+                },
                 getWhatsappLink() {
                     const msg = encodeURIComponent(`Ola, sou ${this.vendorName} e adquiri o basileia, queria saber os próximos passos!`);
                     return `https://wa.me/5511934924430?text=${msg}`;
@@ -541,277 +826,195 @@
     </script>
 
     <div class="checkout-wrapper">
-        
-        <!-- MOBILE SUMMARY TOGGLE -->
         <div class="mobile-summary-toggle" @click="mobileSummaryOpen = !mobileSummaryOpen">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <i class="fas fa-shopping-cart"></i>
-                <span x-text="mobileSummaryOpen ? (locale === 'pt-BR' ? 'Ocultar Resumo' : 'Hide Summary') : (locale === 'pt-BR' ? 'Ver Resumo' : 'View Summary')"></span>
+                <span x-text="mobileSummaryOpen ? t('hide_summary') : t('view_summary')"></span>
                 <i class="fas" :class="mobileSummaryOpen ? 'fa-chevron-up' : 'fa-chevron-down'" style="font-size: 10px;"></i>
             </div>
             <div style="font-weight: 700;" x-text="formatPrice(originalAmount)"></div>
         </div>
 
-        <!-- LEFT PANEL (Order Summary) -->
         <div class="order-summary" :class="{ 'mobile-open': mobileSummaryOpen }">
-            <div class="brand-logo">
-            <img src="https://dash.basileia.global/assets/logo-basileia-horizontal.png" alt="Basiléia Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-            <span class="fallback-text" style="display: none;">Basiléia</span>
+            <div class="brand-logo" style="margin-bottom: 20px;">
+                <svg width="160" height="44" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="160" height="44" rx="12" fill="#7C3AED"/>
+                    <rect x="6" y="6" width="32" height="32" rx="8" fill="white" fill-opacity="0.2"/>
+                    <path d="M22.5 14H18.5V30H22.5C23.6046 30 24.5 29.1046 24.5 28C24.5 26.8954 23.6046 26 22.5 26H18.5M22.5 26C23.6046 26 24.5 25.1046 24.5 24C24.5 22.8954 23.6046 22 22.5 22M22.5 22H18.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <text x="48" y="30" fill="white" style="font-family: 'Inter', sans-serif; font-weight: 700; font-size: 21px; letter-spacing: -0.02em;">Basiléia</text>
+                </svg>
             </div>
 
             <div class="summary-card">
                 <div class="badge-secure">
-                    <i class="fas fa-shield-alt"></i> Checkout 100% Seguro
+                    <i class="fas fa-shield-alt"></i> <span x-text="t('secure_checkout')"></span>
                 </div>
 
-                <div class="summary-label" x-text="locale === 'pt-BR' ? 'Plano Selecionado' : 'Selected Plan'"></div>
+                <div class="summary-label" x-text="t('selected_plan')"></div>
                 <h1 class="plan-title" style="color: white;">{{ $plano }}</h1>
 
                 <div class="price-container">
                     <span class="price-currency" x-text="currencySymbol"></span>
                     <span class="price-value" x-text="formatPrice(originalAmount).replace(/[^0-9,.]/g, '')"></span>
-                    <span class="price-period" x-text="locale === 'pt-BR' ? '/ mês' : '/ month'"></span>
+                    <span class="price-period" x-text="t('per_month')"></span>
                 </div>
 
                 <div class="features-list">
-                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Conformidade LGPD' : 'GDPR/LGPD Compliance'"></span></div>
-                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Suporte Humanizado' : 'Human Support'"></span></div>
-                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Múltiplas Igrejas' : 'Multiple Churches'"></span></div>
-                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="locale === 'pt-BR' ? 'Implantação Rápida' : 'Quick Deployment'"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="t('lgpd')"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="t('support')"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="t('multiple_churches')"></span></div>
+                    <div class="feature-item"><i class="fas fa-check-circle"></i> <span x-text="t('deployment')"></span></div>
                 </div>
 
                 <div class="trust-row">
-                    <div class="trust-item"><i class="fas fa-lock"></i> <span x-text="locale === 'pt-BR' ? 'Garantia total' : 'Full Guarantee'"></span></div>
-                    <div class="trust-item"><i class="fas fa-shield-alt"></i> <span x-text="locale === 'pt-BR' ? 'Pagamento Seguro' : 'Secure Payment'"></span></div>
+                    <div class="trust-item"><i class="fas fa-lock"></i> <span x-text="t('guarantee')"></span></div>
+                    <div class="trust-item"><i class="fas fa-shield-alt"></i> <span x-text="t('secure_payment')"></span></div>
                 </div>
             </div>
 
             <div style="text-align: center; color: #a99fbb; font-size: 11px; opacity: 0.5;">
-                Basiléia Church &copy; {{ date('Y') }} - Todos os direitos reservados
+                Basiléia Church &copy; {{ date('Y') }} - <span x-text="t('rights')"></span>
             </div>
         </div>
 
-        <!-- THE BOOK (Right Panel) -->
         <div class="book-container">
-            <div class="book-bg-layer"></div>
-            <div class="book-bg-layer-2"></div>
-
-            <!-- EXPIRED OVERLAY (THE SCARE) -->
             <div x-show="isExpired" class="expired-overlay" x-cloak x-transition>
                 <div class="expired-box">
                     <i class="fas fa-clock"></i>
-                    <h3 x-text="locale === 'pt-BR' ? 'Link Temporariamente Inativo' : 'Link Temporarily Inactive'"></h3>
-                    <p x-text="locale === 'pt-BR' ? 'Esta oferta expirou por inatividade. Aguarde alguns segundos...' : 'This offer has expired. Please wait a few seconds...'"></p>
+                    <h3 x-text="t('expired_title')"></h3>
+                    <p x-text="t('expired_text')"></p>
                 </div>
             </div>
 
-            <!-- LAYER: PAYMENT (Steps 1 & 2) -->
-            <div class="layer" x-show="step === 1 || step === 2">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div>
-                        <div class="summary-label" style="font-size: 10px; margin-bottom: 4px;" x-text="locale === 'pt-BR' ? 'EXPIRA EM' : 'EXPIRES IN'"></div>
-                        <div style="font-size: 14px; font-weight: 800; background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 10px; display: inline-block; letter-spacing: 1px;" x-text="timeLeft"></div>
-                    </div>
-                    
-                    <div class="custom-select-container" @click.away="showSelector = false">
-                        <div class="custom-select-trigger" @click="showSelector = !showSelector">
-                            <span x-text="countries.find(x => x.code === country).flag + ' ' + country"></span>
-                            <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
-                        </div>
-                        <div class="custom-select-options" :class="{ 'show': showSelector }">
-                            <template x-for="c in countries" :key="c.code">
-                                <div class="custom-select-option" @click="changeCountry(c.code); showSelector = false">
-                                    <span x-text="c.flag"></span>
-                                    <span x-text="c.name"></span>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <h2 class="form-title" x-text="locale === 'pt-BR' ? 'Dados de Pagamento' : 'Payment Details'" style="margin-bottom: 5px;"></h2>
-                </div>
-
-                @if(($asaasPayment['billingType'] ?? 'PIX') === 'PIX')
-                    <!-- PIX FLOW -->
-                    <div class="pix-container">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <div class="badge-secure" style="background: rgba(124, 58, 237, 0.1); color: var(--primary-light); border-color: rgba(124, 58, 237, 0.2);">
-                                <i class="fas fa-bolt"></i> Pagamento Instantâneo
-                            </div>
-                        </div>
-
-                        <div class="pix-qr-box" style="border: 2px solid var(--primary); box-shadow: 0 15px 35px rgba(124, 58, 237, 0.2); background: white; padding: 15px; border-radius: 20px; display: inline-block; margin-bottom: 20px;">
-                            <img src="data:image/png;base64,{{ $pixData['encodedImage'] ?? '' }}" alt="QR Code PIX" style="width: 180px; height: 180px; display: block;">
-                        </div>
-                        
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 20px; text-align: center;">
-                            <div class="summary-label" style="font-size: 11px;" x-text="locale === 'pt-BR' ? 'VALOR TOTAL' : 'TOTAL VALUE'"></div>
-                            <div style="font-size: 36px; font-weight: 900; color: #1e293b; letter-spacing: -1px;" x-text="formatPrice(originalAmount)"></div>
-                        </div>
-
-                        <div style="text-align: left; margin-bottom: 15px;">
-                            <div class="summary-label" style="font-size: 10px; margin-bottom: 6px;">CÓDIGO PIX</div>
-                            <div class="pix-payload" id="pixPayload">{{ $pixData['payload'] ?? '' }}</div>
-                        </div>
-                        
-                        <button class="btn-pay" @click="copyPix()">
-                            <i class="fas fa-copy"></i> <span x-text="locale === 'pt-BR' ? 'Copiar Código' : 'Copy Code'"></span>
-                        </button>
-                        
-                        <div style="margin-top: 15px; color: #64748b; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <i class="fas fa-shield-check" style="color: #10b981;"></i>
-                            <span x-text="locale === 'pt-BR' ? 'Confirmação automática em segundos' : 'Automatic confirmation in seconds'"></span>
-                        </div>
-                    </div>
-                @else
-                    <!-- CARD FLOW -->
-                    <div class="card-scene" @click="isFlipped = !isFlipped" x-show="step === 1">
-                        <div class="card-inner" :class="{ 'is-flipped': isFlipped }">
-                            <div class="card-face card-front">
-                                <div class="card-chip"></div>
-                                <div class="card-brand-logo default" x-show="cardBrand === 'default'">B</div>
-                                <img src="https://raw.githubusercontent.com/aaronfagan/svg-credit-card-payment-icons/main/flat-rounded/visa.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'visa' }" alt="Visa">
-                                <img src="https://raw.githubusercontent.com/aaronfagan/svg-credit-card-payment-icons/main/flat-rounded/mastercard.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'mastercard' }" alt="Mastercard">
-                                <img src="https://raw.githubusercontent.com/aaronfagan/svg-credit-card-payment-icons/main/flat-rounded/amex.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'amex' }" alt="Amex">
-                                <img src="https://raw.githubusercontent.com/aaronfagan/svg-credit-card-payment-icons/main/flat-rounded/elo.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'elo' }" alt="Elo">
-                                <img src="https://raw.githubusercontent.com/aaronfagan/svg-credit-card-payment-icons/main/flat-rounded/hipercard.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'hipercard' }" alt="Hipercard">
-                                <img src="https://raw.githubusercontent.com/aaronfagan/svg-credit-card-payment-icons/main/flat-rounded/diners.svg" class="card-brand-logo" :class="{ 'visible': cardBrand === 'diners' }" alt="Diners">
-                                
-                                <div class="card-number-display" x-text="formatCardNumber(cardNumber)"></div>
-                                <div class="card-bottom">
-                                    <div>
-                                        <div class="card-label">Titular</div>
-                                        <div class="card-value" x-text="cardHolder || 'NOME NO CARTÃO'"></div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div class="card-label">Validade</div>
-                                        <div class="card-value" x-text="cardExpiry || 'MM/AA'"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-face card-back">
-                                <div class="card-magnetic-strip"></div>
-                                <div class="card-cvv-strip" x-text="cardCvv || '•••'"></div>
-                                <div style="padding: 20px; font-size: 10px; opacity: 0.5;">Assinatura Autorizada</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="text-align: center; margin-bottom: 10px;" x-show="step === 1">
-                        <div class="summary-label" style="font-size: 12px;" x-text="locale === 'pt-BR' ? 'VALOR' : 'VALUE'"></div>
-                        <div style="font-size: 32px; font-weight: 900; color: #1e293b;" x-text="formatPrice(originalAmount)"></div>
-                    </div>
-
-                    <!-- STEP 1 UI (OUTSIDE FORM TO PREVENT RELOAD) -->
-                    <div x-show="step === 1" x-transition>
-                        <div class="form-group">
-                            <label class="form-label" x-text="locale === 'pt-BR' ? 'Número do Cartão' : 'Card Number'"></label>
-                            <input type="text" class="form-input" x-model="cardNumber" @input="updateCardNumber($event)" placeholder="0000 0000 0000 0000" maxlength="19">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label" x-text="locale === 'pt-BR' ? 'Validade' : 'Expiry'"></label>
-                                <input type="text" class="form-input" x-model="cardExpiry" @input="updateCardExpiry($event)" placeholder="MM/AA" maxlength="5">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" x-text="locale === 'pt-BR' ? 'CVV' : 'CVV'"></label>
-                                <input type="text" class="form-input" x-model="cardCvv" @focus="isFlipped = true" @blur="isFlipped = false" placeholder="000" maxlength="4">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" x-text="locale === 'pt-BR' ? 'Nome no Cartão' : 'Cardholder Name'"></label>
-                            <input type="text" class="form-input" x-model="cardHolder" placeholder="Como impresso no cartão">
-                        </div>
-                        <button type="button" class="btn-pay" @click="step = 2; localStorage.setItem('checkout_step_' + '{{ $transaction->uuid }}', 2)">
-                            <span x-text="locale === 'pt-BR' ? 'Assinar Agora' : 'Subscribe Now'"></span> <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
-
-                    <!-- STEP 2 FORM (ONLY SUBMITS HERE) -->
-                    <form id="paymentForm" method="POST" action="{{ route('checkout.process', $transaction->uuid) }}" x-show="step === 2" x-transition:enter="layer-transition" x-transition:enter-start="layer-enter-start" x-transition:enter-end="layer-enter-end" x-transition:leave="layer-transition" x-transition:leave-start="layer-leave-start" x-transition:leave-end="layer-leave-end" x-cloak>
-                        @csrf
-                        <!-- HIDDEN FIELDS SYNCED VIA ALPINE -->
-                        <input type="hidden" name="card_number" :value="cardNumber.replace(/\D/g, '')">
-                        <input type="hidden" name="card_expiry" :value="cardExpiry">
-                        <input type="hidden" name="card_cvv" :value="cardCvv">
-                        <input type="hidden" name="card_name" :value="cardHolder">
-
-                        <h2 class="form-title" x-text="locale === 'pt-BR' ? 'Confirme seus dados' : 'Confirm your details'"></h2>
-                        <p class="form-subtitle" x-text="locale === 'pt-BR' ? 'Quase lá! Verifique se as informações da sua igreja estão corretas.' : 'Almost there! Check if your information is correct.'"></p>
-
-                        <div class="form-group">
-                            <label class="form-label" x-text="locale === 'pt-BR' ? 'Nome da Igreja / Instituição' : 'Church / Institution Name'"></label>
-                            <input type="text" name="customer_name" class="form-input" x-model="vendorName" placeholder="Ex: Igreja Central">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" x-text="locale === 'pt-BR' ? 'E-mail de Contato' : 'Contact Email'"></label>
-                            <input type="email" name="customer_email" class="form-input" x-model="vendorEmail" placeholder="contato@igreja.com">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" x-text="locale === 'pt-BR' ? 'Documento (CPF/CNPJ)' : 'Document (Tax ID)'"></label>
-                            <input type="text" name="customer_document" class="form-input" x-model="vendorDoc" placeholder="00.000.000/0001-00">
-                        </div>
-
-                        <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                            <p style="color: #166534; font-size: 13px; display: flex; gap: 8px;">
-                                <i class="fas fa-info-circle" style="margin-top: 3px;"></i>
-                                <span x-text="locale === 'pt-BR' ? 'Enquanto você revisa, nosso sistema está validando sua transação.' : 'While you review, our system is validating your transaction.'"></span>
-                            </p>
-                        </div>
-
-                        <button type="submit" class="btn-pay" @click="processing = true">
-                            <template x-if="!processing">
-                                <span><span x-text="locale === 'pt-BR' ? 'Confirmar e Finalizar' : 'Confirm and Finish'"></span> <i class="fas fa-check"></i></span>
-                            </template>
-                            <template x-if="processing">
-                                <span><i class="fas fa-circle-notch fa-spin"></i> <span x-text="locale === 'pt-BR' ? 'Processando...' : 'Processing...'"></span></span>
-                            </template>
-                        </button>
-                        
-                        <button type="button" class="btn-secondary" @click="step = 1; localStorage.setItem('checkout_step_' + '{{ $transaction->uuid }}', 1)" style="margin-top: 10px; width: 100%;" x-show="!processing">
-                            <i class="fas fa-arrow-left"></i> <span x-text="locale === 'pt-BR' ? 'Voltar' : 'Back'"></span>
-                        </button>
-                    </form>
-                @endif
-            </div>
-
-            <!-- LAYER 3: SUCCESS -->
-            <div class="layer" x-show="step === 3" 
+            <div class="layer" data-step="1" x-show="step === 1" 
                  x-transition:enter="layer-transition"
                  x-transition:enter-start="layer-enter-start"
                  x-transition:enter-end="layer-enter-end"
                  x-transition:leave="layer-transition"
                  x-transition:leave-start="layer-leave-start"
-                 x-transition:leave-end="layer-leave-end"
+                 x-transition:leave-end="layer-leave-end">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <div class="summary-label" style="font-size: 10px; margin-bottom: 4px;" x-text="t('expires_in')"></div>
+                        <div style="font-size: 14px; font-weight: 800; background: #fef2f2; color: #dc2626; padding: 6px 12px; border-radius: 10px; display: inline-block; letter-spacing: 1px;" x-text="timeLeft"></div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <div class="custom-select-container" @click.away="showSelector = false">
+                            <div class="custom-select-trigger" @click="showSelector = !showSelector">
+                                <span x-text="countries.find(x => x.code === country).flag + ' ' + country"></span>
+                                <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                            </div>
+                            <div class="custom-select-options" :class="{ 'show': showSelector }">
+                                <template x-for="c in countries" :key="c.code">
+                                    <div class="custom-select-option" @click="changeCountry(c.code); showSelector = false">
+                                        <span x-text="c.flag"></span> <span x-text="c.name"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="custom-select-container" @click.away="showLangSelector = false">
+                            <div class="custom-select-trigger" @click="showLangSelector = !showLangSelector">
+                                <span x-text="locale.split('-')[0].toUpperCase()"></span>
+                                <i class="fas fa-globe" style="font-size: 10px;"></i>
+                            </div>
+                            <div class="custom-select-options" :class="{ 'show': showLangSelector }" style="width: 100px;">
+                                <div class="custom-select-option" @click="changeLanguage('pt-BR')">PT</div>
+                                <div class="custom-select-option" @click="changeLanguage('es-ES')">ES</div>
+                                <div class="custom-select-option" @click="changeLanguage('en-US')">EN</div>
+                                <div class="custom-select-option" @click="changeLanguage('zh-CN')">CN</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if(($asaasPayment['billingType'] ?? 'PIX') === 'PIX')
+                    <div class="pix-container">
+                        <div class="pix-qr-box"><img src="data:image/png;base64,{{ $pixData['encodedImage'] ?? '' }}"></div>
+                        <div style="font-size: 36px; font-weight: 900; margin-bottom: 20px;" x-text="formatPrice(originalAmount)"></div>
+                        <div class="pix-payload" id="pixPayload">{{ $pixData['payload'] ?? '' }}</div>
+                        <button class="btn-pay" @click="flipLayer(1, 3); processPayment()">
+                            <i class="fas fa-copy"></i> <span x-text="t('copy_code')"></span>
+                        </button>
+                    </div>
+                @else
+                    <div class="card-scene" @click="isFlipped = !isFlipped">
+                        <div class="card-inner" :class="{ 'is-flipped': isFlipped }">
+                            <div class="card-face card-front">
+                                <div class="card-chip"></div>
+                                <div class="card-number-display" x-text="formatCardNumber(cardNumber)"></div>
+                            </div>
+                            <div class="card-face card-back">
+                                <div class="card-magnetic-strip"></div>
+                                <div class="card-cvv-strip" x-text="cardCvv || '•••'"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" x-text="t('card_number')"></label>
+                        <input type="text" class="form-input" x-model="cardNumber" @input="updateCardNumber($event)" maxlength="19">
+                    </div>
+                    <button type="button" class="btn-pay" @click.prevent="flipLayer(1, 2)">
+                        <span x-text="t('subscribe')"></span> <i class="fas fa-arrow-right"></i>
+                    </button>
+                @endif
+            </div>
+
+            <div class="layer" data-step="2" x-show="step === 2" 
+                 x-transition:enter="layer-transition"
+                 x-transition:enter-start="layer-enter-start"
+                 x-transition:enter-end="layer-enter-end"
+                 x-transition:leave="layer-transition"
+                 x-transition:leave-start="layer-leave-start"
+                 x-transition:leave-end="layer-leave-end">
+                <form id="paymentForm" method="POST" action="{{ route('checkout.process', $transaction->uuid) }}">
+                    @csrf
+                    <h2 class="form-title" x-text="t('confirm_title')"></h2>
+                    <div class="form-group">
+                        <label class="form-label" x-text="t('church_name')"></label>
+                        <input type="text" name="customer_name" class="form-input" x-model="vendorName">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                        <button type="button" class="btn-secondary" style="width: auto;" @click="flipLayer(2, 1)">
+                            <i class="fas fa-arrow-left"></i> <span x-text="t('back')"></span>
+                        </button>
+                        <button type="submit" class="btn-pay" style="width: auto;" @click="processing = true">
+                            <span x-text="t('confirm_finish')"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="layer" data-step="3" x-show="step === 3" 
+                 x-transition:enter="layer-transition"
+                 x-transition:enter-start="layer-enter-start"
                  x-cloak>
                 <div class="success-icon">
                     <i class="fas fa-check"></i>
                 </div>
-                <h2 class="form-title" style="text-align: center;">Pagamento Aprovado!</h2>
-                <p class="form-subtitle" style="text-align: center;">Bem-vindo à nova era da sua igreja. Seus recursos já estão liberados.</p>
+                <h2 class="form-title" style="text-align: center;" x-text="t('success_title')"></h2>
+                <p class="form-subtitle" style="text-align: center;" x-text="t('success_subtitle')"></p>
 
                 <div style="background: #f8fafc; border-radius: 16px; padding: 20px; margin-top: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; color: #64748b;">
-                        <span>Transação</span>
+                        <span x-text="t('transaction')"></span>
                         <span style="font-weight: 700; color: #1e293b;">#{{ strtoupper(substr($transaction->uuid, 0, 8)) }}</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 13px; color: #64748b;">
-                        <span>Data</span>
+                        <span x-text="t('date')"></span>
                         <span style="font-weight: 700; color: #1e293b;">{{ date('d/m/Y H:i') }}</span>
                     </div>
                 </div>
 
                 <div class="success-btns">
                     <a href="https://dash.basileia.global/dashboard" class="btn-pay" style="margin-top: 0;">
-                        Acessar Basiléia Church <i class="fas fa-church"></i>
+                        <span x-text="t('access_dash')"></span> <i class="fas fa-church"></i>
                     </a>
                     <a :href="getWhatsappLink()" target="_blank" class="btn-secondary">
-                        <i class="fab fa-whatsapp" style="color: #25d366;"></i> Suporte no WhatsApp
+                        <i class="fab fa-whatsapp" style="color: #25d366;"></i> <span x-text="t('whatsapp_support')"></span>
                     </a>
                     <a href="#" class="btn-secondary">
-                        <i class="fas fa-play-circle" style="color: var(--primary);"></i> Vídeos de Implementação
+                        <i class="fas fa-play-circle" style="color: var(--primary);"></i> <span x-text="t('impl_videos')"></span>
                     </a>
                 </div>
             </div>
