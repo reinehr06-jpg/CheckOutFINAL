@@ -64,8 +64,8 @@
         .checkout-wrapper {
             display: flex;
             width: 100%;
-            max-width: 1100px;
-            min-height: 720px;
+            max-width: 1000px;
+            min-height: 600px;
             background: rgba(15, 10, 30, 0.4);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
@@ -84,7 +84,7 @@
         /* Left Panel - Summary */
         .summary-panel {
             flex: 1;
-            padding: 60px;
+            padding: 40px;
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--glass-border);
@@ -99,23 +99,21 @@
         }
 
         .logo-icon {
-            width: 48px;
-            height: 48px;
+            width: 36px;
+            height: 36px;
             background: white;
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
         }
 
         .logo-text {
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(to right, #fff, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #fff;
         }
 
         .badge-secure {
@@ -147,9 +145,9 @@
         }
 
         .plan-name {
-            font-size: 48px;
+            font-size: 32px;
             font-weight: 800;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         .price-box {
@@ -170,13 +168,13 @@
         }
 
         .price-val {
-            font-size: 56px;
+            font-size: 42px;
             font-weight: 800;
-            letter-spacing: -1px;
+            letter-spacing: -0.5px;
         }
 
         .price-period {
-            font-size: 16px;
+            font-size: 14px;
             color: var(--text-muted);
         }
 
@@ -223,7 +221,7 @@
         .payment-panel {
             flex: 1.1;
             background: var(--card-bg);
-            padding: 60px;
+            padding: 40px;
             color: var(--text-main);
             display: flex;
             flex-direction: column;
@@ -237,7 +235,7 @@
         }
 
         .payment-title {
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 800;
             color: #111827;
         }
@@ -296,7 +294,7 @@
 
         .card-preview {
             width: 100%;
-            height: 220px;
+            height: 190px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
