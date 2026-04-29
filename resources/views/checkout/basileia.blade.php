@@ -64,8 +64,8 @@
         .checkout-wrapper {
             display: flex;
             width: 100%;
-            max-width: 1000px;
-            min-height: 600px;
+            max-width: 900px;
+            min-height: 550px;
             background: rgba(15, 10, 30, 0.4);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
@@ -84,7 +84,7 @@
         /* Left Panel - Summary */
         .summary-panel {
             flex: 1;
-            padding: 40px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             border-right: 1px solid var(--glass-border);
@@ -99,37 +99,37 @@
         }
 
         .logo-icon {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             background: white;
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
+            box-shadow: 0 0 10px rgba(124, 58, 237, 0.15);
         }
 
         .logo-text {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.2px;
             color: #fff;
         }
 
         .badge-secure {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 16px;
+            gap: 4px;
+            padding: 4px 12px;
             background: rgba(16, 185, 129, 0.1);
             border: 1px solid rgba(16, 185, 129, 0.2);
             color: #34d399;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             border-radius: 99px;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
 
         .plan-selection {
@@ -145,9 +145,9 @@
         }
 
         .plan-name {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 800;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         .price-box {
@@ -168,13 +168,13 @@
         }
 
         .price-val {
-            font-size: 42px;
+            font-size: 32px;
             font-weight: 800;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
         }
 
         .price-period {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text-muted);
         }
 
@@ -191,8 +191,8 @@
         }
 
         .feature-check {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             background: var(--accent);
             border-radius: 50%;
             display: flex;
@@ -203,7 +203,7 @@
         }
 
         .feature-label {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 500;
             color: #d1d5db;
         }
@@ -221,7 +221,7 @@
         .payment-panel {
             flex: 1.1;
             background: var(--card-bg);
-            padding: 40px;
+            padding: 30px;
             color: var(--text-main);
             display: flex;
             flex-direction: column;
@@ -235,7 +235,7 @@
         }
 
         .payment-title {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 800;
             color: #111827;
         }
@@ -252,10 +252,10 @@
             font-family: 'JetBrains Mono', monospace;
             background: #fee2e2;
             color: #ef4444;
-            padding: 4px 12px;
-            border-radius: 8px;
+            padding: 2px 10px;
+            border-radius: 6px;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 14px;
             animation: pulse 2s infinite;
         }
 
@@ -275,12 +275,12 @@
         .custom-select {
             position: relative;
             background: #f3f4f6;
-            padding: 8px 12px;
-            border-radius: 12px;
+            padding: 6px 10px;
+            border-radius: 10px;
             border: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -294,7 +294,7 @@
 
         .card-preview {
             width: 100%;
-            height: 190px;
+            height: 170px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -354,8 +354,8 @@
 
         .card-number {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 22px;
-            letter-spacing: 4px;
+            font-size: 18px;
+            letter-spacing: 3px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
@@ -366,7 +366,7 @@
         }
 
         .info-label { font-size: 9px; font-weight: 700; opacity: 0.6; text-transform: uppercase; margin-bottom: 4px; }
-        .info-value { font-size: 14px; font-weight: 600; text-transform: uppercase; }
+        .info-value { font-size: 12px; font-weight: 600; text-transform: uppercase; }
 
         .magnetic-stripe { height: 44px; background: #111; width: 100%; margin-top: 20px; }
         .signature-area { 
@@ -411,17 +411,17 @@
             position: absolute;
             left: 14px;
             color: var(--text-muted);
-            width: 18px;
+            width: 16px;
         }
 
         .form-control {
             width: 100%;
-            height: 52px;
+            height: 44px;
             background: #f9fafb;
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 0 16px 0 44px;
-            font-size: 15px;
+            border-radius: 12px;
+            padding: 0 16px 0 40px;
+            font-size: 14px;
             font-weight: 500;
             color: var(--text-main);
             transition: all 0.3s;
@@ -441,12 +441,12 @@
         }
 
         .submit-btn {
-            height: 56px;
+            height: 48px;
             background: linear-gradient(to right, var(--primary), #a855f7);
             color: white;
             border: none;
-            border-radius: 16px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 15px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
@@ -454,8 +454,8 @@
             justify-content: center;
             gap: 10px;
             transition: all 0.3s;
-            box-shadow: 0 10px 20px -5px rgba(124, 58, 237, 0.4);
-            margin-top: 10px;
+            box-shadow: 0 8px 15px -5px rgba(124, 58, 237, 0.4);
+            margin-top: 5px;
         }
 
         .submit-btn:hover {
