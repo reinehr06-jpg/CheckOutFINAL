@@ -156,7 +156,7 @@ class BasileiaCheckoutController extends Controller
 
             $this->webhookNotifier->notify($transaction);
 
-            return redirect()->route('basileia.checkout.success', $transaction->uuid);
+            return redirect()->route('checkout.success', $transaction->uuid);
 
         } catch (\Exception $e) {
             Log::error('BasileiaCheckout: Payment processing failed', [
