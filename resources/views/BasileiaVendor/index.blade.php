@@ -449,7 +449,10 @@
                         secure_checkout: 'Checkout 100% Seguro',
                         instant_pay_badge: 'Pagamento Instantâneo',
                         copy_pix: 'Copiar Código Pix',
-                        pix_auto: 'Após o pagamento, a confirmação é automática.'
+                        pix_auto: 'Após o pagamento, a confirmação é automática.',
+                        holder_placeholder: 'Nome no Cartão',
+                        expiry_placeholder: 'MM/AA',
+                        church_placeholder: 'Ex: Igreja Central'
                     },
                     'es-ES': {
                         expires_in: 'EXPIRA EN',
@@ -503,7 +506,10 @@
                         secure_checkout: 'Checkout 100% Seguro',
                         instant_pay_badge: 'Pago Instantáneo',
                         copy_pix: 'Copiar Código Pix',
-                        pix_auto: 'Después del pago, la confirmación es automática.'
+                        pix_auto: 'Después del pago, la confirmación es automática.',
+                        holder_placeholder: 'Nombre en la Tarjeta',
+                        expiry_placeholder: 'MM/AA',
+                        church_placeholder: 'Ej: Iglesia Central'
                     },
                     'en-US': {
                         expires_in: 'EXPIRES IN',
@@ -557,7 +563,10 @@
                         secure_checkout: '100% Secure Checkout',
                         instant_pay_badge: 'Instant Payment',
                         copy_pix: 'Copy Pix Code',
-                        pix_auto: 'After payment, confirmation is automatic.'
+                        pix_auto: 'After payment, confirmation is automatic.',
+                        holder_placeholder: 'Cardholder Name',
+                        expiry_placeholder: 'MM/YY',
+                        church_placeholder: 'Ex: Central Church'
                     },
                     'zh-CN': {
                         expires_in: '到期时间',
@@ -611,7 +620,67 @@
                         secure_checkout: '100% 安全结账',
                         instant_pay_badge: '即时支付',
                         copy_pix: '复制代码',
-                        pix_auto: '付款后自动确认'
+                        pix_auto: '付款后自动确认',
+                        holder_placeholder: '持卡人姓名',
+                        expiry_placeholder: '月/年',
+                        church_placeholder: '例如：中央教会'
+                    },
+                    'ja-JP': {
+                        expires_in: '残り時間',
+                        hide_summary: '詳細を隠す',
+                        view_summary: '詳細を見る',
+                        selected_plan: '選択されたプラン',
+                        per_month: '/ 月',
+                        ai_whatsapp: 'WhatsApp経由のAI',
+                        cell_mgmt: 'セル管理',
+                        lgpd: 'GDPR/LGPD準拠',
+                        support: 'ヒューマンサポート',
+                        multiple_churches: '複数の教会',
+                        deployment: '迅速な導入',
+                        guarantee: '完全保証',
+                        guarantee_7: '7日間保証',
+                        secure_payment: '安全な決済',
+                        rights: '全著作権所有',
+                        expired_title: 'リンクが無効になりました',
+                        expired_text: '一定時間の操作がなかったため、このオファーは終了しました...',
+                        payment_details: 'お支払い詳細',
+                        instant_payment: '即時決済',
+                        total_value: '合計金額',
+                        pix_code: 'PIXコード',
+                        copy_code: 'コードをコピー',
+                        auto_confirm: '数秒で自動確認',
+                        titular: '名義人',
+                        validity: '有効期限',
+                        signature: '署名',
+                        value: '金額',
+                        card_number: 'カード番号',
+                        expiry: '有効期限',
+                        cvv: 'CVV',
+                        holder_name: 'カード名義人',
+                        subscribe: '今すぐ購読',
+                        confirm_title: '情報の確認',
+                        confirm_subtitle: 'あと少しです！情報の確認をお願いします。',
+                        church_name: '教会/施設名',
+                        contact_email: '連絡先メールアドレス',
+                        document: '身分証明書 (Tax ID)',
+                        validating: '情報の確認中に決済の検証を行っています。',
+                        confirm_finish: '確認して完了',
+                        processing: '処理中...',
+                        back: '戻る',
+                        success_title: '決済完了！',
+                        success_subtitle: '新しい時代へようこそ。リソースが解放されました。',
+                        transaction: '取引番号',
+                        date: '日付',
+                        access_dash: 'ダッシュボードへ',
+                        whatsapp_support: 'WhatsAppサポート',
+                        impl_videos: '導入ビデオ',
+                        secure_checkout: '100%安全なチェックアウト',
+                        instant_pay_badge: '即時決済',
+                        copy_pix: 'コードをコピー',
+                        pix_auto: '支払い後、自動的に確認されます',
+                        holder_placeholder: 'カードに記載されている名前',
+                        expiry_placeholder: '月/年',
+                        church_placeholder: '例：中央教会'
                     }
                 },
 
@@ -703,6 +772,7 @@
                         else if (['ES','MX','AR','CO','CL','PE','VE','EC','BO','PY','UY',
                                    'CR','GT','HN','SV','NI','PA','DO','CU'].includes(c.code)) this.locale = 'es-ES';
                         else if (c.code === 'CN') this.locale = 'zh-CN';
+                        else if (c.code === 'JP') this.locale = 'ja-JP';
                         else this.locale = 'en-US';
                     }
                     
@@ -836,8 +906,8 @@
         </div>
 
         <div class="order-summary" :class="{ 'mobile-open': mobileSummaryOpen }">
-            <div class="brand-logo" style="margin-bottom: 20px;">
-                <svg width="160" height="44" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="brand-logo" style="margin-bottom: 20px; display: block; width: 160px; height: 44px;">
+                <svg width="160" height="44" viewBox="0 0 160 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
                     <rect width="160" height="44" rx="12" fill="#7C3AED"/>
                     <rect x="6" y="6" width="32" height="32" rx="8" fill="white" fill-opacity="0.2"/>
                     <path d="M22.5 14H18.5V30H22.5C23.6046 30 24.5 29.1046 24.5 28C24.5 26.8954 23.6046 26 22.5 26H18.5M22.5 26C23.6046 26 24.5 25.1046 24.5 24C24.5 22.8954 23.6046 22 22.5 22M22.5 22H18.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -922,6 +992,7 @@
                                 <div class="custom-select-option" @click="changeLanguage('pt-BR')">PT</div>
                                 <div class="custom-select-option" @click="changeLanguage('es-ES')">ES</div>
                                 <div class="custom-select-option" @click="changeLanguage('en-US')">EN</div>
+                                <div class="custom-select-option" @click="changeLanguage('ja-JP')">JP</div>
                                 <div class="custom-select-option" @click="changeLanguage('zh-CN')">CN</div>
                             </div>
                         </div>
@@ -972,7 +1043,7 @@
                     <h2 class="form-title" x-text="t('confirm_title')"></h2>
                     <div class="form-group">
                         <label class="form-label" x-text="t('church_name')"></label>
-                        <input type="text" name="customer_name" class="form-input" x-model="vendorName">
+                        <input type="text" name="customer_name" class="form-input" x-model="vendorName" :placeholder="t('church_placeholder')">
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
                         <button type="button" class="btn-secondary" style="width: auto;" @click="flipLayer(2, 1)">
