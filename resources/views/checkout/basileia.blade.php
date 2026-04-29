@@ -72,7 +72,7 @@
             border-radius: 32px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             margin: 20px;
-            overflow: hidden;
+            overflow: visible;
             animation: fadeIn 0.8s ease-out;
         }
 
@@ -218,13 +218,46 @@
         }
 
         /* Right Panel - Payment */
-        .payment-panel {
+        .payment-panel-container {
             flex: 1.1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .payment-layer {
+            position: absolute;
+            top: 5px;
+            right: -8px;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 32px;
+            z-index: -1;
+            transform: rotate(1.5deg);
+        }
+
+        .payment-layer-2 {
+            position: absolute;
+            top: 12px;
+            right: -15px;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 32px;
+            z-index: -2;
+            transform: rotate(3deg);
+        }
+
+        .payment-panel {
+            height: 100%;
             background: var(--card-bg);
             padding: 30px;
             color: var(--text-main);
             display: flex;
             flex-direction: column;
+            border-radius: 0 32px 32px 0;
+            position: relative;
+            z-index: 10;
         }
 
         .payment-header {
@@ -557,7 +590,10 @@
         </section>
 
         <!-- Right Panel: Payment Details -->
-        <section class="payment-panel">
+        <section class="payment-panel-container">
+            <div class="payment-layer"></div>
+            <div class="payment-layer-2"></div>
+            <div class="payment-panel">
             <div class="payment-header">
                 <h2 class="payment-title" x-text="t('payment_details')">Detalhes do Pagamento</h2>
                 <div class="timer-box">
@@ -716,8 +752,15 @@
                 
                 countries: [
                     { code: 'BR', flag: '🇧🇷', name: 'Brasil', lang: 'pt', currency: 'BRL', symbol: 'R$' },
+                    { code: 'US', flag: '🇺🇸', name: 'USA', lang: 'en', currency: 'USD', symbol: '$' },
                     { code: 'JP', flag: '🇯🇵', name: 'Japan', lang: 'ja', currency: 'JPY', symbol: '¥' },
-                    { code: 'US', flag: '🇺🇸', name: 'USA', lang: 'en', currency: 'USD', symbol: '$' }
+                    { code: 'ES', flag: '🇪🇸', name: 'España', lang: 'es', currency: 'EUR', symbol: '€' },
+                    { code: 'PT', flag: '🇵🇹', name: 'Portugal', lang: 'pt', currency: 'EUR', symbol: '€' },
+                    { code: 'DE', flag: '🇩🇪', name: 'Deutschland', lang: 'de', currency: 'EUR', symbol: '€' },
+                    { code: 'FR', flag: '🇫🇷', name: 'France', lang: 'fr', currency: 'EUR', symbol: '€' },
+                    { code: 'IT', flag: '🇮🇹', name: 'Italia', lang: 'it', currency: 'EUR', symbol: '€' },
+                    { code: 'CN', flag: '🇨🇳', name: 'China', lang: 'zh', currency: 'CNY', symbol: '¥' },
+                    { code: 'TR', flag: '🇹🇷', name: 'Türkiye', lang: 'tr', currency: 'TRY', symbol: '₺' }
                 ],
 
                 get currentCountry() {
@@ -784,8 +827,9 @@
 
                 getBrandLogo() {
                     const num = this.cardNumber.replace(/\s/g, '');
-                    if (num.startsWith('4')) return '<span style="font-weight:900;font-style:italic">VISA</span>';
-                    if (num.match(/^5[1-5]/)) return '<span style="font-weight:900">mastercard</span>';
+                    if (num.startsWith('4')) return '<span style="font-weight:900;font-style:italic;color:#fff;font-size:18px;">VISA</span>';
+                    if (num.match(/^5[1-5]/)) return '<span style="font-weight:900;color:#fff;font-size:16px;">mastercard</span>';
+                    if (num.startsWith('34') || num.startsWith('37')) return '<span style="font-weight:900;color:#fff;font-size:16px;">AMEX</span>';
                     return '<i data-lucide="credit-card"></i>';
                 }
             }
