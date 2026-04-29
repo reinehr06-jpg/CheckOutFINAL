@@ -296,7 +296,7 @@
         .custom-select-option:hover { background: #f1f5f9; }
 
         /* EXPIRED OVERLAY */
-        .expired-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 1000; border-radius: 20px; display: flex; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+        .expired-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 1000; border-radius: 20px; display: flex; align-items: center; justify-content: center; padding: 30px; text-align: center; color: #1e1b4b; }
         .expired-box i { font-size: 40px; color: #dc2626; margin-bottom: 15px; }
 
         @media (max-width: 900px) {

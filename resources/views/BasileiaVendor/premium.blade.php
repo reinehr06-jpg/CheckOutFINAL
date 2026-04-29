@@ -261,7 +261,7 @@
         .btn-pay:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(124, 58, 237, 0.4); }
         .btn-pay:active { transform: translateY(0); }
 
-        .expired-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30, 41, 59, 0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; border-radius: 20px; color: white; text-align: center; }
+        .expired-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; border-radius: 24px; color: #1e1b4b; text-align: center; }
         .expired-box { padding: 40px; }
         .expired-box i { font-size: 48px; color: #ef4444; margin-bottom: 20px; }
         .expired-box h3 { font-size: 24px; margin-bottom: 10px; }
