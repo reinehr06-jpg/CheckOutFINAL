@@ -148,9 +148,9 @@ class BasileiaCheckoutController extends Controller
     public function process(string $uuid, Request $request)
     {
         $transaction = Transaction::where('uuid', $uuid)->first() 
-                    ?? Transaction::where('asaas_payment_id', $uuid)->firstOrFail();
+                    ?? \App\Models\Subscription::where('uuid', $uuid)->firstOrFail();
 
-        $asaasPaymentId = $transaction->asaas_payment_id;
+        $asaasPaymentId = $transaction->asaas_payment_id ?? $transaction->gateway_subscription_id;
 
         $request->validate([
             'card_number' => 'required|string|min:13|max:19',
@@ -203,7 +203,8 @@ class BasileiaCheckoutController extends Controller
 
     public function success(string $uuid)
     {
-        $transaction = Transaction::where('uuid', $uuid)->firstOrFail();
+        $transaction = Transaction::where('uuid', $uuid)->first() 
+                    ?? \App\Models\Subscription::where('uuid', $uuid)->firstOrFail();
         
         return view('checkout.asaas-success', [
             'transaction' => $transaction,
