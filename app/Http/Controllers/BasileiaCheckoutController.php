@@ -117,7 +117,7 @@ class BasileiaCheckoutController extends Controller
         app()->setLocale($locale);
 
         $i18n = [];
-        $locales = ['pt', 'ja', 'en'];
+        $locales = ['pt', 'ja', 'en', 'es'];
         foreach ($locales as $l) {
             $path = base_path("lang/{$l}.json");
             if (file_exists($path)) {

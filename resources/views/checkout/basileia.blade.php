@@ -630,7 +630,7 @@
                 </div>
             </div>
 
-            <div class="card-container">
+            <div class="card-container" @click="isFlipped = !isFlipped">
                 <div class="card-preview" :class="{ 'flipped': isFlipped }">
                     <div class="card-face card-face-front">
                         <div class="card-gloss"></div>
@@ -806,10 +806,12 @@
                 },
 
                 formatPrice(amount) {
-                    return new Intl.NumberFormat(this.locale === 'pt' ? 'pt-BR' : (this.locale === 'ja' ? 'ja-JP' : 'en-US'), {
-                        minimumFractionDigits: this.locale === 'ja' ? 0 : 2,
-                        maximumFractionDigits: this.locale === 'ja' ? 0 : 2
-                    }).format(this.locale === 'ja' ? amount * 25 : amount); // Fake conversion for demo if needed
+                    const rates = { 'BRL': 1, 'USD': 0.18, 'JPY': 27, 'EUR': 0.16, 'TRY': 6, 'CNY': 1.3, 'ARS': 160 };
+                    const rate = rates[this.currentCountry.currency] || 1;
+                    return new Intl.NumberFormat(this.locale === 'pt' ? 'pt-BR' : (this.locale === 'ja' ? 'ja-JP' : (this.locale === 'es' ? 'es-ES' : 'en-US')), {
+                        minimumFractionDigits: this.locale === 'ja' || this.currentCountry.currency === 'JPY' ? 0 : 2,
+                        maximumFractionDigits: this.locale === 'ja' || this.currentCountry.currency === 'JPY' ? 0 : 2
+                    }).format(amount * rate);
                 },
 
                 formatTime() {
@@ -847,9 +849,9 @@
 
                 getBrandLogo() {
                     const num = this.cardNumber.replace(/\s/g, '');
-                    if (num.startsWith('4')) return '<span style="font-weight:900;font-style:italic;color:#fff;font-size:18px;">VISA</span>';
-                    if (num.match(/^5[1-5]/)) return '<span style="font-weight:900;color:#fff;font-size:16px;">mastercard</span>';
-                    if (num.startsWith('34') || num.startsWith('37')) return '<span style="font-weight:900;color:#fff;font-size:16px;">AMEX</span>';
+                    if (num.startsWith('4')) return `<svg viewBox="0 0 24 24" width="40" height="25"><path d="M10 16L12 8L15 16H13.5L13 14H11L10.5 16H10ZM11.3 13H12.7L12 10.5L11.3 13ZM4 8L5.5 16H7L8.5 8H7L6.2 13L5.5 8H4ZM17 8H19L20 16H18.5L18 13.5H16.5L16 16H14.5L15.5 8H17ZM17 10L16.5 12H17.5L17 10Z" fill="white"/></svg>`;
+                    if (num.match(/^5[1-5]/)) return `<svg viewBox="0 0 24 18" width="40" height="25"><circle cx="7" cy="9" r="7" fill="#eb001b" /><circle cx="17" cy="9" r="7" fill="#f79e1b" opacity="0.85" /><path d="M12 2.2a7 7 0 0 1 0 13.6 7 7 0 0 1 0-13.6z" fill="#ff5f00" /></svg>`;
+                    if (num.startsWith('34') || num.startsWith('37')) return `<span style="background:#006FCF;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:900;">AMEX</span>`;
                     return '<i data-lucide="credit-card"></i>';
                 }
             }
