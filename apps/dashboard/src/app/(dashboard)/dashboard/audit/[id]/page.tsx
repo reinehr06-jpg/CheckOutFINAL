@@ -17,7 +17,7 @@ import {
   FileCode,
   Link as LinkIcon
 } from 'lucide-react';
-import { AuditEvent, AuditLevel } from '@/types/audit';
+import { AuditEvent } from '@/types/audit';
 import { MOCK_AUDIT_EVENTS } from '../__mocks__/audit';
 import { cn } from '@/lib/utils';
 
@@ -51,18 +51,25 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const getLevelBadge = (level: AuditLevel) => {
+  const getLevelBadge = (level: string) => {
     switch (level) {
+      case 'Crítico':
       case 'critical':
         return { label: 'Crítico', bg: 'bg-red-50 text-red-700 border-red-200' };
+      case 'Alteração':
       case 'alteration':
-        return { label: 'Alteração', bg: 'bg-amber-50 text-amber-700 border-amber-200' };
+        return { label: 'Alteração', bg: 'bg-violet-50 text-violet-750 border-violet-200' };
+      case 'Informativo':
       case 'informative':
         return { label: 'Informativo', bg: 'bg-blue-50 text-blue-700 border-blue-200' };
+      case 'Acesso':
       case 'access':
         return { label: 'Acesso', bg: 'bg-green-50 text-green-700 border-green-200' };
+      case 'Exclusão':
       case 'deletion':
         return { label: 'Exclusão', bg: 'bg-orange-50 text-orange-700 border-orange-200' };
+      default:
+        return { label: level, bg: 'bg-slate-100 text-slate-700 border-slate-200' };
     }
   };
 
@@ -110,7 +117,7 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-[18px] 2xl:text-[20px] font-black tracking-tight text-slate-950">
-              {event.event}
+              {event.title}
             </h1>
             <span className={cn("px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase border shrink-0", levelBadge.bg)}>
               {levelBadge.label}
@@ -140,7 +147,7 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
           </button>
           <button 
             onClick={() => { const inc = 'INC-' + Math.floor(1000 + Math.random() * 9000); setIncidentId(inc); triggerAlert(`Incidente ${inc} aberto.`); }}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-750 rounded-xl text-[10px] font-black shadow-sm transition-all h-[34px] uppercase"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-755 rounded-xl text-[10px] font-black shadow-sm transition-all h-[34px] uppercase"
           >
             {incidentId ? `Incidente Ativo: ${incidentId}` : 'Abrir incidente'}
           </button>
@@ -161,14 +168,14 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs font-semibold text-slate-500">
               {[
                 { label: 'ID do Evento', value: event.id, mono: true },
-                { label: 'Data e Hora', value: new Date(event.timestamp).toLocaleString('pt-BR') },
+                { label: 'Data e Hora', value: `${event.date} ${event.time}` },
                 { label: 'Ambiente', value: event.environment, uppercase: true },
-                { label: 'Usuário Operador', value: event.user.name },
-                { label: 'Cargo do Usuário', value: event.user.role },
+                { label: 'Usuário Operador', value: event.user },
+                { label: 'Cargo do Usuário', value: event.role },
                 { label: 'Sistema Utilizado', value: event.system },
                 { label: 'IP de Origem', value: event.ip, mono: true },
-                { label: 'Resultado', value: event.result === 'success' ? 'Sucesso' : (event.result === 'blocked' ? 'Bloqueado' : 'Falha') },
-                { label: 'Entidade Afetada', value: event.entityType }
+                { label: 'Resultado', value: event.level === 'Crítico' ? 'Bloqueado' : 'Sucesso' },
+                { label: 'Entidade Afetada', value: event.entityType || 'Configuração' }
               ].map((item) => (
                 <div key={item.label} className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/60">
                   <span className="text-[8.5px] text-slate-400 uppercase block font-black leading-none mb-1">{item.label}</span>
@@ -196,7 +203,7 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Geolocalização</span>
-                <span className="text-slate-850 font-bold block">{event.ipLocation || 'São Paulo, Brasil'}</span>
+                <span className="text-slate-850 font-bold block">{event.location || 'São Paulo, Brasil'}</span>
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Hash da Sessão (2FA Validado)</span>
@@ -224,7 +231,7 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
               </button>
             </div>
             <pre className="bg-slate-950 text-green-400 font-mono text-[10.5px] p-3.5 rounded-xl overflow-x-auto no-scrollbar max-h-[300px]">
-              {JSON.stringify(event.metadata || { event: event.event, timestamp: event.timestamp }, null, 2)}
+              {JSON.stringify(event.metadata || { event: event.title, timestamp: event.date + ' ' + event.time }, null, 2)}
             </pre>
           </div>
 
@@ -241,9 +248,9 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
             <div className="space-y-4 relative pl-3 font-semibold text-xs text-slate-655">
               <div className="absolute left-[18.5px] top-2 bottom-2 w-0.5 bg-slate-100" />
               {[
-                { label: 'Origem', val: `Usuário ${event.user.name} acessa dashboard` },
-                { label: 'Ação executora', val: event.event },
-                { label: 'Entidade impactada', val: `${event.entityType}: ${event.entityId || 'N/A'}` }
+                { label: 'Origem', val: `Usuário ${event.user} acessa dashboard` },
+                { label: 'Ação executora', val: event.title },
+                { label: 'Entidade impactada', val: `${event.entityType || 'Configuração'}: ${event.entityId || 'N/A'}` }
               ].map((step, idx) => (
                 <div key={idx} className="flex gap-3 items-start relative z-10">
                   <div className="w-4 h-4 rounded-full bg-brand text-white flex items-center justify-center shrink-0 text-[8px] font-black">
@@ -271,7 +278,7 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
                   className="p-2 border border-slate-100 hover:border-brand/35 bg-slate-50/50 hover:bg-brand-soft/20 rounded-xl flex items-center justify-between gap-1 transition-all block cursor-pointer"
                 >
                   <div className="min-w-0">
-                    <span className="text-slate-850 font-bold block truncate">{rel.event}</span>
+                    <span className="text-slate-850 font-bold block truncate">{rel.title}</span>
                     <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">{rel.id}</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />

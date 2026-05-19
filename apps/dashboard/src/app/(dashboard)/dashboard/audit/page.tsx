@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { 
   Terminal, 
   Search, 
-  SlidersHorizontal, 
-  Calendar, 
   X, 
   Copy, 
   Check, 
-  ExternalLink, 
   HelpCircle, 
   Bookmark, 
   Download, 
@@ -19,45 +15,39 @@ import {
   ShieldAlert, 
   PenLine, 
   Info, 
-  LogIn, 
-  Trash2, 
-  ChevronRight, 
-  AlertTriangle,
-  Play,
-  Pause,
-  ChevronDown,
+  ChevronDown, 
   RefreshCw,
   Activity,
   Zap,
   Repeat
 } from 'lucide-react';
-import { AuditEvent, AuditLevel, AuditResult, AuditEntityType } from '@/types/audit';
-import { MOCK_AUDIT_EVENTS, MOCK_SUMMARY } from './__mocks__/audit';
+import { AuditEvent } from '@/types/audit';
+import { MOCK_AUDIT_EVENTS } from './__mocks__/audit';
 import { cn } from '@/lib/utils';
 
 export default function AuditPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<AuditEvent[]>(MOCK_AUDIT_EVENTS);
-  const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(MOCK_AUDIT_EVENTS[0]);
+  const [selectedEvent, setSelectedEvent] = useState<AuditEvent>(MOCK_AUDIT_EVENTS[0]);
   
   // Realtime Polling state
   const [realtimeActive, setRealtimeActive] = useState(true);
   
   // Filters State (Row 1)
-  const [period, setPeriod] = useState('hoje');
+  const [period, setPeriod] = useState('Hoje');
   const [filterUser, setFilterUser] = useState('Todos');
   const [filterSystem, setFilterSystem] = useState('Todos');
   const [filterEventType, setFilterEventType] = useState('Todos');
-  const [filterLevel, setFilterLevel] = useState<string>('Todos');
+  const [filterLevel, setFilterLevel] = useState('Todos');
   
   // Filters State (Row 2)
-  const [filterEntity, setFilterEntity] = useState<string>('Todos');
+  const [filterEntity, setFilterEntity] = useState('Todos');
   const [filterEntityId, setFilterEntityId] = useState('');
   const [filterAction, setFilterAction] = useState('Todos');
   const [filterIp, setFilterIp] = useState('');
   const [filterResult, setFilterResult] = useState('Todos');
-
+  
   // Search input
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -76,54 +66,7 @@ export default function AuditPage() {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Simulate real-time logs ingestion if active and no drawer/panel open
-    const timer = setInterval(() => {
-      if (!realtimeActive || selectedEvent) return;
-
-      const randomUsers = [
-        { name: "Vinícius Admin", role: "Administrador" },
-        { name: "Mariana Santos", role: "Operador" },
-        { name: "Rafael Oliveira", role: "Dev" },
-        { name: "Sistema", role: "Webhook" }
-      ];
-      const randomSystems = ["Basileia Pay", "Mercado Pago", "Pagar.me"];
-      const randomEvents = [
-        { name: "Login realizado", cat: "ACESSO", lvl: "informative" as const, desc: "Login realizado via IP corporativo" },
-        { name: "Configuração alterada", cat: "CONFIGURAÇÃO", lvl: "alteration" as const, desc: "Antifraude recalibrado para tolerância média" },
-        { name: "Filtro de IP adicionado", cat: "SEGURANÇA", lvl: "critical" as const, desc: "Regra crítica de bloqueio de IP ativada" }
-      ];
-
-      const rUser = randomUsers[Math.floor(Math.random() * randomUsers.length)];
-      const rSys = randomSystems[Math.floor(Math.random() * randomSystems.length)];
-      const rEvt = randomEvents[Math.floor(Math.random() * randomEvents.length)];
-
-      const newEvent: AuditEvent = {
-        id: `evt_live_${Math.floor(Math.random() * 900000)}`,
-        timestamp: new Date().toISOString(),
-        event: rEvt.name,
-        category: rEvt.cat,
-        level: rEvt.lvl,
-        details: `${rEvt.desc} • Operado por ${rUser.name}`,
-        user: { name: rUser.name, role: rUser.role },
-        system: rSys,
-        environment: "production",
-        ip: `177.12.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-        ipLocation: "São Paulo, BR",
-        result: "success",
-        entityType: "Configuração",
-        entityId: "cfg_antifraud_rules",
-        metadata: {
-          simulated: true,
-          latency: "44ms"
-        }
-      };
-
-      setEvents(prev => [newEvent, ...prev]);
-    }, 12000);
-
-    return () => clearInterval(timer);
-  }, [realtimeActive, selectedEvent]);
+  }, []);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -147,12 +90,12 @@ export default function AuditPage() {
     triggerToast(`Incidente ${incId} criado e associado ao evento.`);
   };
 
-  const getEventTheme = (level: AuditLevel, category: string) => {
-    if (level === 'critical' || category === 'SEGURANÇA') {
+  const getEventTheme = (level: string, category: string) => {
+    if (level === 'Crítico' || category === 'SEGURANÇA') {
       return { 
         icon: ShieldAlert, 
         bgClass: 'bg-red-50 text-red-650 border-red-200', 
-        dotClass: 'bg-red-600', 
+        dotClass: 'bg-red-500', 
         badgeClass: 'bg-red-50 text-red-700 border-red-200' 
       };
     }
@@ -175,68 +118,52 @@ export default function AuditPage() {
     if (category === 'ASSINATURA') {
       return { 
         icon: Repeat, 
-        bgClass: 'bg-orange-50 text-orange-600 border-orange-200', 
+        bgClass: 'bg-orange-50 text-orange-650 border-orange-255', 
         dotClass: 'bg-orange-600', 
         badgeClass: 'bg-orange-50 text-orange-700 border-orange-200' 
       };
     }
-    if (level === 'alteration') {
+    if (level === 'Alteração') {
       return { 
         icon: PenLine, 
-        bgClass: 'bg-purple-50 text-brand border-purple-200', 
-        dotClass: 'bg-brand', 
-        badgeClass: 'bg-purple-50 text-brand border-purple-200' 
+        bgClass: 'bg-violet-50 text-violet-600 border-violet-200', 
+        dotClass: 'bg-violet-500', 
+        badgeClass: 'bg-violet-50 text-violet-700 border-violet-200' 
       };
     }
     return { 
       icon: Info, 
       bgClass: 'bg-slate-50 text-slate-500 border-slate-200', 
-      dotClass: 'bg-slate-500', 
-      badgeClass: 'bg-slate-50 text-slate-700 border-slate-200' 
+      dotClass: 'bg-blue-500', 
+      badgeClass: 'bg-slate-100 text-slate-600 border-slate-200' 
     };
   };
 
-  const getLevelBadge = (level: AuditLevel) => {
-    switch (level) {
-      case 'critical':
-        return { label: 'Crítico', bg: 'bg-red-50 text-red-700 border-red-200' };
-      case 'alteration':
-        return { label: 'Alteração', bg: 'bg-purple-50 text-brand border-purple-200' };
-      case 'informative':
-        return { label: 'Info', bg: 'bg-blue-50 text-blue-750 border-blue-200' };
-      case 'access':
-        return { label: 'Acesso', bg: 'bg-green-50 text-green-750 border-green-200' };
-      case 'deletion':
-        return { label: 'Exclusão', bg: 'bg-orange-50 text-orange-700 border-orange-200' };
-    }
-  };
-
-  // Filter application
   const getFilteredEvents = () => {
     return events.filter(evt => {
       // Search Box
-      const matchesSearch = evt.event.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesSearch = evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             evt.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (evt.entityId && evt.entityId.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                            evt.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            evt.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             evt.system.toLowerCase().includes(searchQuery.toLowerCase());
 
       // Tab selector
       let matchesTab = true;
-      if (activeTab === 'critical') matchesTab = evt.level === 'critical';
-      else if (activeTab === 'alteration') matchesTab = evt.level === 'alteration';
-      else if (activeTab === 'access') matchesTab = evt.level === 'access' || evt.category === 'ACESSO';
-      else if (activeTab === 'deletion') matchesTab = evt.level === 'deletion' || evt.category === 'EXCLUSÃO';
+      if (activeTab === 'critical') matchesTab = evt.level === 'Crítico';
+      else if (activeTab === 'alteration') matchesTab = evt.level === 'Alteração';
+      else if (activeTab === 'access') matchesTab = evt.level === 'Acesso' || evt.category === 'ACESSO';
+      else if (activeTab === 'deletion') matchesTab = evt.level === 'Exclusão' || evt.category === 'EXCLUSÃO';
 
       // Filters
-      const matchesUser = filterUser === 'Todos' ? true : evt.user.name === filterUser;
+      const matchesUser = filterUser === 'Todos' ? true : evt.user === filterUser;
       const matchesSystem = filterSystem === 'Todos' ? true : evt.system === filterSystem;
-      const matchesLevel = filterLevel === 'Todos' ? true : evt.level === filterLevel.toLowerCase();
-      const matchesEventType = filterEventType === 'Todos' ? true : evt.event === filterEventType;
+      const matchesLevel = filterLevel === 'Todos' ? true : evt.level === filterLevel;
+      const matchesEventType = filterEventType === 'Todos' ? true : evt.title === filterEventType;
       const matchesEntity = filterEntity === 'Todos' ? true : evt.entityType === filterEntity;
       const matchesEntityId = filterEntityId === '' ? true : evt.entityId?.toLowerCase().includes(filterEntityId.toLowerCase());
       const matchesIp = filterIp === '' ? true : evt.ip.includes(filterIp);
-      const matchesResult = filterResult === 'Todos' ? true : evt.result === filterResult.toLowerCase();
+      const matchesResult = filterResult === 'Todos' ? true : (filterResult.toLowerCase() === 'success' ? true : false); // simple match
 
       return matchesSearch && matchesTab && matchesUser && matchesSystem && matchesLevel && matchesEventType && matchesEntity && matchesEntityId && matchesIp && matchesResult;
     });
@@ -245,10 +172,42 @@ export default function AuditPage() {
   const filteredEvents = getFilteredEvents();
   const paginatedEvents = filteredEvents.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
+  // Pre-select first item when list changes or filter updates
+  useEffect(() => {
+    if (paginatedEvents.length > 0) {
+      setSelectedEvent(paginatedEvents[0]);
+    }
+  }, [filterUser, filterSystem, filterLevel, filterEventType, filterEntity, filterEntityId, filterIp, searchQuery, activeTab]);
+
+  const hasActiveFilters = 
+    filterUser !== 'Todos' || 
+    filterSystem !== 'Todos' || 
+    filterLevel !== 'Todos' || 
+    filterEventType !== 'Todos' || 
+    filterEntity !== 'Todos' || 
+    filterEntityId !== '' || 
+    filterIp !== '' || 
+    filterResult !== 'Todos' || 
+    searchQuery !== '';
+
+  const handleClearFilters = () => {
+    setFilterUser('Todos');
+    setFilterSystem('Todos');
+    setFilterLevel('Todos');
+    setFilterEventType('Todos');
+    setFilterEntity('Todos');
+    setFilterEntityId('');
+    setFilterIp('');
+    setFilterResult('Todos');
+    setSearchQuery('');
+  };
+
+  if (!mounted) return null;
+
   return (
-    <div className="w-full text-left pt-1 pb-10 bg-[#F7F7FA] min-h-screen select-none font-sans">
+    <div className="w-full text-left space-y-5 select-none font-sans">
       
-      {/* Toast Alert popup banner */}
+      {/* Toast popup */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-55 bg-brand text-white p-3.5 rounded-2xl shadow-xl border border-brand/50 flex items-center justify-between gap-3 max-w-sm animate-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-2">
@@ -261,749 +220,754 @@ export default function AuditPage() {
         </div>
       )}
 
-      <div className="max-w-[1600px] mx-auto px-4 lg:px-6">
-        
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E7E5EF] pb-4 mb-4 shrink-0">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <Terminal className="w-5 h-5 text-brand" />
-              <h1 className="text-[18px] 2xl:text-[20px] font-black tracking-tight text-slate-950">Auditoria</h1>
-              
-              <div className="group relative cursor-pointer">
-                <HelpCircle className="w-4 h-4 text-slate-400 hover:text-slate-655" />
-                <div className="absolute left-0 bottom-6 hidden group-hover:block bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-lg w-[260px] z-50 leading-relaxed font-semibold">
-                  🛡️ **Imutabilidade total:** todos os logs de auditoria da Basileia Pay são somente-leitura. Nenhum dado pode ser editado, excluído ou alterado por qualquer usuário.
-                </div>
+      {/* Header section (Section 3) */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[30px] font-black tracking-[-0.04em] text-slate-950">
+              Auditoria
+            </h1>
+            <div className="group relative cursor-pointer">
+              <HelpCircle className="h-5 w-5 text-slate-400 hover:text-slate-500" />
+              <div className="absolute left-0 bottom-6 hidden group-hover:block bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-lg w-[260px] z-50 leading-relaxed font-semibold">
+                🛡️ **Imutabilidade total:** todos os logs de auditoria da Basileia Pay são somente-leitura. Nenhum dado pode ser editado, excluído ou alterado.
               </div>
             </div>
-            <p className="text-slate-400 font-semibold text-[10.5px] 2xl:text-[11px] tracking-tight">
-              Central forense de eventos do sistema com rastreabilidade completa.
-            </p>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button 
-              onClick={() => triggerToast('Filtros salvos como busca rápida.')}
-              className="flex items-center justify-center gap-1 px-2.5 py-1 bg-white border border-[#E7E5EF] hover:bg-brand-soft rounded-xl text-[10px] font-black text-slate-700 shadow-sm transition-all h-[28px]"
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            Central forense de eventos do sistema com rastreabilidade completa.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => triggerToast('Filtros salvos como busca rápida.')}
+            className="flex h-10 items-center justify-center gap-1.5 px-4 bg-white border border-[#E8DDFD] hover:bg-slate-50 rounded-xl text-xs font-black text-slate-700 shadow-sm transition-all"
+          >
+            <Bookmark className="w-3.5 h-3.5 text-slate-400" />
+            Salvar busca
+          </button>
+          <button 
+            onClick={() => triggerToast('Exportando logs para planilha...')}
+            className="flex h-10 items-center justify-center gap-1.5 px-4 bg-white border border-[#E8DDFD] hover:bg-slate-50 rounded-xl text-xs font-black text-slate-700 shadow-sm transition-all"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-400" />
+            Exportar
+          </button>
+          <button 
+            onClick={() => triggerToast('Modo de investigação de logs ativado.')}
+            className="flex h-10 items-center justify-center gap-1.5 px-4 bg-violet-600 hover:bg-violet-750 text-white rounded-xl text-xs font-black shadow-lg shadow-violet-600/15 transition-all uppercase tracking-tight"
+          >
+            <Shield className="w-3.5 h-3.5 shrink-0" />
+            Investigação
+          </button>
+        </div>
+      </div>
+
+      {/* Filters Area (Section 4) */}
+      <div className="rounded-[22px] border border-[#E8DDFD] bg-white/85 p-4 shadow-sm backdrop-blur-md space-y-3">
+        {/* Row 1 */}
+        <div className="grid grid-cols-5 gap-3">
+          {/* Período */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Período
+            </span>
+            <select 
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
             >
-              <Bookmark className="w-3.5 h-3.5 text-slate-400" />
-              Salvar busca
-            </button>
-            <button 
-              onClick={() => triggerToast('Exportando logs para planilha...')}
-              className="flex items-center justify-center gap-1 px-2.5 py-1 bg-white border border-[#E7E5EF] hover:bg-brand-soft rounded-xl text-[10px] font-black text-slate-700 shadow-sm transition-all h-[28px]"
+              <option value="Hoje">Hoje</option>
+              <option value="7d">Últimos 7 dias</option>
+              <option value="30d">Últimos 30 dias</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Usuário */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Usuário
+            </span>
+            <select 
+              value={filterUser}
+              onChange={(e) => setFilterUser(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
             >
-              <Download className="w-3.5 h-3.5 text-slate-400" />
-              Exportar
-            </button>
-            <button 
-              onClick={() => triggerToast('Modo de investigação criminal de logs ativado.')}
-              className="flex items-center justify-center gap-1 px-3 py-1 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10px] font-black shadow-lg shadow-brand/15 transition-all h-[28px] uppercase tracking-tight"
+              <option value="Todos">Todos</option>
+              <option value="Vinícius Admin">Vinícius Admin</option>
+              <option value="Mariana Santos">Mariana Santos</option>
+              <option value="Rafael Oliveira">Rafael Oliveira</option>
+              <option value="Sistema">Sistema</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Sistema */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Sistema
+            </span>
+            <select 
+              value={filterSystem}
+              onChange={(e) => setFilterSystem(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
             >
-              <Shield className="w-3.5 h-3.5 shrink-0" />
-              Investigação
-            </button>
+              <option value="Todos">Todos</option>
+              <option value="Basileia Pay">Basileia Pay</option>
+              <option value="Mercado Pago">Mercado Pago</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Tipo de evento */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Tipo de evento
+            </span>
+            <select 
+              value={filterEventType}
+              onChange={(e) => setFilterEventType(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
+            >
+              <option value="Todos">Todos</option>
+              <option value="Reembolso aprovado">Reembolso aprovado</option>
+              <option value="Checkout atualizado">Checkout atualizado</option>
+              <option value="Login realizado">Login realizado</option>
+              <option value="Chave de API criada">Chave de API criada</option>
+              <option value="Permissão alterada">Permissão alterada</option>
+              <option value="Pagamento capturado">Pagamento capturado</option>
+              <option value="Tentativa de acesso negada">Tentativa de acesso negada</option>
+              <option value="Webhook entregue">Webhook entregue</option>
+              <option value="Assinatura cancelada">Assinatura cancelada</option>
+              <option value="Configuração alterada">Configuração alterada</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Nível */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Nível
+            </span>
+            <select 
+              value={filterLevel}
+              onChange={(e) => setFilterLevel(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
+            >
+              <option value="Todos">Todos</option>
+              <option value="Crítico">Crítico</option>
+              <option value="Alteração">Alteração</option>
+              <option value="Informativo">Informativo</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
 
-        {/* Filters Grid */}
-        <div className="bg-white border border-[#E7E5EF] rounded-2xl p-3 shadow-sm mb-4 space-y-2.5">
-          
-          {/* Row 1 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Período</label>
-              <select 
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="hoje">Hoje</option>
-                <option value="7d">Últimos 7 dias</option>
-                <option value="30d">Últimos 30 dias</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Usuário</label>
-              <select 
-                value={filterUser}
-                onChange={(e) => setFilterUser(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="Todos">Todos</option>
-                <option value="Vinícius Admin">Vinícius Admin</option>
-                <option value="Mariana Santos">Mariana Santos</option>
-                <option value="Rafael Oliveira">Rafael Oliveira</option>
-                <option value="Sistema">Sistema</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Sistema</label>
-              <select 
-                value={filterSystem}
-                onChange={(e) => setFilterSystem(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="Todos">Todos</option>
-                <option value="Basileia Pay">Basileia Pay</option>
-                <option value="Mercado Pago">Mercado Pago</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tipo de Evento</label>
-              <select 
-                value={filterEventType}
-                onChange={(e) => setFilterEventType(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="Todos">Todos os tipos</option>
-                <option value="Reembolso aprovado">Reembolso aprovado</option>
-                <option value="Checkout atualizado">Checkout atualizado</option>
-                <option value="Login realizado">Login realizado</option>
-                <option value="Chave de API criada">Chave de API criada</option>
-                <option value="Permissão alterada">Permissão alterada</option>
-                <option value="Pagamento capturado">Pagamento capturado</option>
-                <option value="Tentativa de acesso negada">Tentativa de acesso negada</option>
-                <option value="Webhook entregue">Webhook entregue</option>
-                <option value="Assinatura cancelada">Assinatura cancelada</option>
-                <option value="Configuração alterada">Configuração alterada</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nível</label>
-              <select 
-                value={filterLevel}
-                onChange={(e) => setFilterLevel(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="Todos">Todos os níveis</option>
-                <option value="Critical">Crítico</option>
-                <option value="Alteration">Alteração</option>
-                <option value="Informative">Informativo</option>
-              </select>
-            </div>
+        {/* Row 2 */}
+        <div className="grid grid-cols-6 gap-3">
+          {/* Entidade */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Entidade
+            </span>
+            <select 
+              value={filterEntity}
+              onChange={(e) => setFilterEntity(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
+            >
+              <option value="Todos">Todas</option>
+              <option value="Reembolso">Reembolso</option>
+              <option value="Checkout">Checkout</option>
+              <option value="Sessão">Sessão</option>
+              <option value="API Key">API Key</option>
+              <option value="Usuário">Usuário</option>
+              <option value="Pagamento">Pagamento</option>
+              <option value="Webhook">Webhook</option>
+              <option value="Assinatura">Assinatura</option>
+              <option value="Configuração">Configuração</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Row 2 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5 pt-2 border-t border-slate-50">
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Entidade</label>
-              <select 
-                value={filterEntity}
-                onChange={(e) => setFilterEntity(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="Todos">Todas</option>
-                <option value="Pagamento">Pagamento</option>
-                <option value="Reembolso">Reembolso</option>
-                <option value="Checkout">Checkout</option>
-                <option value="Gateway">Gateway</option>
-                <option value="Usuário">Usuário</option>
-                <option value="Webhook">Webhook</option>
-                <option value="Assinatura">Assinatura</option>
-                <option value="Configuração">Configuração</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">ID Entidade</label>
-              <input 
-                type="text"
-                placeholder="Ex: REE-2024..."
-                value={filterEntityId}
-                onChange={(e) => setFilterEntityId(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-900 focus:outline-none h-[30px]"
-              />
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Ação</label>
-              <select 
-                value={filterAction}
-                onChange={(e) => setFilterAction(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="Todos">Todas as ações</option>
-                <option value="criação">Criação</option>
-                <option value="alteração">Alteração</option>
-                <option value="exclusão">Exclusão</option>
-                <option value="acesso">Acesso</option>
-                <option value="aprovação">Aprovação</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">IP de Origem</label>
-              <input 
-                type="text"
-                placeholder="Ex: 177.12..."
-                value={filterIp}
-                onChange={(e) => setFilterIp(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-900 focus:outline-none h-[30px]"
-              />
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Resultado</label>
-              <select 
-                value={filterResult}
-                onChange={(e) => setFilterResult(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
-              >
-                <option value="Todos">Todos</option>
-                <option value="Success">Sucesso</option>
-                <option value="Failed">Falha</option>
-                <option value="Blocked">Bloqueado</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Busca Global</label>
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-450" />
-                <input 
-                  type="text"
-                  placeholder="Buscar usuário, entidade, evento..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl pl-6.5 pr-2.5 py-1 text-xs font-semibold text-slate-900 focus:outline-none h-[30px]"
-                />
-              </div>
-            </div>
+          {/* ID Entidade */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              ID Entidade
+            </span>
+            <input 
+              type="text"
+              placeholder="Ex: REE-2024..."
+              value={filterEntityId}
+              onChange={(e) => setFilterEntityId(e.target.value)}
+              className="w-full bg-transparent text-xs font-bold text-slate-950 focus:outline-none placeholder:text-slate-350"
+            />
           </div>
 
-          {/* Active filter pills */}
-          {(filterUser !== 'Todos' || filterSystem !== 'Todos' || filterLevel !== 'Todos' || filterEventType !== 'Todos' || filterEntity !== 'Todos' || filterEntityId !== '' || filterIp !== '' || filterResult !== '' || searchQuery !== '') && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-50">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mr-1">Filtros ativos:</span>
+          {/* Ação */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Ação
+            </span>
+            <select 
+              value={filterAction}
+              onChange={(e) => setFilterAction(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
+            >
+              <option value="Todos">Todas</option>
+              <option value="criação">Criação</option>
+              <option value="alteração">Alteração</option>
+              <option value="exclusão">Exclusão</option>
+              <option value="acesso">Acesso</option>
+              <option value="aprovação">Aprovação</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* IP de Origem */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              IP Origem
+            </span>
+            <input 
+              type="text"
+              placeholder="Ex: 177.12..."
+              value={filterIp}
+              onChange={(e) => setFilterIp(e.target.value)}
+              className="w-full bg-transparent text-xs font-bold text-slate-950 focus:outline-none placeholder:text-slate-350"
+            />
+          </div>
+
+          {/* Resultado */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white px-3 relative">
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Resultado
+            </span>
+            <select 
+              value={filterResult}
+              onChange={(e) => setFilterResult(e.target.value)}
+              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
+            >
+              <option value="Todos">Todos</option>
+              <option value="success">Sucesso</option>
+              <option value="failed">Falha</option>
+              <option value="blocked">Bloqueado</option>
+            </select>
+            <ChevronDown className="h-3.5 w-3.5 text-slate-455 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Busca Global */}
+          <div className="flex h-11 flex-col justify-center rounded-2xl border border-[#E8DDFD] bg-white pl-7 pr-3 relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            <span className="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400 leading-none mb-0.5">
+              Busca Global
+            </span>
+            <input 
+              type="text"
+              placeholder="ID, usuário, sistema..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent text-xs font-bold text-slate-950 focus:outline-none placeholder:text-slate-350"
+            />
+          </div>
+        </div>
+
+        {/* Row 3 - Active filters (Section 4) */}
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs font-semibold text-slate-500">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Filtros ativos:</span>
               {filterUser !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Usuário: {filterUser}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterUser('Todos')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterUser('Todos')} />
                 </span>
               )}
               {filterSystem !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Sistema: {filterSystem}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterSystem('Todos')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterSystem('Todos')} />
                 </span>
               )}
               {filterLevel !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Nível: {filterLevel}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterLevel('Todos')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterLevel('Todos')} />
                 </span>
               )}
               {filterEventType !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Tipo: {filterEventType}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterEventType('Todos')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterEventType('Todos')} />
                 </span>
               )}
               {filterEntity !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Entidade: {filterEntity}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterEntity('Todos')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterEntity('Todos')} />
                 </span>
               )}
               {filterEntityId && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   ID: {filterEntityId}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterEntityId('')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterEntityId('')} />
                 </span>
               )}
               {filterIp && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   IP: {filterIp}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterIp('')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterIp('')} />
                 </span>
               )}
               {filterResult !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Resultado: {filterResult}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterResult('Todos')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterResult('Todos')} />
                 </span>
               )}
               {searchQuery && (
-                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Busca: {searchQuery}
-                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSearchQuery('')} />
+                  <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setSearchQuery('')} />
                 </span>
               )}
-              <button 
-                onClick={() => {
-                  setFilterUser('Todos');
-                  setFilterSystem('Todos');
-                  setFilterLevel('Todos');
-                  setFilterEventType('Todos');
-                  setFilterEntity('Todos');
-                  setFilterEntityId('');
-                  setFilterIp('');
-                  setFilterResult('Todos');
-                  setSearchQuery('');
-                }}
-                className="text-[9px] text-red-500 font-bold hover:underline ml-auto"
-              >
-                Limpar todos
-              </button>
             </div>
-          )}
+            <button 
+              onClick={handleClearFilters}
+              className="text-xs font-black text-red-500 hover:underline active:scale-95"
+            >
+              Limpar todos
+            </button>
+          </div>
+        )}
+      </div>
 
-        </div>
-
-        {/* Main interactive area: Table + Details Panel side-by-side */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
+      {/* Main Grid: Tabela + Painel Lateral (Section 2) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start">
+        
+        {/* Left Side: Table card */}
+        <section className="min-w-0">
           
-          {/* Table Container */}
-          <div className="space-y-4">
+          <div className="overflow-hidden rounded-[22px] border border-[#E8DDFD] bg-white/85 shadow-sm">
             
-            <div className="bg-white border border-[#E7E5EF] rounded-2xl shadow-sm overflow-hidden flex flex-col">
-              
-              {/* Tabs list with counters and live toggle on the right */}
-              <div className="border-b border-slate-100 bg-[#FAF9FF]/40 px-3.5 py-1.5 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  {[
-                    { id: 'all', label: 'Todos', count: '24.812' },
-                    { id: 'critical', label: 'Críticos', count: '71', badge: 'bg-red-50 text-red-650' },
-                    { id: 'alteration', label: 'Alterações', count: '18.342', badge: 'bg-purple-50 text-brand' },
-                    { id: 'access', label: 'Acessos', count: '3.912', badge: 'bg-blue-50 text-blue-650' },
-                    { id: 'deletion', label: 'Exclusões', count: '187', badge: 'bg-orange-50 text-orange-600' }
-                  ].map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={cn(
-                          "px-3 py-1.5 rounded-xl text-[10.5px] font-black uppercase tracking-tight transition-all flex items-center gap-2 border",
-                          isActive 
-                            ? "bg-white text-brand border-brand shadow-sm" 
-                            : "bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100"
-                        )}
-                      >
-                        <span>{tab.label}</span>
-                        <span className={cn(
-                          "px-2 py-0.2 rounded-lg text-[9px] font-black",
-                          tab.badge || "bg-slate-200 text-slate-700"
-                        )}>
-                          {tab.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* Real time dot indicator */}
-                  <button 
-                    onClick={() => setRealtimeActive(prev => !prev)}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tight text-slate-500 hover:text-brand"
-                  >
-                    <span className={cn(
-                      "w-1.5 h-1.5 rounded-full",
-                      realtimeActive ? "bg-green-500 animate-pulse" : "bg-slate-300"
-                    )} />
-                    <span>Tempo Real {realtimeActive ? 'Ativo' : 'Pausado'}</span>
-                  </button>
-
-                  <button 
-                    onClick={() => {
-                      setLoading(true);
-                      setTimeout(() => {
-                        setLoading(false);
-                        triggerToast('Logs atualizados com sucesso.');
-                      }, 800);
-                    }}
-                    className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand transition-colors"
-                  >
-                    <RefreshCw className={cn("w-3.5 h-3.5", loading ? "animate-spin" : "")} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Data Table */}
-              <div className="w-full overflow-x-auto relative flex">
-                
-                {/* Visual Timeline vertical bar */}
-                <div className="w-[20px] shrink-0 relative flex flex-col items-center">
-                  <div className="absolute top-6 bottom-6 w-0.5 bg-slate-100" />
-                  {paginatedEvents.map((evt, idx) => {
-                    const theme = getEventTheme(evt.level, evt.category);
-                    return (
-                      <div 
-                        key={`line-dot-${evt.id}`}
-                        style={{ height: '62px', top: `${idx * 62 + 18}px` }}
-                        className="absolute flex items-center justify-center w-full"
-                      >
-                        <div className={cn("w-2 h-2 rounded-full ring-4 ring-white z-10", theme.dotClass)} />
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <table className="w-full min-w-[1100px] text-left text-xs table-fixed flex-1">
-                  <colgroup>
-                    <col className="w-[12%]"/>  {/* Data/Hora */}
-                    <col className="w-[18%]"/>  {/* Evento */}
-                    <col className="w-[22%]"/>  {/* Detalhes */}
-                    <col className="w-[15%]"/>  {/* Usuário */}
-                    <col className="w-[12%]"/>  {/* Sistema */}
-                    <col className="w-[11%]"/>  {/* IP */}
-                    <col className="w-[10%]"/>  {/* Nível */}
-                  </colgroup>
-                  <thead>
-                    <tr className="border-b border-[#E7E5EF] text-[9.5px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50/40">
-                      <th className="px-3 py-2.5">Data/Hora</th>
-                      <th className="px-3 py-2.5">Evento</th>
-                      <th className="px-3 py-2.5">Detalhes</th>
-                      <th className="px-3 py-2.5">Usuário</th>
-                      <th className="px-3 py-2.5">Sistema</th>
-                      <th className="px-3 py-2.5">IP de Origem</th>
-                      <th className="px-3 py-2.5">Nível</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-655">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
-                          Carregando logs da auditoria...
-                        </td>
-                      </tr>
-                    ) : paginatedEvents.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
-                          Nenhum evento encontrado para os filtros ativos.
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedEvents.map((evt) => {
-                        const theme = getEventTheme(evt.level, evt.category);
-                        const lvlInfo = getLevelBadge(evt.level);
-                        const isSelected = selectedEvent?.id === evt.id;
-                        const isCritical = evt.level === 'critical';
-
-                        return (
-                          <tr 
-                            key={evt.id}
-                            onClick={() => setSelectedEvent(evt)}
-                            className={cn(
-                              "hover:bg-[#FAF9FF]/40 cursor-pointer h-[62px] transition-all relative border-l-4",
-                              isSelected ? "bg-[#FAF9FF] border-l-brand" : "border-l-transparent",
-                              isCritical && !isSelected ? "bg-red-50/15" : ""
-                            )}
-                          >
-                            {/* Data/Hora */}
-                            <td className="px-3 py-2 align-middle">
-                              <span className="text-slate-900 font-black block leading-none">
-                                {new Date(evt.timestamp).toLocaleTimeString('pt-BR')}
-                              </span>
-                              <span className="text-[10px] text-slate-400 block mt-1 font-bold">
-                                {new Date(evt.timestamp).toLocaleDateString('pt-BR')}
-                              </span>
-                            </td>
-
-                            {/* Evento */}
-                            <td className="px-3 py-2 align-middle">
-                              <div className="flex items-center gap-2">
-                                <div className={cn("w-5.5 h-5.5 rounded-lg border flex items-center justify-center shrink-0", theme.bgClass)}>
-                                  <theme.icon className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="min-w-0">
-                                  <span className="font-bold text-slate-900 block truncate">{evt.event}</span>
-                                  <span className="text-[8.5px] font-black bg-brand/5 border border-brand/20 text-brand px-1.5 py-0.2 rounded mt-0.5 block w-fit uppercase leading-none">
-                                    {evt.category}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Detalhes */}
-                            <td className="px-3 py-2 align-middle text-slate-500 font-medium text-[11px] leading-relaxed max-w-[240px] truncate">
-                              {evt.details}
-                            </td>
-
-                            {/* Usuário */}
-                            <td className="px-3 py-2 align-middle">
-                              <div className="flex items-center gap-2">
-                                <div className="w-5.5 h-5.5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
-                                  <User className="w-3 h-3" />
-                                </div>
-                                <div className="min-w-0">
-                                  <span className="text-slate-800 font-bold block truncate leading-none">{evt.user.name}</span>
-                                  <span className="text-[9.5px] text-slate-400 block mt-1 leading-none">{evt.user.role}</span>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Sistema */}
-                            <td className="px-3 py-2 align-middle">
-                              <span className="text-slate-850 font-bold block leading-none">{evt.system}</span>
-                              <span className="text-[9px] text-slate-400 block mt-1 uppercase font-black">{evt.environment}</span>
-                            </td>
-
-                            {/* IP de Origem */}
-                            <td className="px-3 py-2 align-middle">
-                              <span className="font-mono text-slate-900 block leading-none">{evt.ip}</span>
-                              <span className="text-[9.5px] text-slate-400 block mt-1">{evt.ipLocation || 'Desconhecido'}</span>
-                            </td>
-
-                            {/* Nível */}
-                            <td className="px-3 py-2 align-middle">
-                              <span className={cn(
-                                "px-2 py-0.5 rounded text-[9.5px] font-black border uppercase block w-fit leading-none",
-                                lvlInfo.bg
-                              )}>
-                                {lvlInfo.label}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-
-              </div>
-
-              {/* Paginate selector footer */}
-              <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500 bg-[#FAF9FF]/40 h-[42px]">
-                <span>Mostrando {Math.min(filteredEvents.length, (currentPage - 1) * rowsPerPage + 1)} a {Math.min(filteredEvents.length, currentPage * rowsPerPage)} de 24.812 eventos</span>
-                
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px]">Linhas por página:</span>
-                    <select 
-                      value={rowsPerPage} 
-                      onChange={(e) => { setRowsPerPage(parseInt(e.target.value) || 10); setCurrentPage(1); }}
-                      className="bg-white border border-[#E7E5EF] rounded px-1.5 py-0.5 text-[10.5px] font-bold"
+            {/* Tabs de categorias com contadores (Section 5) */}
+            <div className="flex items-center justify-between border-b border-[#E8DDFD] px-4 py-3 bg-[#FAF8FF]">
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: 'all', label: 'Todos', count: '24.812' },
+                  { id: 'critical', label: 'Críticos', count: '71' },
+                  { id: 'alteration', label: 'Alterações', count: '18.342' },
+                  { id: 'access', label: 'Acessos', count: '3.912' },
+                  { id: 'deletion', label: 'Exclusões', count: '187' }
+                ].map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={cn(
+                        "flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-black uppercase tracking-[0.08em] transition-all",
+                        isActive
+                          ? "border border-violet-300 bg-violet-50 text-violet-750"
+                          : "text-slate-500 hover:bg-slate-50"
+                      )}
                     >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </div>
+                      {tab.label}
+                      <span className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px]",
+                        isActive ? "bg-white text-violet-700 shadow-sm" : "bg-slate-100 text-slate-500"
+                      )}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: Math.min(5, Math.ceil(filteredEvents.length / rowsPerPage)) }).map((_, idx) => {
-                      const pageNum = idx + 1;
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setRealtimeActive(prev => !prev)}
+                  className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em] text-slate-600 cursor-pointer"
+                >
+                  <span className={cn(
+                    "h-2 w-2 rounded-full",
+                    realtimeActive ? "bg-green-500 animate-pulse" : "bg-slate-350"
+                  )} />
+                  Tempo real
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setLoading(true);
+                    setTimeout(() => {
+                      setLoading(false);
+                      triggerToast('Logs atualizados com sucesso.');
+                    }, 800);
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-slate-500"
+                >
+                  <RefreshCw className={cn("h-4 w-4", loading ? "animate-spin" : "")} />
+                </button>
+              </div>
+            </div>
+
+            {/* Table data body */}
+            <div className="overflow-x-auto relative">
+              <table className="w-full min-w-[980px] table-fixed text-left">
+                <colgroup>
+                  <col className="w-[140px]" />
+                  <col className="w-[210px]" />
+                  <col />
+                  <col className="w-[180px]" />
+                  <col className="w-[150px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[110px]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-[#E8DDFD] bg-[#FAF8FF]">
+                    {["Data/Hora", "Evento", "Detalhes", "Usuário", "Sistema", "IP", "Nível"].map((header) => (
+                      <th
+                        key={header}
+                        className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
+                      >
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-semibold">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
+                        Carregando logs da auditoria...
+                      </td>
+                    </tr>
+                  ) : paginatedEvents.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
+                        Nenhum evento encontrado para os filtros selecionados.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedEvents.map((event) => {
+                      const theme = getEventTheme(event.level, event.category);
+                      const isSelected = selectedEvent?.id === event.id;
+
                       return (
-                        <button 
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
+                        <tr 
+                          key={event.id}
+                          onClick={() => setSelectedEvent(event)}
                           className={cn(
-                            "w-5.5 h-5.5 rounded text-[10px] font-bold flex items-center justify-center transition-colors",
-                            pageNum === currentPage ? 'bg-brand/10 text-brand font-black border border-brand/20' : 'hover:bg-slate-100 text-slate-500'
+                            "cursor-pointer border-b border-slate-100 transition h-[68px]",
+                            isSelected ? "bg-violet-50/70" : "hover:bg-[#FAF8FF]"
                           )}
                         >
-                          {pageNum}
-                        </button>
+                          {/* Data/Hora */}
+                          <td className="relative px-4 py-3 align-middle">
+                            <div className="absolute left-5 top-0 h-full w-px bg-slate-200 pointer-events-none" />
+
+                            <div className="relative flex items-center gap-3">
+                              <span className={cn(
+                                "z-10 h-3 w-3 rounded-full ring-4 ring-white shrink-0",
+                                theme.dotClass
+                              )} />
+
+                              <div>
+                                <p className="text-sm font-black text-slate-950">{event.time}</p>
+                                <p className="text-[11px] font-semibold text-slate-400">{event.relative}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Evento */}
+                          <td className="px-4 py-3 align-middle">
+                            <div className="flex items-center gap-3">
+                              <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0 border", theme.bgClass)}>
+                                <theme.icon className="h-4 w-4" />
+                              </div>
+
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-black text-slate-950">
+                                  {event.title}
+                                </p>
+
+                                <span className="mt-1 inline-flex rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
+                                  {event.category}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Detalhes */}
+                          <td className="min-w-0 px-4 py-3 align-middle">
+                            <p className="truncate text-sm font-semibold text-slate-700">
+                              {event.details}
+                            </p>
+                            <p className="mt-1 truncate text-[11px] font-medium text-slate-400">
+                              {event.meta}
+                            </p>
+                          </td>
+
+                          {/* Usuário */}
+                          <td className="px-4 py-3 align-middle">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 shrink-0 border border-slate-200">
+                                <User className="h-4 w-4 text-slate-500" />
+                              </div>
+
+                              <div>
+                                <p className="text-sm font-black text-slate-950">{event.user}</p>
+                                <p className="text-[11px] font-semibold text-slate-400">{event.role}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Sistema */}
+                          <td className="px-4 py-3 align-middle">
+                            <p className="text-sm font-black text-slate-950">{event.system}</p>
+                            <p className="text-[11px] font-semibold text-slate-400">{event.environment}</p>
+                          </td>
+
+                          {/* IP */}
+                          <td className="px-4 py-3 align-middle">
+                            <p className="text-sm font-bold text-slate-700 font-mono">{event.ip}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{event.location || 'Brasil'}</p>
+                          </td>
+
+                          {/* Nível */}
+                          <td className="px-4 py-3 align-middle">
+                            <span className={cn(
+                              "inline-flex rounded-lg px-2.5 py-1 text-[10px] font-black uppercase border",
+                              event.level === "Crítico" && "bg-red-50 text-red-650 border-red-200",
+                              event.level === "Alteração" && "bg-violet-50 text-violet-700 border-violet-200",
+                              event.level === "Informativo" && "bg-slate-100 text-slate-600 border-slate-200"
+                            )}>
+                              {event.level}
+                            </span>
+                          </td>
+                        </tr>
                       );
-                    })}
-                    {Math.ceil(filteredEvents.length / rowsPerPage) > 5 && (
-                      <>
-                        <span className="px-1 text-slate-400">...</span>
-                        <button 
-                          onClick={() => setCurrentPage(Math.ceil(filteredEvents.length / rowsPerPage))}
-                          className="w-5.5 h-5.5 rounded text-[10px] font-bold flex items-center justify-center hover:bg-slate-100 text-slate-500"
-                        >
-                          2.482
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginação da tabela (Section 22) */}
+            <div className="flex h-[58px] items-center justify-between border-t border-[#E8DDFD] px-5 bg-[#FAF8FF]/40">
+              <p className="text-xs font-semibold text-slate-500">
+                Mostrando {Math.min(filteredEvents.length, (currentPage - 1) * rowsPerPage + 1)} a {Math.min(filteredEvents.length, currentPage * rowsPerPage)} de 24.812 eventos
+              </p>
+
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setCurrentPage(1)} 
+                  className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 1 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50')}
+                >
+                  1
+                </button>
+                <button 
+                  onClick={() => setCurrentPage(2)} 
+                  disabled={Math.ceil(filteredEvents.length / rowsPerPage) < 2}
+                  className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 2 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50 disabled:opacity-50')}
+                >
+                  2
+                </button>
+                <button 
+                  onClick={() => setCurrentPage(3)} 
+                  disabled={Math.ceil(filteredEvents.length / rowsPerPage) < 3}
+                  className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 3 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50 disabled:opacity-50')}
+                >
+                  3
+                </button>
+                <span className="text-slate-400 text-xs px-1">...</span>
+                <button 
+                  onClick={() => setCurrentPage(Math.ceil(filteredEvents.length / rowsPerPage) || 1)} 
+                  className="h-8 rounded-xl border border-[#E8DDFD] bg-white px-3 text-xs font-bold hover:bg-slate-50"
+                >
+                  2.482
+                </button>
               </div>
 
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400">Linhas por página</span>
+                <select 
+                  value={rowsPerPage} 
+                  onChange={(e) => { setRowsPerPage(parseInt(e.target.value) || 10); setCurrentPage(1); }}
+                  className="h-8 rounded-xl border border-[#E8DDFD] bg-white px-3 text-xs font-bold focus:outline-none cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
 
           </div>
 
-          {/* DETALHE DO EVENTO LATERAL (340px) */}
-          <div className="w-full lg:w-[340px] shrink-0 bg-white border border-[#E7E5EF] rounded-2xl p-4 shadow-sm space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-50 pb-2">
-              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest leading-none">Detalhes do Evento</span>
-              {selectedEvent && (
-                <button 
-                  onClick={() => setSelectedEvent(null)}
-                  className="p-1 hover:bg-slate-55/20 rounded text-slate-400 hover:text-slate-600 shrink-0"
-                >
-                  <X className="w-4.5 h-4.5" />
-                </button>
-              )}
-            </div>
+        </section>
 
-            {selectedEvent ? (
-              <div className="space-y-4 text-xs font-semibold text-slate-655">
-                
-                {/* Bloco 1: Identificação */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-brand shrink-0" />
-                    <span className="text-slate-900 font-black">{selectedEvent.event}</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-brand/5 border border-brand/20 text-[9px] font-black text-brand uppercase block w-fit leading-none">
+        {/* Right Side: Event details card (Section 16 & 17) */}
+        <aside className="w-[360px] shrink-0 sticky top-4">
+          {selectedEvent ? (
+            <div className="rounded-[22px] border border-[#E8DDFD] bg-white/90 p-5 shadow-sm space-y-4">
+              
+              {/* Header */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                    Detalhes do evento
+                  </h3>
+                </div>
+
+                <button 
+                  onClick={() => triggerToast('Inspeção lateral mantida ativa.')}
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#E8DDFD] bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Event title & badge */}
+              <div className="flex items-start gap-3 border-b border-slate-100 pb-4">
+                <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl shrink-0 border", getEventTheme(selectedEvent.level, selectedEvent.category).bgClass)}>
+                  <ShieldAlert className="h-5 w-5" />
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-base font-black text-slate-950 leading-tight">{selectedEvent.title}</p>
+                  <span className="mt-1 inline-flex rounded-md bg-violet-50 border border-violet-250 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
                     {selectedEvent.category}
                   </span>
-
-                  <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl space-y-1">
-                    <span className="text-[8.5px] text-slate-400 uppercase block font-black">ID do Evento</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-slate-700 truncate text-[10px] select-all">{selectedEvent.id}</span>
-                      <button 
-                        onClick={() => handleCopyText(selectedEvent.id, 'id')}
-                        className="p-0.5 text-slate-400 hover:text-brand"
-                      >
-                        {copiedField === 'id' ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
                 </div>
+              </div>
 
-                {/* Bloco 2: Usuário */}
-                <div className="space-y-1">
-                  <span className="text-[8.5px] text-slate-400 uppercase block font-black">Usuário Operador</span>
-                  <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl">
-                    <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
-                      <User className="w-3.5 h-3.5" />
-                    </div>
+              {/* Detail fields (Section 18) */}
+              <div className="grid grid-cols-2 gap-4 border-b border-slate-100 py-3.5">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">ID do evento</p>
+                  <p className="mt-1 text-xs font-mono font-bold text-slate-800 truncate select-all">{selectedEvent.id}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">Data / Hora</p>
+                  <p className="mt-1 text-xs font-bold text-slate-800">{selectedEvent.date} {selectedEvent.time}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">Nível</p>
+                  <p className="mt-1 text-xs font-bold text-slate-800">{selectedEvent.level}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">Sistema</p>
+                  <p className="mt-1 text-xs font-bold text-slate-800 leading-tight">{selectedEvent.system} / {selectedEvent.environment}</p>
+                </div>
+              </div>
+
+              {/* IP source block */}
+              <div className="border-b border-slate-100 py-3.5">
+                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">IP de Origem</p>
+                <p className="mt-1 text-xs font-bold text-slate-800 font-mono">{selectedEvent.ip} <span className="text-slate-400 font-sans ml-1">({selectedEvent.location || 'São Paulo, Brasil'})</span></p>
+              </div>
+
+              {/* Affected Entity block (Section 19) */}
+              <div className="border-b border-slate-100 py-3.5 space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                  Entidade afetada
+                </h4>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">Tipo</p>
+                    <p className="mt-0.5 text-xs font-bold text-slate-800">{selectedEvent.entityType || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">ID da entidade</p>
+                    <p className="mt-0.5 text-xs font-mono font-bold text-slate-800">{selectedEvent.entityId || 'N/A'}</p>
+                  </div>
+                  {selectedEvent.relatedIds?.orderId && (
                     <div>
-                      <span className="text-slate-800 font-bold block">{selectedEvent.user.name}</span>
-                      <span className="text-[10px] text-slate-400 block">{selectedEvent.user.role}</span>
+                      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400 font-sans">Pedido relacionado</p>
+                      <p className="mt-0.5 text-xs font-bold text-violet-600 hover:underline cursor-pointer">{selectedEvent.relatedIds.orderId}</p>
                     </div>
-                  </div>
-                </div>
-
-                {/* Bloco 3: Sistema */}
-                <div className="space-y-1">
-                  <span className="text-[8.5px] text-slate-400 uppercase block font-black">Sistema</span>
-                  <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl">
-                    <span className="text-slate-800 font-bold">{selectedEvent.system}</span>
-                    <span className="px-1.5 py-0.2 bg-brand/5 border border-brand/20 text-[9px] rounded font-black text-brand uppercase">
-                      {selectedEvent.environment}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bloco 4: IP */}
-                <div className="space-y-1">
-                  <span className="text-[8.5px] text-slate-400 uppercase block font-black">IP de Origem</span>
-                  <div className="bg-slate-50 p-2 rounded-xl flex justify-between items-center">
-                    <span className="font-mono text-slate-800">{selectedEvent.ip}</span>
-                    <span className="text-slate-400 text-[10px]">{selectedEvent.ipLocation || 'Curitiba, BR'}</span>
-                  </div>
-                </div>
-
-                {/* Bloco 5: Entidade */}
-                <div className="space-y-1">
-                  <span className="text-[8.5px] text-slate-400 uppercase block font-black">Entidade Afetada</span>
-                  <div className="bg-slate-50 p-2.5 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 font-medium">Tipo</span>
-                      <span className="text-slate-900 font-bold">{selectedEvent.entityType}</span>
+                  )}
+                  {selectedEvent.relatedIds?.customerId && (
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400 font-sans">Cliente relacionado</p>
+                      <p className="mt-0.5 text-xs font-bold text-violet-600 hover:underline cursor-pointer">{selectedEvent.relatedIds.customerId} — Mariana Souza</p>
                     </div>
-                    {selectedEvent.entityId && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-500 font-medium">ID da entidade</span>
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-slate-900 font-bold">{selectedEvent.entityId}</span>
-                          <button 
-                            onClick={() => handleCopyText(selectedEvent.entityId || '', 'entityId')}
-                            className="text-slate-400 hover:text-brand"
-                          >
-                            {copiedField === 'entityId' ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {selectedEvent.relatedIds?.orderId && (
-                      <div className="flex justify-between items-center border-t border-slate-100/60 pt-1.5">
-                        <span className="text-slate-500 font-medium">Pedido</span>
-                        <span className="text-brand font-bold hover:underline cursor-pointer flex items-center gap-0.5">
-                          {selectedEvent.relatedIds.orderId}
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </span>
-                      </div>
-                    )}
-                    {selectedEvent.relatedIds?.customerId && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-500 font-medium">Cliente</span>
-                        <span className="text-brand font-bold hover:underline cursor-pointer flex items-center gap-0.5">
-                          {selectedEvent.relatedIds.customerId} — Mariana Souza
-                          <ExternalLink className="w-2.5 h-2.5" />
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-
-                {/* Bloco 6: Detalhes */}
-                <div className="space-y-1">
-                  <span className="text-[8.5px] text-slate-400 uppercase block font-black">Detalhes da Ação</span>
-                  <p className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-655 text-[11px] leading-relaxed">
-                    {selectedEvent.details}
-                  </p>
-                </div>
-
-                {/* Bloco 7: Metadados JSON */}
-                {selectedEvent.metadata && (
-                  <div className="space-y-1">
-                    <span className="text-[8.5px] text-slate-400 uppercase block font-black">Metadados Brutos (JSON)</span>
-                    <pre className="bg-slate-950 text-green-400 font-mono text-[9.5px] p-3 rounded-xl overflow-x-auto no-scrollbar max-h-[120px]">
-                      {JSON.stringify(selectedEvent.metadata, null, 2)}
-                    </pre>
-                  </div>
-                )}
-
-                {/* Bloco 8: Ações Rápidas */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link 
-                      href={`/dashboard/audit/${selectedEvent.id}`}
-                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[9.5px] font-black text-center text-slate-700 block transition-all"
-                    >
-                      Ver Entidade
-                    </Link>
-                    <button 
-                      onClick={() => triggerToast(`Histórico da entidade ${selectedEvent.entityId} filtrado.`)}
-                      className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[9.5px] font-black text-slate-700 transition-all"
-                    >
-                      Histórico
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <button 
-                      onClick={() => handleMarkAsReviewed(selectedEvent.id)}
-                      disabled={reviewedEvents.includes(selectedEvent.id)}
-                      className="w-full py-1.5 bg-white border border-brand/20 hover:bg-brand-soft text-brand text-[10px] font-black uppercase rounded-xl transition-all disabled:opacity-50"
-                    >
-                      {reviewedEvents.includes(selectedEvent.id) ? 'Revisado' : 'Marcar como Revisado'}
-                    </button>
-                    <button 
-                      onClick={() => handleOpenIncident(selectedEvent.id)}
-                      className="w-full py-1.5 bg-red-50 hover:bg-red-100 text-red-750 text-[10px] font-black uppercase rounded-xl transition-all"
-                    >
-                      {incidents[selectedEvent.id] ? `Incidente: ${incidents[selectedEvent.id]}` : 'Abrir Incidente'}
-                    </button>
-                  </div>
-                </div>
-
               </div>
-            ) : (
-              <div className="text-center py-16 text-slate-400 font-semibold text-xs space-y-2">
-                <Terminal className="w-8 h-8 mx-auto text-slate-300" />
-                <p>Selecione um evento na timeline para inspecionar os logs de auditoria.</p>
+
+              {/* Text details description */}
+              <div className="border-b border-slate-100 py-3.5">
+                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">Descrição da Ação</p>
+                <p className="mt-1 text-xs font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100/60 leading-relaxed">{selectedEvent.details}</p>
               </div>
-            )}
 
-          </div>
+              {/* JSON Payload (Section 20) */}
+              {selectedEvent.metadata && (
+                <div className="border-b border-slate-100 py-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                      Metadados
+                    </h4>
 
-        </div>
+                    <button 
+                      onClick={() => handleCopyText(JSON.stringify(selectedEvent.metadata, null, 2), 'json')}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E8DDFD] bg-white hover:bg-slate-50 text-slate-500 active:scale-95 transition-all"
+                    >
+                      {copiedField === 'json' ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+
+                  <pre className="max-h-[140px] overflow-auto rounded-2xl bg-slate-950 p-4 text-[10.5px] leading-relaxed text-emerald-400 font-mono no-scrollbar">
+                    {JSON.stringify(selectedEvent.metadata, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Action Buttons (Section 21) */}
+              <div className="grid grid-cols-2 gap-2 pt-1.5">
+                <button 
+                  onClick={() => triggerToast('Exibindo entidade relacionada...')}
+                  className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-750 transition-colors"
+                >
+                  Ver entidade
+                </button>
+
+                <button 
+                  onClick={() => triggerToast(`Histórico da entidade ${selectedEvent.entityId || ''} filtrado.`)}
+                  className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-750 transition-colors"
+                >
+                  Investigar histórico
+                </button>
+
+                <button 
+                  onClick={() => handleMarkAsReviewed(selectedEvent.id)}
+                  disabled={reviewedEvents.includes(selectedEvent.id)}
+                  className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-750 transition-colors disabled:opacity-50"
+                >
+                  {reviewedEvents.includes(selectedEvent.id) ? 'Revisado' : 'Marcar revisado'}
+                </button>
+
+                <button 
+                  onClick={() => handleOpenIncident(selectedEvent.id)}
+                  className="h-10 rounded-xl border border-red-100 bg-red-50 hover:bg-red-100 text-xs font-black text-red-650 transition-colors"
+                >
+                  {incidents[selectedEvent.id] ? `Incid: ${incidents[selectedEvent.id]}` : 'Abrir incidente'}
+                </button>
+              </div>
+
+            </div>
+          ) : (
+            <div className="rounded-[22px] border border-[#E8DDFD] bg-white/90 p-5 shadow-sm text-center py-20 text-slate-400 font-bold text-xs space-y-2">
+              <Terminal className="w-8 h-8 mx-auto text-slate-300" />
+              <p>Selecione um evento na timeline para inspecionar os logs de auditoria.</p>
+            </div>
+          )}
+        </aside>
 
       </div>
 

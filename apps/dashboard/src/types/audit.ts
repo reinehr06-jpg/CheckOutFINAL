@@ -1,63 +1,27 @@
-export type AuditLevel = "critical" | "alteration" | "informative" | "access" | "deletion";
-export type AuditResult = "success" | "failed" | "blocked";
-export type AuditEntityType =
-  | "Pagamento" 
-  | "Reembolso" 
-  | "Checkout" 
-  | "Gateway"
-  | "Sistema" 
-  | "Usuário" 
-  | "Webhook" 
-  | "API Key"
-  | "Assinatura" 
-  | "Configuração" 
-  | "Sessão" 
-  | "Roteamento";
-
 export interface AuditEvent {
   id: string;
-  timestamp: string;
-  event: string;
+  time: string;
+  relative: string;
+  date: string;
+  title: string;
   category: string;
-  level: AuditLevel;
   details: string;
-  user: {
-    id?: string;
-    name: string;
-    role: string;
-    avatar?: string | null;
-  };
+  meta: string;
+  user: string;
+  role: string;
   system: string;
-  environment: "production" | "sandbox";
+  environment: string;
   ip: string;
-  ipLocation?: string;
-  result: AuditResult;
-  entityType: AuditEntityType;
+  location?: string;
+  level: string; // 'Crítico' | 'Alteração' | 'Informativo' | 'Acesso' | 'Exclusão'
+  type: string;  // e.g. 'refund', 'checkout'
+  entityType?: string;
   entityId?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
   relatedIds?: {
     orderId?: string;
-    paymentId?: string;
     customerId?: string;
-    checkoutId?: string;
-    gatewayId?: string;
   };
-  reviewedAt?: string;
-  reviewedBy?: string;
-  incidentId?: string;
-}
-
-export interface AuditFilters {
-  period: { from: string; to: string };
-  userId?: string;
-  systemId?: string;
-  eventTypes?: string[];
-  level?: AuditLevel;
-  entityType?: AuditEntityType;
-  entityId?: string;
-  action?: string;
-  ip?: string;
-  result?: AuditResult;
 }
 
 export interface AuditSummary {
