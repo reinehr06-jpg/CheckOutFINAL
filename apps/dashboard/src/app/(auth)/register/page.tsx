@@ -1,80 +1,86 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Shield, 
   Lock, 
   FileText, 
   ArrowRight, 
-  Check, 
   ArrowLeft,
-  Key,
-  Monitor
+  User,
+  Mail,
+  Building,
+  Check,
+  X,
+  Eye,
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-export default function TwoFactorPage() {
-  const [code, setCode] = useState(['', '', '', '', '', '']);
-  const codeInputs = useRef<any[]>([]);
+type RegisterMode = 'invite' | 'signup' | 'first_access';
+
+export default function RegisterPage() {
+  const [mode, setMode] = useState<RegisterMode>('invite');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [company, setCompany] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const handleCodeChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      const pasted = value.slice(0, 6).split('');
-      const newCode = [...code];
-      pasted.forEach((char, i) => {
-        if (index + i < 6) newCode[index + i] = char;
-      });
-      setCode(newCode);
-      const nextIndex = Math.min(index + pasted.length, 5);
-      codeInputs.current[nextIndex]?.focus();
-      return;
+  // Pre-fill mock data based on selected mode
+  useEffect(() => {
+    if (mode === 'invite') {
+      setName('Vinícius Reinehr');
+      setEmail('vinicius@empresa.com.br');
+      setCompany('Basileia Premium Corp');
+      triggerToast("Convite corporativo carregado com sucesso!");
+    } else if (mode === 'first_access') {
+      setName('Vinícius Reinehr');
+      setEmail('vinicius@empresa.com.br');
+      setCompany('');
+      triggerToast("Configuração de primeiro acesso iniciada.");
+    } else {
+      setName('');
+      setEmail('');
+      setCompany('');
     }
+  }, [mode]);
 
-    const newCode = [...code];
-    newCode[index] = value;
-    setCode(newCode);
+  // Password requirements check
+  const hasMinLen = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  
+  const isPasswordSecure = hasMinLen && hasUpper && hasNumber && hasSpecial;
+  const isFormValid = name && email && (mode !== 'signup' || company) && isPasswordSecure && password === confirmPassword && termsAccepted;
 
-    if (value && index < 5) {
-      codeInputs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      codeInputs.current[index - 1]?.focus();
-    }
-  };
-
-  const handle2faVerifySubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const fullCode = code.join('');
-    if (fullCode.length < 6) {
-      triggerToast('Por favor, insira o código completo de 6 dígitos.');
+    if (!isFormValid) {
+      triggerToast("Por favor, preencha todos os campos e cumpra os requisitos de senha.");
       return;
     }
 
     setLoading(true);
-    triggerToast('Validando código OTP...');
-
+    triggerToast("Registrando nova conta corporativa com trilha de auditoria...");
     setTimeout(() => {
       setLoading(false);
-      if (fullCode === '999999' || fullCode.includes('0')) {
-        triggerToast('Código inválido ou expirado. Verifique o código e tente novamente.');
-      } else {
-        triggerToast('Sessão autenticada! Redirecionando para o painel principal...');
-        setTimeout(() => {
-          window.location.href = '/dashboard/bci';
-        }, 800);
-      }
-    }, 1200);
+      setSuccess(true);
+      triggerToast("Conta configurada e ativa! Redirecionando...");
+    }, 1800);
   };
 
   return (
@@ -106,15 +112,15 @@ export default function TwoFactorPage() {
 
           <div className="space-y-4">
             <h2 className="text-[28px] xl:text-[34px] font-black tracking-tight text-[#1E1538] leading-tight">
-              Autenticação segura em<br />duas etapas.
+              Criação de conta e<br />primeiro acesso controlado.
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-3">
             {[
-              { icon: Shield, title: 'Ambiente protegido', desc: 'Seus dados sempre seguros' },
-              { icon: Lock, title: 'Infraestrutura segura', desc: 'Padrões globais de segurança' },
-              { icon: FileText, title: 'Acesso auditável', desc: 'Logs, trilhas e conformidade' }
+              { icon: Sparkles, title: 'Onboarding guiado', desc: 'Passo a passo simples e intuitivo' },
+              { icon: Shield, title: 'Compliance ativo', desc: 'Ativação opcional/obrigatória de 2FA' },
+              { icon: Lock, title: 'Acesso seguro', desc: 'Links de convite expiráveis e de uso único' }
             ].map((pilar) => {
               const IconComp = pilar.icon;
               return (
@@ -307,86 +313,218 @@ export default function TwoFactorPage() {
 
         </div>
 
-        {/* Right column: Auth card */}
+        {/* Right column: Form Card */}
         <div className="flex flex-col space-y-4 items-center justify-center animate-in fade-in slide-in-from-right-6 duration-700">
           
-          <div className="bg-white border border-[#E8DDFD]/90 rounded-[28px] p-6.5 xl:p-9.5 shadow-2xl shadow-purple-950/5 w-full max-w-[480px] text-left space-y-6 relative overflow-hidden">
+          <div className="bg-white border border-[#E8DDFD]/90 rounded-[28px] p-7 xl:p-10 shadow-2xl shadow-purple-950/5 w-full max-w-[480px] text-left space-y-5 relative overflow-hidden">
             
-            {/* Step indicator active 2 */}
-            <div className="flex items-center justify-center gap-3 w-full shrink-0 select-none pb-2 border-b border-slate-50">
-              <div className="flex items-center gap-1.5">
-                <span className="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-all bg-emerald-100 text-emerald-700">
-                  <Check className="w-3 h-3" />
-                </span>
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Credenciais</span>
-              </div>
-              <span className="w-10 h-[1.5px] bg-[#E8DDFD] shrink-0" />
-              <div className="flex items-center gap-1.5">
-                <span className="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-all bg-brand text-white shadow-md shadow-brand/15">
-                  2
-                </span>
-                <span className="text-[11px] font-black uppercase tracking-wider text-brand">Verificação</span>
-              </div>
+            {/* Mode selection tabs */}
+            <div className="flex bg-slate-50 border border-slate-200/60 rounded-xl p-1 w-full gap-1">
+              {(['invite', 'signup', 'first_access'] as RegisterMode[]).map((m) => {
+                const labels: Record<RegisterMode, string> = {
+                  invite: '💼 Convite',
+                  signup: '🚀 Cadastro',
+                  first_access: '⚡ 1º Acesso'
+                };
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      if (!success) setMode(m);
+                    }}
+                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                      mode === m
+                        ? 'bg-white text-brand shadow-sm border border-slate-200/30'
+                        : 'text-slate-450 hover:text-slate-650'
+                    }`}
+                  >
+                    {labels[m]}
+                  </button>
+                );
+              })}
             </div>
 
-            <form onSubmit={handle2faVerifySubmit} className="space-y-5 animate-in fade-in duration-300">
-              <div>
-                <h3 className="text-[22px] font-black tracking-tight text-[#1E1538]">Verificação em 2 fatores</h3>
-                <p className="text-slate-400 font-semibold text-xs mt-1">
-                  Insira o código de 6 dígitos gerado pelo seu app autenticador.
-                </p>
-              </div>
+            <div className="space-y-1">
+              <h3 className="text-[21px] font-black tracking-tight text-[#1E1538]">
+                {mode === 'invite' && 'Completar Convite'}
+                {mode === 'signup' && 'Criar sua conta'}
+                {mode === 'first_access' && 'Primeiro Acesso'}
+              </h3>
+              <p className="text-slate-450 font-bold text-xs leading-relaxed">
+                {mode === 'invite' && 'Você foi convidado para acessar a Basileia Pay. Complete seus dados corporativos.'}
+                {mode === 'signup' && 'Cadastre sua empresa e inicie sua jornada na melhor infraestrutura de checkout do mercado.'}
+                {mode === 'first_access' && 'Seus dados já existem na plataforma. Defina sua senha segura e ative seu painel.'}
+              </p>
+            </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between gap-2 pt-2">
-                  {code.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={(el) => { codeInputs.current[i] = el; }}
-                      type="text"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(i, e.target.value)}
-                      onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                      className="w-11 h-13 bg-slate-50 border-2 border-[#E8DDFD] rounded-xl text-center text-lg font-black text-[#1E1538] focus:outline-none focus:border-brand transition-all shadow-sm focus:bg-white"
-                    />
-                  ))}
+            {success ? (
+              <div className="bg-emerald-50/75 border border-emerald-100 text-emerald-850 rounded-2xl p-5 text-xs font-semibold leading-relaxed space-y-3">
+                <div className="font-black text-emerald-800 text-[13px] flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full shrink-0 animate-ping" />
+                  Conta criada com sucesso!
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 text-left block leading-relaxed">
-                  Dica: Copie o código gerado no Autenticador e cole direto no primeiro campo para auto-preenchimento.
-                </span>
+                <p>
+                  Sua conta na Basileia Pay está ativa e seu primeiro acesso foi auditado com sucesso.
+                </p>
+                <p>
+                  Estamos te redirecionando para configurar seu painel administrativo em alguns segundos...
+                </p>
+                <div className="pt-2">
+                  <Link
+                    href="/login"
+                    className="w-full h-10.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                  >
+                    Acessar painel agora
+                  </Link>
+                </div>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-3.5">
+                
+                {/* Nome Completo */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Nome completo</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      disabled={mode === 'invite' || mode === 'first_access'}
+                      placeholder="Ex: Vinícius Reinehr"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full h-10.5 pl-4 pr-10 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all placeholder:text-slate-350 bg-slate-50/50 focus:bg-white disabled:bg-slate-100 disabled:text-slate-450"
+                    />
+                    <User className="w-4 h-4 text-slate-350 absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0" />
+                  </div>
+                </div>
 
-              <button
-                type="submit"
-                disabled={loading || code.join('').length < 6}
-                className="w-full h-12 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-              >
-                {loading ? 'Verificando...' : 'Verificar e Acessar'}
-                <ArrowRight className="w-4 h-4 text-white" />
-              </button>
+                {/* E-mail */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">E-mail corporativo</label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      disabled={mode === 'invite' || mode === 'first_access'}
+                      placeholder="seu@empresa.com.br"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full h-10.5 pl-4 pr-10 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all placeholder:text-slate-350 bg-slate-50/50 focus:bg-white disabled:bg-slate-100 disabled:text-slate-450"
+                    />
+                    <Mail className="w-4 h-4 text-slate-350 absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0" />
+                  </div>
+                </div>
 
-              <div className="flex flex-col gap-3 pt-2 text-center text-xs select-none">
+                {/* Empresa (Omitida no Primeiro Acesso) */}
+                {mode !== 'first_access' && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Nome da Empresa</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        disabled={mode === 'invite'}
+                        placeholder="Ex: Basileia Inc"
+                        value={company}
+                        onChange={(e) => setCompany(e.target.value)}
+                        className="w-full h-10.5 pl-4 pr-10 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all placeholder:text-slate-350 bg-slate-50/50 focus:bg-white disabled:bg-slate-100 disabled:text-slate-450"
+                      />
+                      <Building className="w-4 h-4 text-slate-350 absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Senha */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Nova Senha</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      placeholder="Mínimo 8 caracteres"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full h-10.5 pl-4 pr-10 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all placeholder:text-slate-350 bg-slate-50/50 focus:bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-450 hover:text-slate-650 shrink-0"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirmar Senha */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Confirmar Senha</label>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Repita a senha corporativa"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full h-10.5 px-4 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all placeholder:text-slate-350 bg-slate-50/50 focus:bg-white"
+                  />
+                </div>
+
+                {/* Requirements check list */}
+                <div className="bg-[#FAF8FF] border border-[#E8DDFD]/65 rounded-xl p-3 space-y-2 text-[10.5px]">
+                  <div className="text-[9px] font-black uppercase text-slate-400 tracking-wider pb-0.5 border-b border-[#E8DDFD]/35">
+                    Força de senha exigida
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 font-bold">
+                    <div className="flex items-center gap-1.5">
+                      {hasMinLen ? <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> : <X className="w-3.5 h-3.5 text-slate-350 shrink-0" />}
+                      <span className={hasMinLen ? "text-emerald-700" : "text-slate-450"}>8+ caracteres</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {hasUpper ? <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> : <X className="w-3.5 h-3.5 text-slate-350 shrink-0" />}
+                      <span className={hasUpper ? "text-emerald-700" : "text-slate-450"}>Letra maiúscula</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {hasNumber ? <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> : <X className="w-3.5 h-3.5 text-slate-350 shrink-0" />}
+                      <span className={hasNumber ? "text-emerald-700" : "text-slate-450"}>Um número</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {hasSpecial ? <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> : <X className="w-3.5 h-3.5 text-slate-350 shrink-0" />}
+                      <span className={hasSpecial ? "text-emerald-700" : "text-slate-450"}>Caractere especial</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Termos de Uso Checkbox */}
+                <div className="flex items-start gap-2.5 pt-1">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-brand focus:ring-brand shrink-0"
+                  />
+                  <label htmlFor="terms" className="text-[11px] font-bold text-slate-450 leading-tight">
+                    Declaro que aceito as <a href="#" onClick={(e) => { e.preventDefault(); triggerToast("Carregando Termos de Uso..."); }} className="text-brand font-black hover:underline">Políticas de Segurança de Dados</a> e os <a href="#" onClick={(e) => { e.preventDefault(); triggerToast("Carregando Termos de Serviços..."); }} className="text-brand font-black hover:underline">Termos de Serviços</a> da Basileia Pay.
+                  </label>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => {
-                    triggerToast('Digite "000000" para simular o código de recuperação.');
-                    setCode(['0', '0', '0', '0', '0', '0']);
-                  }}
-                  className="text-brand font-black hover:underline"
+                  type="submit"
+                  disabled={loading || !isFormValid}
+                  className="w-full h-11 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  Usar código de recuperação
+                  {loading ? 'Processando...' : mode === 'first_access' ? 'Ativar acesso' : 'Criar minha conta'}
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </button>
+              </form>
+            )}
 
-                <Link
-                  href="/login"
-                  className="text-slate-450 hover:text-slate-700 font-bold flex items-center justify-center gap-1"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao login
-                </Link>
-              </div>
-            </form>
-
+            {/* Divider */}
             <div className="relative w-full h-[1px] bg-slate-50/50 flex items-center justify-center py-2">
               <span className="w-full h-[1px] bg-[#E8DDFD]/65 absolute top-1/2 -translate-y-1/2" />
               <div className="w-7 h-7 bg-white rounded-full border border-[#E8DDFD] shadow-sm flex items-center justify-center z-10 shrink-0">
@@ -395,17 +533,10 @@ export default function TwoFactorPage() {
             </div>
 
             <div className="text-center text-xs font-semibold text-slate-400 pb-1">
-              Precisando de ajuda?{' '}
-              <a 
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  triggerToast("Abrindo canal de suporte de segurança Basileia...");
-                }}
-                className="text-brand font-black hover:underline"
-              >
-                Fale com nosso suporte
-              </a>
+              Já possui uma credencial de acesso?{' '}
+              <Link href="/login" className="text-brand font-black hover:underline">
+                Acesse o login
+              </Link>
             </div>
 
           </div>

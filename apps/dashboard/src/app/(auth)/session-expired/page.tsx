@@ -1,80 +1,24 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { 
   Shield, 
   Lock, 
   FileText, 
+  Clock,
   ArrowRight, 
-  Check, 
   ArrowLeft,
   Key,
   Monitor
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
-export default function TwoFactorPage() {
-  const [code, setCode] = useState(['', '', '', '', '', '']);
-  const codeInputs = useRef<any[]>([]);
+export default function SessionExpiredPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
-  };
-
-  const handleCodeChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      const pasted = value.slice(0, 6).split('');
-      const newCode = [...code];
-      pasted.forEach((char, i) => {
-        if (index + i < 6) newCode[index + i] = char;
-      });
-      setCode(newCode);
-      const nextIndex = Math.min(index + pasted.length, 5);
-      codeInputs.current[nextIndex]?.focus();
-      return;
-    }
-
-    const newCode = [...code];
-    newCode[index] = value;
-    setCode(newCode);
-
-    if (value && index < 5) {
-      codeInputs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      codeInputs.current[index - 1]?.focus();
-    }
-  };
-
-  const handle2faVerifySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const fullCode = code.join('');
-    if (fullCode.length < 6) {
-      triggerToast('Por favor, insira o código completo de 6 dígitos.');
-      return;
-    }
-
-    setLoading(true);
-    triggerToast('Validando código OTP...');
-
-    setTimeout(() => {
-      setLoading(false);
-      if (fullCode === '999999' || fullCode.includes('0')) {
-        triggerToast('Código inválido ou expirado. Verifique o código e tente novamente.');
-      } else {
-        triggerToast('Sessão autenticada! Redirecionando para o painel principal...');
-        setTimeout(() => {
-          window.location.href = '/dashboard/bci';
-        }, 800);
-      }
-    }, 1200);
   };
 
   return (
@@ -106,7 +50,7 @@ export default function TwoFactorPage() {
 
           <div className="space-y-4">
             <h2 className="text-[28px] xl:text-[34px] font-black tracking-tight text-[#1E1538] leading-tight">
-              Autenticação segura em<br />duas etapas.
+              Sua sessão expirou por<br />motivos de segurança.
             </h2>
           </div>
 
@@ -307,86 +251,46 @@ export default function TwoFactorPage() {
 
         </div>
 
-        {/* Right column: Auth card */}
+        {/* Right column: Expired card */}
         <div className="flex flex-col space-y-4 items-center justify-center animate-in fade-in slide-in-from-right-6 duration-700">
           
-          <div className="bg-white border border-[#E8DDFD]/90 rounded-[28px] p-6.5 xl:p-9.5 shadow-2xl shadow-purple-950/5 w-full max-w-[480px] text-left space-y-6 relative overflow-hidden">
+          <div className="bg-white border border-[#E8DDFD]/90 rounded-[28px] p-7 xl:p-10 shadow-2xl shadow-purple-950/5 w-full max-w-[460px] text-left space-y-6 relative overflow-hidden">
             
-            {/* Step indicator active 2 */}
-            <div className="flex items-center justify-center gap-3 w-full shrink-0 select-none pb-2 border-b border-slate-50">
-              <div className="flex items-center gap-1.5">
-                <span className="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-all bg-emerald-100 text-emerald-700">
-                  <Check className="w-3 h-3" />
-                </span>
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Credenciais</span>
-              </div>
-              <span className="w-10 h-[1.5px] bg-[#E8DDFD] shrink-0" />
-              <div className="flex items-center gap-1.5">
-                <span className="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-all bg-brand text-white shadow-md shadow-brand/15">
-                  2
-                </span>
-                <span className="text-[11px] font-black uppercase tracking-wider text-brand">Verificação</span>
-              </div>
+            <div className="w-12 h-12 rounded-2xl bg-violet-50 text-brand border border-violet-100 flex items-center justify-center">
+              <Clock className="w-6 h-6 shrink-0" />
             </div>
 
-            <form onSubmit={handle2faVerifySubmit} className="space-y-5 animate-in fade-in duration-300">
-              <div>
-                <h3 className="text-[22px] font-black tracking-tight text-[#1E1538]">Verificação em 2 fatores</h3>
-                <p className="text-slate-400 font-semibold text-xs mt-1">
-                  Insira o código de 6 dígitos gerado pelo seu app autenticador.
-                </p>
-              </div>
+            <div className="space-y-1.5">
+              <h3 className="text-[22px] font-black tracking-tight text-[#1E1538]">Sessão expirada</h3>
+              <p className="text-slate-450 font-bold text-xs leading-relaxed mt-1.5">
+                Sua sessão expirou por segurança. Faça login novamente para continuar.
+              </p>
+            </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between gap-2 pt-2">
-                  {code.map((digit, i) => (
-                    <input
-                      key={i}
-                      ref={(el) => { codeInputs.current[i] = el; }}
-                      type="text"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleCodeChange(i, e.target.value)}
-                      onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                      className="w-11 h-13 bg-slate-50 border-2 border-[#E8DDFD] rounded-xl text-center text-lg font-black text-[#1E1538] focus:outline-none focus:border-brand transition-all shadow-sm focus:bg-white"
-                    />
-                  ))}
-                </div>
-                <span className="text-[10px] font-bold text-slate-400 text-left block leading-relaxed">
-                  Dica: Copie o código gerado no Autenticador e cole direto no primeiro campo para auto-preenchimento.
-                </span>
-              </div>
+            {/* Simulated context retention badge */}
+            <div className="bg-[#FAF8FF] border border-[#E8DDFD]/65 rounded-xl p-3.5 text-left text-[10px] font-bold text-slate-400 leading-normal flex items-start gap-2">
+              <Shield className="w-4 h-4 text-brand shrink-0 mt-0.5" />
+              <span>Nenhum dado foi perdido. Suas alterações locais e rascunhos foram salvos localmente e serão revalidados após o login.</span>
+            </div>
 
-              <button
-                type="submit"
-                disabled={loading || code.join('').length < 6}
-                className="w-full h-12 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+            <div className="space-y-3 pt-1">
+              <Link
+                href="/login"
+                className="w-full h-11.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all flex items-center justify-center gap-1.5"
               >
-                {loading ? 'Verificando...' : 'Verificar e Acessar'}
+                Entrar novamente
                 <ArrowRight className="w-4 h-4 text-white" />
-              </button>
+              </Link>
 
-              <div className="flex flex-col gap-3 pt-2 text-center text-xs select-none">
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerToast('Digite "000000" para simular o código de recuperação.');
-                    setCode(['0', '0', '0', '0', '0', '0']);
-                  }}
-                  className="text-brand font-black hover:underline"
-                >
-                  Usar código de recuperação
-                </button>
+              <Link
+                href="/login"
+                className="w-full h-11 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao login
+              </Link>
+            </div>
 
-                <Link
-                  href="/login"
-                  className="text-slate-450 hover:text-slate-700 font-bold flex items-center justify-center gap-1"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao login
-                </Link>
-              </div>
-            </form>
-
+            {/* Divider */}
             <div className="relative w-full h-[1px] bg-slate-50/50 flex items-center justify-center py-2">
               <span className="w-full h-[1px] bg-[#E8DDFD]/65 absolute top-1/2 -translate-y-1/2" />
               <div className="w-7 h-7 bg-white rounded-full border border-[#E8DDFD] shadow-sm flex items-center justify-center z-10 shrink-0">
@@ -395,16 +299,16 @@ export default function TwoFactorPage() {
             </div>
 
             <div className="text-center text-xs font-semibold text-slate-400 pb-1">
-              Precisando de ajuda?{' '}
+              Se o problema persistir,{' '}
               <a 
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  triggerToast("Abrindo canal de suporte de segurança Basileia...");
+                  triggerToast("Abrindo canal de ajuda de TI da Basileia...");
                 }}
                 className="text-brand font-black hover:underline"
               >
-                Fale com nosso suporte
+                fale com o suporte
               </a>
             </div>
 
