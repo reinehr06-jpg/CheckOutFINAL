@@ -93,6 +93,29 @@ class User extends Authenticatable
         return $query->where('status', 'active');
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function canImpersonate(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    public function impersonations(): HasMany
+    {
+        return $this->hasMany(ImpersonationSession::class, 'super_admin_id');
+    }
+
+    public function getEffectiveCompanyId(): ?int
+    {
+        if (app()->bound('impersonation_company_id')) {
+            return app('impersonation_company_id');
+        }
+        return $this->company_id;
+    }
+
     public function isLocked(): bool
     {
         return $this->status === 'locked' || $this->locked_at !== null;

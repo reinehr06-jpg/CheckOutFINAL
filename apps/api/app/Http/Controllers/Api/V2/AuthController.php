@@ -72,4 +72,30 @@ class AuthController extends Controller
             'two_factor_enabled' => $user->two_factor_enabled,
         ]);
     }
+
+    public function verify2fa(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Não autenticado.'], 401);
+        }
+
+        $data = $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $twoFactorService = app(\App\Services\TwoFactorAuthService::class);
+
+        if ($twoFactorService->verifyCode($user, $data['code'])) {
+            $user->update(['last_auth_at' => now()]);
+            return response()->json([
+                'success' => true,
+                'message' => '2FA verificado com sucesso.',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Código inválido ou expirado.',
+        ], 422);
+    }
 }

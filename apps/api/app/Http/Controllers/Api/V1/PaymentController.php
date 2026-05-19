@@ -15,22 +15,38 @@ class PaymentController extends Controller
 
     public function index(Request $request)
     {
-        $payments = \App\Models\Payment::where('company_id', \App\Services\TenantContext::companyId())
-            ->with(['order', 'gatewayAccount'])
-            ->latest()
-            ->paginate($request->per_page ?? 20);
+        $user = auth()->user();
+        $companyId = TenantContext::companyId();
+
+        $query = \App\Models\Payment::query();
+
+        // Super admin ve todos os pagamentos
+        if ($user && $user->isSuperAdmin() && !$user->company_id) {
+            // Sem filtro de company_id
+        } elseif ($companyId) {
+            $query->where('company_id', $companyId);
+        } else {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'meta' => ['current_page' => 1, 'last_page' => 1, 'total' => 0, 'request_id' => $request->attributes->get('request_id')],
+            ]);
+        }
+
+        $payments = $query->with(['order', 'gatewayAccount'])->latest()->paginate($request->per_page ?? 20);
 
         return response()->json([
             'success' => true,
             'data' => $payments->getCollection()->map(fn($p) => [
                 'id' => $p->id,
                 'uuid' => $p->uuid,
+                'customer' => $p->order?->customer_name ?? 'N/A',
                 'method' => $p->method,
-                'gateway' => $p->gatewayAccount->name,
-                'amount' => $p->amount,
+                'gateway' => $p->gatewayAccount?->name ?? 'N/A',
+                'value' => 'R$ ' . number_format($p->amount / 100, 2, ',', '.'),
                 'status' => $p->status,
-                'status_label' => ucfirst($p->status),
-                'created_at' => $p->created_at->format('d/m/Y H:i'),
+                'risk' => 'low',
+                'created_at' => $p->created_at->format('d/m H:i'),
             ]),
             'meta' => [
                 'current_page' => $payments->currentPage(),

@@ -1,72 +1,125 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { 
   DollarSign, 
   TrendingUp, 
   ShieldCheck, 
   AlertCircle, 
   Filter,
-  BarChart3,
   ArrowUpRight,
-  ArrowDownRight
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Area, AreaChart, ResponsiveContainer } from 'recharts';
+import { apiFetch } from '@/lib/api';
 
-const kpis = [
-  {
-    title: 'Volume Processado',
-    value: 'R$ 28,71 mi',
-    change: '+2,04%',
-    trend: 'up',
-    description: 'vs 7 dias atrás',
-    icon: DollarSign,
-    color: 'brand',
-    chartData: [40, 45, 42, 48, 50, 48, 52]
-  },
-  {
-    title: 'Receita Líquida',
-    value: 'R$ 2,41 mi',
-    change: '+10,71%',
-    trend: 'up',
-    description: 'vs 7 dias atrás',
-    icon: TrendingUp,
-    color: 'brand',
-    chartData: [30, 35, 32, 40, 38, 45, 50]
-  },
-  {
-    title: 'Taxa de Aprovação',
-    value: '94,62%',
-    change: '+2,49 p.p.',
-    trend: 'up',
-    description: 'vs 7 dias atrás',
-    icon: ShieldCheck,
-    color: 'success',
-    chartData: [90, 92, 91, 94, 93, 94, 95]
-  },
-  {
-    title: 'Falhas de Pagamento',
-    value: '2,31%',
-    change: '+0,47 p.p.',
-    trend: 'down',
-    description: 'vs 7 dias atrás',
-    icon: AlertCircle,
-    color: 'danger',
-    chartData: [2.1, 2.3, 2.2, 2.5, 2.4, 2.3, 2.3]
-  },
-  {
-    title: 'Conversão Final',
-    value: '75,9%',
-    change: '+3,52 p.p.',
-    trend: 'up',
-    description: 'vs 7 dias atrás',
-    icon: Filter,
-    color: 'brand',
-    chartData: [80, 78, 79, 76, 77, 75, 76]
-  }
-];
+type KpiData = {
+  title: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down';
+  description: string;
+  icon: typeof DollarSign;
+  color: string;
+  chartData: number[];
+};
 
 export function KpiGrid() {
+  const [kpis, setKpis] = useState<KpiData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const result = await apiFetch('/api/v1/dashboard/stats');
+        if (result.success && result.data) {
+          const d = result.data as any;
+          setKpis([
+            {
+              title: 'Volume Processado',
+              value: d.volume_processed || 'R$ 0,00',
+              change: d.volume_change || '+0%',
+              trend: d.volume_trend === 'down' ? 'down' : 'up',
+              description: 'vs 7 dias atras',
+              icon: DollarSign,
+              color: 'brand',
+              chartData: d.volume_chart || [0,0,0,0,0,0,0]
+            },
+            {
+              title: 'Receita Liquida',
+              value: d.net_revenue || 'R$ 0,00',
+              change: d.revenue_change || '+0%',
+              trend: d.revenue_trend === 'down' ? 'down' : 'up',
+              description: 'vs 7 dias atras',
+              icon: TrendingUp,
+              color: 'brand',
+              chartData: d.revenue_chart || [0,0,0,0,0,0,0]
+            },
+            {
+              title: 'Taxa de Aprovacao',
+              value: d.approval_rate || '0%',
+              change: d.approval_change || '+0%',
+              trend: d.approval_trend === 'down' ? 'down' : 'up',
+              description: 'vs 7 dias atras',
+              icon: ShieldCheck,
+              color: 'success',
+              chartData: d.approval_chart || [0,0,0,0,0,0,0]
+            },
+            {
+              title: 'Falhas de Pagamento',
+              value: d.failure_rate || '0%',
+              change: d.failure_change || '+0%',
+              trend: d.failure_trend === 'up' ? 'down' : 'up',
+              description: 'vs 7 dias atras',
+              icon: AlertCircle,
+              color: 'danger',
+              chartData: d.failure_chart || [0,0,0,0,0,0,0]
+            },
+            {
+              title: 'Conversao Final',
+              value: d.conversion_rate || '0%',
+              change: d.conversion_change || '+0%',
+              trend: d.conversion_trend === 'down' ? 'down' : 'up',
+              description: 'vs 7 dias atras',
+              icon: Filter,
+              color: 'brand',
+              chartData: d.conversion_chart || [0,0,0,0,0,0,0]
+            },
+          ]);
+        } else {
+          setKpis([]);
+        }
+      } catch {
+        setKpis([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 2xl:gap-6">
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className="bg-white p-4 2xl:p-5 rounded-[20px] border border-border h-[130px] 2xl:h-[142px] flex items-center justify-center">
+            <Loader2 className="w-5 h-5 text-slate/30 animate-spin" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (kpis.length === 0) {
+    return (
+      <div className="bg-white p-8 rounded-[20px] border border-border text-center">
+        <p className="text-sm font-bold text-slate/50">Nenhum dado disponivel ainda.</p>
+        <p className="text-xs font-bold text-slate/30 mt-1">Conecte um sistema e faca sua primeira venda.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 2xl:gap-6">
       {kpis.map((kpi) => (
@@ -74,7 +127,6 @@ export function KpiGrid() {
           key={kpi.title} 
           className="group bg-white p-4 2xl:p-5 rounded-[20px] border border-border shadow-sm hover:shadow-xl hover:shadow-brand/5 hover:-translate-y-1 transition-all duration-500 h-[130px] 2xl:h-[142px] flex flex-col relative overflow-hidden"
         >
-          {/* Header: Icon + Title */}
           <div className="flex items-center justify-between relative z-10">
             <div className={cn(
               "w-7 h-7 2xl:w-8 2xl:h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
@@ -87,7 +139,6 @@ export function KpiGrid() {
             </p>
           </div>
 
-          {/* Body: Value + Change */}
           <div className="relative z-10 mt-auto pb-2 2xl:pb-4">
             <p className="text-[22px] 2xl:text-[27px] font-black text-ink tracking-tighter leading-none mb-1 whitespace-nowrap">
               {kpi.value}
@@ -104,8 +155,6 @@ export function KpiGrid() {
             </div>
           </div>
 
-
-          {/* Sparkline: Refined & Transparent (No Fill/Overlay) */}
           <div className="absolute bottom-0 left-0 right-0 h-9 pointer-events-none">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={kpi.chartData.map((v, i) => ({ v, i }))}>

@@ -28,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
+        // Set tenant context for Sanctum-authenticated requests
+        $middleware->api(append: [
+            \App\Http\Middleware\SetTenantContext::class,
+        ]);
+
         // Security headers for all responses
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 

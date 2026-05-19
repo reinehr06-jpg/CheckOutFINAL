@@ -99,6 +99,16 @@ Route::prefix('v1')->group(function () {
             Route::post('dashboard/api-keys', [\App\Http\Controllers\Api\V1\Dashboard\ApiKeyController::class, 'store']);
             Route::get('dashboard/audit', [\App\Http\Controllers\Api\V1\Dashboard\AuditController::class, 'index']);
 
+            // Super Admin
+            Route::prefix('super-admin')->group(function () {
+                Route::get('companies', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'companies']);
+                Route::get('companies/{companyId}/users', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'companyUsers']);
+                Route::post('impersonate/start', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'startImpersonation']);
+                Route::post('impersonate/stop', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'stopImpersonation']);
+                Route::get('impersonate/status', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'impersonationStatus']);
+                Route::get('impersonate/history', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'impersonationHistory']);
+            });
+
             // User Management
             Route::get('dashboard/users', [\App\Http\Controllers\Api\V1\Dashboard\UserManagementController::class, 'index']);
             Route::post('dashboard/users', [\App\Http\Controllers\Api\V1\Dashboard\UserManagementController::class, 'store']);
@@ -170,6 +180,8 @@ Route::prefix('v2')->name('api.v2.')->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('auth/me', [\App\Http\Controllers\Api\V2\AuthController::class, 'me']);
+        Route::post('auth/2fa/verify', [\App\Http\Controllers\Api\V2\AuthController::class, 'verify2fa']);
+        Route::post('auth/logout', [\App\Http\Controllers\Api\V2\AuthController::class, 'logout']);
         Route::get('dashboard/stats', [\App\Http\Controllers\Api\V2\DashboardController::class, 'stats']);
     });
 });

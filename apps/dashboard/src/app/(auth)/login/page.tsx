@@ -65,7 +65,7 @@ export default function LoginPage() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const handleCredentialsSubmit = (e: React.FormEvent) => {
+  const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       triggerToast('Preencha todos os campos obrigatórios.');
@@ -75,17 +75,54 @@ export default function LoginPage() {
     setLoading(true);
     triggerToast('Validando credenciais de acesso...');
 
-    setTimeout(() => {
-      setLoading(false);
-      // Simulate account lockout on specific mock user if wanted, or standard success flow:
-      if (email.toLowerCase().includes('lock')) {
-        setAuthState('locked_out');
-        triggerToast('Por segurança, esta conta foi temporariamente bloqueada.');
-      } else {
-        setAuthState('two_factor');
-        triggerToast('Credenciais corretas! Prossiga com o desafio 2FA.');
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      
+      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        triggerToast(data.error?.message || 'Email ou senha inválidos.');
+        setLoading(false);
+        return;
       }
-    }, 1200);
+
+      // Salva token e dados do usuário
+      localStorage.setItem('basileia_token', data.data.token);
+      localStorage.setItem('basileia_user', JSON.stringify(data.data.user));
+
+      // Se é super_admin, vai direto pro dashboard
+      if (data.data.user.role === 'super_admin') {
+        triggerToast('Login super admin realizado!');
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 500);
+        return;
+      }
+
+      // Se tem 2FA configurado, vai para verificação
+      if (data.data.user.two_factor_enabled) {
+        triggerToast('Credenciais corretas! Prossiga com o 2FA.');
+        setAuthState('two_factor');
+      } else {
+        triggerToast('Login realizado com sucesso!');
+        setTimeout(() => {
+          window.location.href = '/dashboard/onboarding';
+        }, 500);
+      }
+    } catch (err) {
+      triggerToast('Erro de conexão com o servidor. Verifique se a API está rodando.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 2FA Code Handling
@@ -119,7 +156,7 @@ export default function LoginPage() {
     }
   };
 
-  const handle2faVerifySubmit = (e: React.FormEvent) => {
+  const handle2faVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullCode = code.join('');
     if (fullCode.length < 6) {
@@ -130,21 +167,40 @@ export default function LoginPage() {
     setLoading(true);
     triggerToast('Validando código OTP...');
 
-    setTimeout(() => {
-      setLoading(false);
-      if (fullCode === '999999' || fullCode.includes('0')) {
-        // Trigger simulated wrong code error
-        triggerToast('Código inválido ou expirado. Verifique o código e tente novamente.');
-      } else {
-        triggerToast('Sessão autenticada! Redirecionando para o painel de primeiro início (Onboarding)...');
-        setTimeout(() => {
-          window.location.href = '/dashboard/onboarding';
-        }, 800);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const token = localStorage.getItem('basileia_token');
+
+      const res = await fetch(`${API_URL}/api/v2/auth/2fa/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code: fullCode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.message) {
+        triggerToast(data.message || 'Código inválido ou expirado.');
+        setLoading(false);
+        return;
       }
-    }, 1200);
+
+      triggerToast('Autenticado! Redirecionando...');
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
+    } catch (err) {
+      triggerToast('Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRecoverySubmit = (e: React.FormEvent) => {
+  const handleRecoverySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recoveryEmail) {
       triggerToast('Informe seu e-mail.');
@@ -154,11 +210,33 @@ export default function LoginPage() {
     setLoading(true);
     triggerToast('Processando solicitação de recuperação...');
 
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      
+      const res = await fetch(`${API_URL}/api/v1/auth/password/forgot`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ email: recoveryEmail }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        triggerToast('Erro ao processar solicitação. Tente novamente.');
+        setLoading(false);
+        return;
+      }
+
       setRecoverySent(true);
-      triggerToast('Solicitação recebida com sucesso.');
-    }, 1200);
+      triggerToast('Se este e-mail estiver cadastrado, enviaremos as instruções.');
+    } catch (err) {
+      triggerToast('Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -12,10 +12,22 @@ class SystemController extends Controller
 {
     public function index()
     {
-        $systems = ConnectedSystem::where('company_id', TenantContext::companyId())
-            ->with(['apiKeys'])
-            ->latest()
-            ->get();
+        $user = auth()->user();
+        
+        $query = ConnectedSystem::query();
+
+        if ($user && $user->isSuperAdmin() && !$user->company_id) {
+            // Super admin ve todos os sistemas
+            $query->with(['apiKeys']);
+        } else {
+            $companyId = TenantContext::companyId();
+            if (!$companyId) {
+                return response()->json(['success' => true, 'data' => []]);
+            }
+            $query->where('company_id', $companyId)->with(['apiKeys']);
+        }
+
+        $systems = $query->latest()->get();
 
         return response()->json([
             'success' => true,
@@ -24,9 +36,15 @@ class SystemController extends Controller
                 'uuid' => $s->uuid,
                 'name' => $s->name,
                 'slug' => $s->slug,
+                'description' => $s->description ?? 'Gateway de Pagamento',
+                'logo_url' => $s->logo_url,
                 'status' => $s->status,
                 'environment' => $s->environment,
-                'api_key_preview' => $s->apiKeys->first()?->key ?? 'N/A',
+                'gateway_default' => $s->apiKeys->first()?->name ?? 'N/A',
+                'checkout_default' => 'N/A',
+                'last_activity' => $s->updated_at?->diffForHumans() ?? '---',
+                'uptime' => '99.9%',
+                'reqs' => '0 req/s',
                 'created_at' => $s->created_at->format('d/m/Y H:i'),
             ])
         ]);
