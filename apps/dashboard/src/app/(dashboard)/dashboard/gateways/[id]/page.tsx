@@ -1,0 +1,859 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { 
+  ArrowLeft,
+  ShieldCheck,
+  ShieldAlert,
+  Key,
+  Network,
+  Activity,
+  Layers,
+  Settings,
+  X,
+  Check,
+  Loader2,
+  Lock,
+  Play,
+  Pause,
+  AlertCircle,
+  Copy,
+  ChevronDown,
+  TrendingUp,
+  Cpu,
+  Globe,
+  Clock,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Database,
+  Terminal,
+  Calendar,
+  CheckCircle2,
+  HelpCircle
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// Static Gateway Mock List for Details
+const gatewaysDetailsMocks = [
+  {
+    id: 'pagarme',
+    name: 'Pagar.me',
+    provider: 'Pagar.me',
+    desc: 'Gateway de cartão, PIX e boleto',
+    status: 'Operacional',
+    ambiente: 'Produção',
+    aprovacao: '98,72%',
+    pp: '+1,4 p.p.',
+    uptime: '99,92%',
+    p95: '184ms',
+    reqs: '142 req/s',
+    conta: 'Pagar.me Principal',
+    contaId: 'acc_pagarme_001',
+    client_id: 'cli_live_pagarme_8829f01',
+    api_key: 'ak_live_pagarme_a89f92e81cfb29a8a7c6e',
+    secret: 'sh_live_pagarme_9c8a2ef81cfb9b8b7a6d5c',
+    webhooks: [
+      { event: 'payment.succeeded', status: '200 OK', time: 'há 2 min', id: 'evt_pgm_102' },
+      { event: 'payment.failed', status: '200 OK', time: 'há 15 min', id: 'evt_pgm_101' },
+      { event: 'charge.refunded', status: '200 OK', time: 'há 1 h', id: 'evt_pgm_100' },
+    ],
+    eventos: [
+      { title: 'Credenciais verificadas', user: 'Trust Layer', time: 'há 10 min', desc: 'Revalidação periódica de integridade bem-sucedida.' },
+      { title: 'Rota de Cartão de Crédito ativada', user: 'Vinícius Admin', time: 'há 2 dias', desc: 'Checkout Pagar.me Padrão vinculado ao Sistema Core.' },
+      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 1 mês', desc: 'Cadastro de conta de recebimento acc_pagarme_001.' }
+    ]
+  },
+  {
+    id: 'mercadopago',
+    name: 'Mercado Pago',
+    provider: 'Mercado Pago',
+    desc: 'Provedor de Pix e carteiras',
+    status: 'Operacional',
+    ambiente: 'Produção',
+    aprovacao: '96,31%',
+    pp: '+0,8 p.p.',
+    uptime: '99,78%',
+    p95: '210ms',
+    reqs: '118 req/s',
+    conta: 'Mercado Pago BR',
+    contaId: 'acc_mp_002',
+    client_id: 'cli_live_mp_4492b02',
+    api_key: 'ak_live_mp_b89f81dfbc1a28a9b7c3e',
+    secret: 'sh_live_mp_8c8a1ef91bfb2b7b6a5d4c',
+    webhooks: [
+      { event: 'payment.succeeded', status: '200 OK', time: 'há 5 min', id: 'evt_mp_202' },
+      { event: 'payment.failed', status: '200 OK', time: 'há 12 min', id: 'evt_mp_201' },
+    ],
+    eventos: [
+      { title: 'Chave API atualizada', user: 'Vinícius Admin', time: 'há 3 dias', desc: 'Credenciais de produção rotacionadas para acc_mp_002.' },
+      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 2 meses', desc: 'Configuração da conta Mercado Pago BR.' }
+    ]
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    provider: 'Stripe',
+    desc: 'Infraestrutura global de pagamentos',
+    status: 'Atenção',
+    ambiente: 'Produção',
+    aprovacao: '92,15%',
+    pp: '-3,2 p.p.',
+    uptime: '98,21%',
+    p95: '430ms',
+    reqs: '86 req/s',
+    conta: 'Stripe Global',
+    contaId: 'acc_stripe_003',
+    client_id: 'cli_live_stripe_9930c03',
+    api_key: 'ak_live_stripe_c89f71efbc1b28a9b7c3e',
+    secret: 'sh_live_stripe_7c8a1ef91bfb2b7b6a5d4c',
+    webhooks: [
+      { event: 'payment.succeeded', status: '200 OK', time: 'há 14 min', id: 'evt_str_302' },
+      { event: 'charge.failed', status: '504 Gateway Timeout', time: 'há 14 min', id: 'evt_str_301' },
+    ],
+    eventos: [
+      { title: 'Timeout na autorização detectado', user: 'Trust Layer', time: 'há 14 min', desc: 'Latência do ping de checkout ultrapassou limite crítico de 4000ms.' },
+      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 3 meses', desc: 'Vinculação da conta Stripe Global acc_stripe_003.' }
+    ]
+  },
+  {
+    id: 'asaas',
+    name: 'Asaas',
+    provider: 'Asaas',
+    desc: 'Conta digital para boletos e Pix',
+    status: 'Operacional',
+    ambiente: 'Produção',
+    aprovacao: '97,08%',
+    pp: '+0,5 p.p.',
+    uptime: '99,95%',
+    p95: '165ms',
+    reqs: '74 req/s',
+    conta: 'Asaas Principal',
+    contaId: 'acc_asaas_004',
+    client_id: 'cli_live_asaas_1120a04',
+    api_key: 'ak_live_asaas_d89f61efbc1c28a9b7c3e',
+    secret: 'sh_live_asaas_6c8a1ef91bfb2b7b6a5d4c',
+    webhooks: [
+      { event: 'payment.succeeded', status: '200 OK', time: 'há 1 h', id: 'evt_asa_402' },
+    ],
+    eventos: [
+      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 4 meses', desc: 'Cadastro de conta digital de recebimento acc_asaas_004.' }
+    ]
+  },
+  {
+    id: 'cielo',
+    name: 'Cielo',
+    provider: 'Cielo',
+    desc: 'Adquirente tradicional de cartões',
+    status: 'Operacional',
+    ambiente: 'Produção',
+    aprovacao: '95,42%',
+    pp: '-0,9 p.p.',
+    uptime: '99,61%',
+    p95: '390ms',
+    reqs: '91 req/s',
+    conta: 'Cielo Principal',
+    contaId: 'acc_cielo_005',
+    client_id: 'cli_live_cielo_2220b05',
+    api_key: 'ak_live_cielo_e89f51efbc1d28a9b7c3e',
+    secret: 'sh_live_cielo_5c8a1ef91bfb2b7b6a5d4c',
+    webhooks: [
+      { event: 'payment.succeeded', status: '200 OK', time: 'há 3 h', id: 'evt_cie_502' },
+    ],
+    eventos: [
+      { title: 'Alerta de p95 elevado', user: 'Trust Layer', time: 'há 5 h', desc: 'Latência média superou p90 configurado de 350ms.' }
+    ]
+  },
+  {
+    id: 'adyen',
+    name: 'Adyen',
+    provider: 'Adyen',
+    desc: 'Plataforma unificada global',
+    status: 'Desativado',
+    ambiente: 'Sandbox',
+    aprovacao: '—',
+    pp: '—',
+    uptime: '0%',
+    p95: '—',
+    reqs: '0 req/s',
+    conta: 'Sem conta padrão',
+    contaId: '',
+    client_id: 'cli_sand_adyen_0982d06',
+    api_key: 'ak_sand_adyen_f89f41efbc1e28a9b7c3e',
+    secret: 'sh_sand_adyen_4c8a1ef91bfb2b7b6a5d4c',
+    webhooks: [],
+    eventos: [
+      { title: 'Gateway desativado', user: 'Vinícius Admin', time: 'há 1 semana', desc: 'Desativação manual devido a encerramento de período de testes.' }
+    ]
+  },
+  {
+    id: 'bb_pix',
+    name: 'Banco do Brasil PIX',
+    provider: 'Banco do Brasil PIX',
+    desc: 'Integração direta corporativa Pix',
+    status: 'Instável',
+    ambiente: 'Produção',
+    aprovacao: '89,27%',
+    pp: '-5,4 p.p.',
+    uptime: '95,12%',
+    p95: '890ms',
+    reqs: '62 req/s',
+    conta: 'BB PIX',
+    contaId: 'acc_bb_pix_006',
+    client_id: 'cli_live_bb_pix_3389a06',
+    api_key: 'ak_live_bb_pix_a89f31efbc1f28a9b7c3e',
+    secret: 'sh_live_bb_pix_3c8a1ef91bfb2b7b6a5d4c',
+    webhooks: [
+      { event: 'pix.received', status: '500 Server Error', time: 'há 28 min', id: 'evt_bb_602' },
+      { event: 'pix.received', status: '200 OK', time: 'há 1 h', id: 'evt_bb_601' },
+    ],
+    eventos: [
+      { title: 'Erros 500 recorrentes', user: 'Trust Layer', time: 'há 28 min', desc: 'Detecção de 12 falhas 500 seguidas no retorno do webhook do BB PIX.' }
+    ]
+  },
+  {
+    id: 'internal',
+    name: 'Internal Router',
+    provider: 'Internal Router',
+    desc: 'Roteador inteligente Basileia Pay',
+    status: 'Operacional',
+    ambiente: 'Produção',
+    aprovacao: '99,91%',
+    pp: '+0,1 p.p.',
+    uptime: '100%',
+    p95: '120ms',
+    reqs: '23 req/s',
+    erro: 'Sem erros recentes',
+    conta: 'Internal Router',
+    contaId: 'acc_internal_007',
+    client_id: 'cli_live_internal_0001a07',
+    api_key: 'ak_live_internal_f89f21efbc1a28a9b7c3e',
+    secret: 'sh_live_internal_2c8a1ef91bfb2b7b6a5d4c',
+    webhooks: [],
+    eventos: [
+      { title: 'Gateway conectado', user: 'Trust Layer', time: 'há 6 meses', desc: 'Roteador interno ativo para sistemas da empresa.' }
+    ]
+  }
+];
+
+// Methods Mock Data
+const methodsMock = [
+  { method: 'Cartão de Crédito', active: true, tax: '98,22%', fee: '2,99% + R$ 0,30', trans: 'há 2 min' },
+  { method: 'Pix Dinâmico', active: true, tax: '99,84%', fee: '0,99%', trans: 'há 4 min' },
+  { method: 'Boleto Bancário', active: true, tax: '94,50%', fee: 'R$ 1,80 fixo', trans: 'há 1 h' },
+  { method: 'Apple / Google Pay', active: false, tax: '—', fee: '3,29% + R$ 0,10', trans: 'Nunca' },
+];
+
+// Systems Linkage Mock Data
+const systemsMock = [
+  { name: 'Sistema Core', active: true, checkout: 'Checkout Pagar.Me Padrão', vol: 'R$ 1.849.200,00', share: '62%' },
+  { name: 'Assinaturas', active: true, checkout: 'Checkout Assinatura Pro', vol: 'R$ 840.100,00', share: '28%' },
+  { name: 'Eventos', active: false, checkout: 'Checkout Evento', vol: 'R$ 290.420,00', share: '10%' },
+];
+
+function ProviderLogo({ name }: { name: string }) {
+  const letters = name.substring(0, 2).toUpperCase();
+  let bg = "bg-purple-600";
+  if (name.includes("Mercado")) bg = "bg-sky-500";
+  else if (name.includes("Stripe")) bg = "bg-indigo-600";
+  else if (name.includes("Asaas")) bg = "bg-blue-600";
+  else if (name.includes("Cielo")) bg = "bg-emerald-600";
+  else if (name.includes("Adyen")) bg = "bg-green-700";
+  else if (name.includes("Banco")) bg = "bg-yellow-500 text-slate-900";
+  else if (name.includes("Internal")) bg = "bg-slate-700";
+
+  return (
+    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-md shrink-0", bg)}>
+      {letters}
+    </div>
+  );
+}
+
+export default function GatewayDetailPage() {
+  const params = useParams();
+  const id = params?.id as string;
+  
+  // Find matching gateway details or fallback to Pagarme mock
+  const gw = useMemo(() => {
+    return gatewaysDetailsMocks.find(g => g.id === id) || gatewaysDetailsMocks[0];
+  }, [id]);
+
+  const [statusActive, setStatusActive] = useState(gw.status !== 'Desativado');
+  const [activeTab, setActiveTab] = useState<'resumo' | 'credenciais' | 'metodos' | 'sistemas' | 'webhooks' | 'testes' | 'eventos'>('resumo');
+  const [successAlert, setSuccessAlert] = useState<string | null>(null);
+
+  // Toggle visible credential keys
+  const [revealClient, setRevealClient] = useState(false);
+  const [revealApi, setRevealApi] = useState(false);
+  const [revealSecret, setRevealSecret] = useState(false);
+
+  // Diagnostic running console simulator
+  const [diagnosticTask, setDiagnosticTask] = useState<string | null>(null);
+  const [diagnosticTerminal, setDiagnosticTerminal] = useState<string[]>([]);
+  const [diagnosticStatus, setDiagnosticStatus] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
+
+  // Trigger notification alert
+  const triggerSuccessAlert = (message: string) => {
+    setSuccessAlert(message);
+    setTimeout(() => {
+      setSuccessAlert(null);
+    }, 4500);
+  };
+
+  // Run isolated tab diagnostic tests
+  const executeDiagnosticTest = (testType: string) => {
+    setDiagnosticTask(testType);
+    setDiagnosticStatus('running');
+    setDiagnosticTerminal([
+      `[INFO] Iniciando diagnóstico de gateway: ${gw.name}`,
+      `[INFO] Resolvendo endpoint de validação...`,
+      `[CONNECT] Conectando a api.${gw.name.toLowerCase().replace(/ /g, '')}.com/v2...`
+    ]);
+
+    setTimeout(() => {
+      setDiagnosticTerminal(prev => [...prev, `[AUTH] Verificando cabeçalhos e assinatura de segurança...`]);
+    }, 800);
+
+    setTimeout(() => {
+      if (testType === 'auth_verify') {
+        if (gw.status === 'Instável') {
+          setDiagnosticStatus('failed');
+          setDiagnosticTerminal(prev => [
+            ...prev,
+            `[ERROR] Falha de autenticação API!`,
+            `[ERROR] Servidor externo retornou Status 502 Bad Gateway.`,
+            `[ERROR] Diagnóstico concluído com falhas.`
+          ]);
+        } else {
+          setDiagnosticStatus('success');
+          setDiagnosticTerminal(prev => [
+            ...prev,
+            `[AUTH] Credenciais verificadas com sucesso!`,
+            `[SUCCESS] Uptime verificado: 100% nas últimas 24h.`,
+            `[SUCCESS] Integridade da conta de recebimento: Ativa.`
+          ]);
+        }
+      } else if (testType === 'pix_loop') {
+        setDiagnosticStatus('success');
+        setDiagnosticTerminal(prev => [
+          ...prev,
+          `[PIX] Simulando criação de cobrança no valor R$ 10,00...`,
+          `[PIX] QR Code gerado: pix.br/payload/test_charge_992a`,
+          `[SUCCESS] Callback de confirmação recebido com sucesso (200 OK).`
+        ]);
+      } else {
+        setDiagnosticStatus('success');
+        setDiagnosticTerminal(prev => [
+          ...prev,
+          `[CARD] Simulando autorização de Cartão de Crédito...`,
+          `[CARD] Payload enviado: Mastercard final 4432`,
+          `[SUCCESS] Transação aprovada e capturada com sucesso.`
+        ]);
+      }
+    }, 2200);
+  };
+
+  return (
+    <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-2.5 2xl:gap-3.5 relative min-h-0 select-none pb-4">
+      
+      {/* Success Notification Alert */}
+      {successAlert && (
+        <div className="fixed top-6 right-6 z-50 bg-green-500 text-white p-3.5 rounded-2xl shadow-xl shadow-green-900/10 flex items-center justify-between gap-3 max-w-sm border border-green-400 animate-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 shrink-0 text-white" />
+            <span className="text-[11.5px] font-bold">{successAlert}</span>
+          </div>
+          <button onClick={() => setSuccessAlert(null)} className="p-0.5 text-white/70 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Breadcrumb row & Back */}
+      <div className="flex items-center gap-2 px-1 shrink-0">
+        <Link 
+          href="/dashboard/gateways"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E8DDFD] rounded-xl text-[10px] font-black text-slate-700 shadow-sm hover:bg-brand-soft transition-all uppercase tracking-tight"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 text-slate-400" />
+          Voltar para Gateways
+        </Link>
+        <span className="text-slate-300 text-xs">/</span>
+        <span className="text-slate-400 font-bold text-[11px]">Detalhes do Gateway</span>
+      </div>
+
+      {/* Header Info Block */}
+      <header className="bg-white p-4 rounded-3xl border border-[#E8DDFD] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full shrink-0">
+        <div className="flex items-center gap-3.5">
+          <ProviderLogo name={gw.name} />
+          
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-[20px] 2xl:text-[22px] font-black text-slate-950 tracking-tighter leading-none">{gw.name}</h1>
+              
+              <span className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase border",
+                statusActive ? "bg-green-50 border-green-200/50 text-green-700" : "bg-slate-50 border-slate-200/50 text-slate-500"
+              )}>
+                <div className={cn("w-1 h-1 rounded-full", statusActive ? "bg-green-500" : "bg-slate-400")} />
+                {statusActive ? 'Ativo' : 'Desativado'}
+              </span>
+
+              {gw.ambiente === 'Produção' ? (
+                <span className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-green-50 text-green-700 border border-green-200/50">
+                  Produção
+                </span>
+              ) : (
+                <span className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-black uppercase bg-slate-100 text-slate-600 border border-slate-200/50">
+                  Sandbox
+                </span>
+              )}
+            </div>
+            
+            <p className="text-slate-400 font-bold text-[11px] 2xl:text-[11.5px] mt-1">{gw.desc}</p>
+          </div>
+        </div>
+
+        {/* Dynamic top-right toggle activation */}
+        <div className="flex items-center gap-3 bg-[#FAF8FF] border border-[#E8DDFD] px-4 py-2.5 rounded-2xl shadow-sm self-start sm:self-center">
+          <div className="text-right">
+            <p className="text-[10px] font-black text-slate-950 uppercase tracking-widest leading-none">Controle de Status</p>
+            <p className="text-[9px] font-bold text-slate-400 mt-0.5">Operações {statusActive ? 'Ativadas' : 'Pausadas'}</p>
+          </div>
+          
+          <label className="relative inline-flex items-center cursor-pointer select-none">
+            <input 
+              type="checkbox" 
+              className="sr-only peer" 
+              checked={statusActive}
+              onChange={() => {
+                setStatusActive(!statusActive);
+                triggerSuccessAlert(`Status do gateway alterado com sucesso!`);
+              }}
+            />
+            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand"></div>
+          </label>
+        </div>
+      </header>
+
+      {/* Tabs navigation list */}
+      <div className="flex items-center border-b border-[#E8DDFD]/60 pb-0 px-1 w-full shrink-0 select-none overflow-x-auto no-scrollbar">
+        <div className="flex gap-5 min-w-max">
+          {[
+            { id: 'resumo', label: 'Resumo', icon: Activity },
+            { id: 'credenciais', label: 'Credenciais API', icon: Key },
+            { id: 'metodos', label: 'Métodos Ativos', icon: Cpu },
+            { id: 'sistemas', label: 'Sistemas Vinculados', icon: Layers },
+            { id: 'webhooks', label: 'Webhooks & Entregas', icon: Globe },
+            { id: 'testes', label: 'Testes Rápidos', icon: Terminal },
+            { id: 'eventos', label: 'Eventos de Auditoria', icon: Calendar },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={cn(
+                  "pb-2.5 text-[12.5px] font-black relative transition-all tracking-tight flex items-center gap-1.5",
+                  isActive ? "text-brand" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                {tab.label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-brand rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* MAIN TAB CONTENT RENDER */}
+      <div className="w-full shrink-0">
+        
+        {/* Tab 1: Resumo */}
+        {activeTab === 'resumo' && (
+          <div className="space-y-4">
+            {/* Top Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: 'Uptime do Gateway', val: gw.uptime, sub: 'Monitorado pelo Trust Layer', color: 'text-slate-900' },
+                { label: 'Latência p95 Média', val: gw.p95, sub: 'Tempo de ping do provedor', color: 'text-slate-900' },
+                { label: 'Taxa de Requisições', val: gw.reqs, sub: 'Vendas em andamento por segundo', color: 'text-slate-900' },
+                { label: 'Taxa de Aprovação', val: gw.aprovacao, sub: gw.pp + ' nas últimas 24h', color: 'text-green-600' }
+              ].map((c, i) => (
+                <div key={i} className="bg-white p-4 rounded-[22px] border border-[#E8DDFD] shadow-sm">
+                  <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest block mb-2">{c.label}</span>
+                  <p className={cn("text-[20px] font-black tracking-tight leading-none", c.color)}>{c.val}</p>
+                  <p className="text-[9.5px] font-bold text-slate-400 mt-1">{c.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Performance analysis widget */}
+            <div className="bg-white p-4 rounded-[22px] border border-[#E8DDFD] shadow-sm">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-3">Análise Técnica Operacional</span>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+                <div className="space-y-1 lg:col-span-2">
+                  <h4 className="text-[13px] font-black text-slate-950 leading-tight">Rotas configuradas na Basileia Pay</h4>
+                  <p className="text-[11.5px] font-bold text-slate-400 leading-relaxed">
+                    Este provedor é responsável pela captura primária de transações originadas no **Sistema Core**.
+                    Seu desempenho técnico está operando dentro dos parâmetros tolerados.
+                  </p>
+                  <div className="bg-slate-50 border border-slate-200/50 p-3 rounded-2xl flex items-center gap-3 text-[11px] text-slate-600 font-bold mt-3">
+                    <Database className="w-5 h-5 text-brand shrink-0" />
+                    <span>Conta vinculada de liquidação: <strong className="text-slate-900">{gw.conta}</strong> ({gw.contaId || 'Sandbox'})</span>
+                  </div>
+                </div>
+
+                <div className="bg-[#FAF8FF] border border-[#E8DDFD] p-3 rounded-2xl flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <span className="text-[7.5px] font-black text-slate-400 uppercase tracking-widest block">Último erro de conexão</span>
+                    <p className="text-[11.5px] font-black text-slate-900 truncate leading-snug">{gw.erro}</p>
+                  </div>
+                  <button 
+                    onClick={() => triggerSuccessAlert('Revalidação estática concluída com sucesso!')}
+                    className="w-full mt-3 h-[30px] bg-white border border-[#E8DDFD] hover:bg-brand hover:text-white hover:border-brand rounded-xl text-[9.5px] font-black uppercase tracking-tight transition-all shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3 h-3" /> Revalidar status
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Credenciais */}
+        {activeTab === 'credenciais' && (
+          <div className="bg-white p-5 rounded-[24px] border border-[#E8DDFD] shadow-sm space-y-4">
+            <div>
+              <h3 className="text-[14px] font-black text-slate-950 tracking-tight leading-none">Configuração de Credenciais de API</h3>
+              <p className="text-slate-400 font-bold text-[11px] mt-1">Insira e valide as chaves criptografadas de produção ou ambiente de testes.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {[
+                { label: 'Client ID / Identificador da Conta', val: gw.client_id, reveal: revealClient, setter: setRevealClient },
+                { label: 'API Key (Public key / Token)', val: gw.api_key, reveal: revealApi, setter: setRevealApi },
+              ].map((k) => (
+                <div key={k.label} className="space-y-1.5">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{k.label}</span>
+                  <div className="relative flex items-center border border-[#E8DDFD] rounded-2xl bg-[#FAF8FF] px-3.5 h-12 shadow-inner">
+                    <span className="text-[12.5px] font-mono font-bold text-slate-700 truncate pr-8">
+                      {k.reveal ? k.val : k.val.substring(0, 8) + '••••••••••••••••••••••••'}
+                    </span>
+                    <button 
+                      onClick={() => k.setter(!k.reveal)}
+                      className="absolute right-3.5 text-slate-400 hover:text-brand transition-colors p-1"
+                    >
+                      {k.reveal ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <div className="space-y-1.5 md:col-span-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Secret Key / Assinatura do Provedor</span>
+                <div className="relative flex items-center border border-[#E8DDFD] rounded-2xl bg-[#FAF8FF] px-3.5 h-12 shadow-inner">
+                  <span className="text-[12.5px] font-mono font-bold text-slate-700 truncate pr-8">
+                    {revealSecret ? gw.secret : 'sh_live_••••••••••••••••••••••••••••••••••••••••••••'}
+                  </span>
+                  <button 
+                    onClick={() => setRevealSecret(!revealSecret)}
+                    className="absolute right-3.5 text-slate-400 hover:text-brand transition-colors p-1"
+                  >
+                    {revealSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-3">
+              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 bg-green-50 border border-green-200/50 px-2.5 py-1 rounded-xl text-green-700 shadow-sm">
+                <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
+                Integridade auditada e aprovada pelo Trust Layer
+              </span>
+
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => triggerSuccessAlert('Solicitação de rotação de credenciais enviada!')}
+                  className="h-[34px] px-3 bg-white border border-[#E8DDFD] hover:bg-brand-soft rounded-xl text-[10.5px] font-black text-slate-700 uppercase tracking-tight transition-all shadow-sm"
+                >
+                  Rotacionar Chaves
+                </button>
+                
+                <button 
+                  onClick={() => triggerSuccessAlert('Fluxo de edição de credenciais iniciado com sucesso!')}
+                  className="h-[34px] px-4 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-tight transition-all shadow-sm shadow-brand/10"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Métodos */}
+        {activeTab === 'metodos' && (
+          <div className="bg-white p-4 rounded-[24px] border border-[#E8DDFD] shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-[14px] font-black text-slate-950 leading-none">Métodos de Captura Disponíveis</h3>
+                <p className="text-slate-400 font-bold text-[11px] mt-1">Controle quais modalidades de transações este provedor processará.</p>
+              </div>
+              <button 
+                onClick={() => triggerSuccessAlert('Novo método adicionado!')}
+                className="px-3.5 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10px] font-black uppercase tracking-tight shadow-sm"
+              >
+                Vincular método
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {methodsMock.map((m) => (
+                <div 
+                  key={m.method}
+                  className={cn(
+                    "p-3 rounded-2xl border flex items-center justify-between gap-4 transition-all shadow-sm",
+                    m.active ? "bg-white border-[#E8DDFD]" : "bg-slate-50 border-slate-200/50 opacity-60"
+                  )}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[12.5px] font-black text-slate-950 leading-none">{m.method}</span>
+                      <span className={cn(
+                        "text-[8px] font-black px-1.5 py-0.2 rounded border uppercase",
+                        m.active ? "bg-green-50 border-green-200/50 text-green-700" : "bg-slate-100 border-slate-200 text-slate-400"
+                      )}>
+                        {m.active ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </div>
+                    <p className="text-[9.5px] font-bold text-slate-400">
+                      Taxa de Aprovação: <strong className="text-slate-700">{m.tax}</strong> • Fee: <strong className="text-slate-700">{m.fee}</strong>
+                    </p>
+                    <p className="text-[8.5px] text-slate-300 font-bold">Última captura: {m.trans}</p>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      defaultChecked={m.active} 
+                      onChange={() => triggerSuccessAlert(`Status do método ${m.method} alterado.`)} 
+                    />
+                    <div className="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand"></div>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Sistemas */}
+        {activeTab === 'sistemas' && (
+          <div className="bg-white p-4 rounded-[24px] border border-[#E8DDFD] shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-[14px] font-black text-slate-950 leading-none">Mapeamento e Vínculos de Sistemas</h3>
+                <p className="text-slate-400 font-bold text-[11px] mt-1 font-medium">Sistemas corporativos que direcionam transações para este gateway.</p>
+              </div>
+              <button 
+                onClick={() => triggerSuccessAlert('Associação com novo sistema iniciada!')}
+                className="px-3.5 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10px] font-black uppercase tracking-tight shadow-sm"
+              >
+                Vincular sistema
+              </button>
+            </div>
+
+            <div className="w-full overflow-hidden border border-slate-200/50 rounded-2xl mt-2 shadow-sm">
+              <table className="w-full text-left table-fixed">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200/50 text-[9.5px] font-black uppercase tracking-widest text-slate-400">
+                    <th className="py-2.5 px-3 w-[30%]">Sistema</th>
+                    <th className="py-2.5 px-2 w-[30%]">Checkout Padrão</th>
+                    <th className="py-2.5 px-2 w-[22%]">Volume Financeiro</th>
+                    <th className="py-2.5 px-2 w-[10%]">Share</th>
+                    <th className="py-2.5 pr-3 text-right w-[8%]"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-[11.5px] font-bold text-slate-700">
+                  {systemsMock.map((sys) => (
+                    <tr key={sys.name} className="hover:bg-slate-50/50 h-[50px] transition-colors">
+                      <td className="py-2 px-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-950 font-black">{sys.name}</span>
+                          <span className={cn(
+                            "text-[8px] font-black px-1.5 py-0.2 rounded uppercase border",
+                            sys.active ? "bg-green-50 border-green-200/50 text-green-700" : "bg-slate-50 border-slate-200 text-slate-400"
+                          )}>
+                            {sys.active ? 'Principal' : 'Backup'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-2 text-slate-500 font-bold">{sys.checkout}</td>
+                      <td className="py-2 px-2 text-slate-950 font-black">{sys.vol}</td>
+                      <td className="py-2 px-2 text-slate-400 font-bold">{sys.share}</td>
+                      <td className="py-2 pr-3 text-right">
+                        <button 
+                          onClick={() => triggerSuccessAlert(`Configurando regras do ${sys.name}...`)}
+                          className="text-[9.5px] font-black text-brand hover:underline"
+                        >
+                          Regras
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Webhooks */}
+        {activeTab === 'webhooks' && (
+          <div className="bg-white p-4 rounded-[24px] border border-[#E8DDFD] shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-[14px] font-black text-slate-950 leading-none">Subscrição de Webhooks Corporativos</h3>
+                <p className="text-slate-400 font-bold text-[11px] mt-1 font-medium">Histórico recente de payloads de retorno disparados pelo gateway.</p>
+              </div>
+              <button 
+                onClick={() => triggerSuccessAlert('Iniciada a simulação de webhook de teste manual!')}
+                className="px-3.5 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10px] font-black uppercase tracking-tight shadow-sm"
+              >
+                Disparar webhook teste
+              </button>
+            </div>
+
+            {/* List webhooks deliveries */}
+            {gw.webhooks.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-[11.5px]">
+                Nenhum webhook recebido recentemente neste gateway.
+              </div>
+            ) : (
+              <div className="space-y-2.5 pt-2">
+                {gw.webhooks.map((w, idx) => (
+                  <div key={idx} className="bg-slate-50 border border-slate-200/50 p-3 rounded-2xl flex items-center justify-between gap-3 text-[11px] font-bold text-slate-700">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-slate-950 font-black">{w.event}</span>
+                        <span className={cn(
+                          "text-[8px] font-mono px-1 rounded-md",
+                          w.status.includes("OK") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        )}>
+                          {w.status}
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-slate-400 font-bold">ID Transmissão: {w.id} • Payload auditado</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9.5px] font-bold text-slate-400">{w.time}</span>
+                      <button 
+                        onClick={() => triggerSuccessAlert('Webhook reenviado com sucesso para a fila!')}
+                        className="h-[26px] px-2 bg-white border border-[#E8DDFD] hover:bg-slate-100 rounded-lg text-[9px] font-black text-slate-700 uppercase tracking-tight transition-all shadow-sm"
+                      >
+                        Reenviar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 6: Testes */}
+        {activeTab === 'testes' && (
+          <div className="bg-white p-4 rounded-[24px] border border-[#E8DDFD] shadow-sm space-y-4">
+            <div>
+              <h3 className="text-[14px] font-black text-slate-950 leading-none">Console Interativo de Diagnósticos</h3>
+              <p className="text-slate-400 font-bold text-[11px] mt-1 font-medium">Execute testes manuais rápidos de autenticação de chaves ou fluxo transacional de simulação.</p>
+            </div>
+
+            {/* Panel terminal */}
+            <div className="bg-slate-950 rounded-2xl p-4 border border-slate-900 font-mono text-[11px] text-green-400 space-y-1 shadow-inner h-[170px] overflow-y-auto no-scrollbar">
+              {diagnosticTerminal.length === 0 ? (
+                <div className="text-slate-500 italic h-full flex items-center justify-center select-text">
+                  [AGUARDANDO] Selecione um teste manual abaixo para inicializar o console de diagnóstico...
+                </div>
+              ) : (
+                <div className="select-text">
+                  {diagnosticTerminal.map((line, idx) => (
+                    <p key={idx} className={cn(
+                      line.includes("[ERROR]") && "text-red-500",
+                      line.includes("[SUCCESS]") && "text-green-300",
+                      line.includes("[INFO]") && "text-blue-400"
+                    )}>
+                      {line}
+                    </p>
+                  ))}
+                  {diagnosticStatus === 'running' && (
+                    <p className="animate-pulse text-white flex items-center gap-1.5 mt-1 font-black">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processando teste de conexões...
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Test Triggers buttons */}
+            <div className="flex gap-2 flex-wrap pt-2">
+              {[
+                { id: 'auth_verify', label: 'Validar Autenticação API', desc: 'Testa chaves' },
+                { id: 'pix_loop', label: 'Simular Cobrança Pix', desc: 'Simula Pix' },
+                { id: 'cc_loop', label: 'Simular Cartão Crédito', desc: 'Simula Cartão' }
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  disabled={diagnosticStatus === 'running'}
+                  onClick={() => executeDiagnosticTest(t.id)}
+                  className="px-4 py-2 bg-brand/10 border border-brand/20 hover:bg-brand hover:text-white rounded-xl text-[10px] font-black uppercase tracking-tight transition-all shadow-sm flex-1 min-w-[130px] disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  {t.label}
+                  <span className="block text-[8px] font-bold opacity-60 normal-case mt-0.5">{t.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 7: Eventos */}
+        {activeTab === 'eventos' && (
+          <div className="bg-white p-4 rounded-[24px] border border-[#E8DDFD] shadow-sm space-y-4">
+            <div>
+              <h3 className="text-[14px] font-black text-slate-950 leading-none">Timeline de Auditoria de Eventos</h3>
+              <p className="text-slate-400 font-bold text-[11px] mt-1 font-medium">Histórico cronológico de ações técnicas e operacionais auditadas pelo Trust Layer.</p>
+            </div>
+
+            {/* Timeline component */}
+            <div className="relative border-l border-[#E8DDFD] ml-2.5 pl-5 space-y-4 pt-2 pb-2 select-text">
+              {gw.eventos.map((ev, idx) => (
+                <div key={idx} className="relative leading-tight">
+                  {/* Timeline dot */}
+                  <div className="absolute -left-[26px] top-1.5 w-3 h-3 bg-brand border-2 border-white rounded-full shadow" />
+                  
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11.5px] font-black text-slate-950">{ev.title}</span>
+                    <span className="text-[9px] font-bold text-slate-400">• {ev.time}</span>
+                  </div>
+                  
+                  <p className="text-[10px] font-bold text-slate-500 mt-1">{ev.desc}</p>
+                  <p className="text-[8.5px] font-bold text-slate-400 uppercase mt-0.5">Operador: {ev.user}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
