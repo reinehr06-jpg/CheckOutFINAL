@@ -14,83 +14,89 @@ interface SettingsSummaryGridProps {
 
 export function SettingsSummaryGrid({ summary, onTabChange, onActionFeedback }: SettingsSummaryGridProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-[#E7E5EF]">
+    <div className="pt-6 border-t border-[#E8DDFD]/60 w-full text-left">
       
-      {/* Card 1 - Segurança */}
-      <div className="bg-white border border-[#E7E5EF] rounded-[20px] p-5 flex flex-col justify-between shadow-sm min-h-[140px] text-left">
-        <div>
-          <div className="flex items-center justify-between">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
-              <Shield className="w-4.5 h-4.5" />
+      {/* Bloco horizontal único, 4 colunas com divisórias discretas e borda lilás suave */}
+      <div className="bg-white border border-[#E8DDFD] rounded-[22px] shadow-sm shadow-slate-100/50 divide-y lg:divide-y-0 lg:divide-x divide-[#E8DDFD]/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 w-full overflow-hidden">
+        
+        {/* Seção 1 - Segurança */}
+        <div className="p-5 flex flex-col justify-between min-h-[148px]">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Segurança</span>
+              <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Protegido
+              </span>
             </div>
-            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-250/50">
-              Protegido
-            </span>
+            <p className="mt-3 text-[11px] font-medium text-slate-450 leading-relaxed">
+              Todas as políticas de segurança estão ativas e atualizadas.
+            </p>
           </div>
-          <p className="mt-3.5 text-[11.5px] font-semibold text-slate-500 leading-snug">
-            Todas as políticas de segurança estão ativas e atualizadas.
-          </p>
-        </div>
-      </div>
-
-      {/* Card 2 - Integrações */}
-      <div className="bg-white border border-[#E7E5EF] rounded-[20px] p-5 flex flex-col justify-between shadow-sm min-h-[140px] text-left">
-        <div>
-          <div className="w-8 h-8 rounded-lg bg-violet-50 text-violet-650 border border-violet-100 flex items-center justify-center shrink-0">
-            <GitBranch className="w-4.5 h-4.5" />
+          <div className="mt-3 flex items-center gap-1.5 text-[10px] font-black text-violet-600">
+            <Shield className="w-3.5 h-3.5 shrink-0" />
+            <span>Sistema Blindado</span>
           </div>
-          <p className="mt-3.5 text-[11.5px] font-semibold text-slate-500 leading-snug">
-            {summary.integrations.gatewaysCount} gateways conectados · {summary.integrations.webhooksCount} webhooks ativos
-          </p>
         </div>
-        <button
-          onClick={() => onTabChange('integrations')}
-          className="mt-3 inline-flex items-center gap-1 text-[11px] font-black text-brand hover:underline cursor-pointer w-fit"
-        >
-          Ver integrações
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
 
-      {/* Card 3 - Uso da API */}
-      <div className="bg-white border border-[#E7E5EF] rounded-[20px] p-5 flex flex-col justify-between shadow-sm min-h-[140px] text-left">
-        <div>
-          <div className="flex items-center justify-between">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
-              <Code2 className="w-4.5 h-4.5" />
+        {/* Seção 2 - Integrações */}
+        <div className="p-5 flex flex-col justify-between min-h-[148px]">
+          <div>
+            <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Integrações</span>
+            <p className="mt-3 text-[11px] font-medium text-slate-450 leading-relaxed">
+              {summary.integrations.gatewaysCount} gateways conectados<br />
+              {summary.integrations.webhooksCount} webhooks ativos
+            </p>
+          </div>
+          <button
+            onClick={() => onTabChange('integrations')}
+            className="mt-3 inline-flex items-center gap-1 text-[10px] font-black text-violet-600 hover:text-violet-850 hover:underline cursor-pointer w-fit uppercase tracking-tight"
+          >
+            Ver integrações
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Seção 3 - Uso da API */}
+        <div className="p-5 flex flex-col justify-between min-h-[148px]">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Uso da API</span>
+              <Link 
+                href="/dashboard/developers"
+                className="inline-flex items-center gap-0.5 text-[10px] font-black text-violet-600 hover:text-violet-850 hover:underline uppercase tracking-tight"
+              >
+                Ver métricas
+                <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
-            <Link 
-              href="/dashboard/developers"
-              className="inline-flex items-center gap-0.5 text-[11px] font-black text-brand hover:underline"
-            >
-              Ver métricas
-              <ArrowRight className="w-3 h-3" />
-            </Link>
+            <p className="mt-3 text-[11px] font-medium text-slate-450 leading-relaxed">
+              {summary.apiUsage.callsThisMonth.toLocaleString('pt-BR')} chamadas este mês<br />
+              {summary.apiUsage.percentUsed}% do limite utilizado
+            </p>
           </div>
-          <p className="mt-3.5 text-[11.5px] font-semibold text-slate-500 leading-snug">
-            {summary.apiUsage.callsThisMonth.toLocaleString('pt-BR')} chamadas este mês · {summary.apiUsage.percentUsed}% utilizado
-          </p>
+          <div className="mt-2.5">
+            <SettingsApiUsageBar percentUsed={summary.apiUsage.percentUsed} />
+          </div>
         </div>
-        <SettingsApiUsageBar percentUsed={summary.apiUsage.percentUsed} />
-      </div>
 
-      {/* Card 4 - Ambiente */}
-      <div className="bg-white border border-[#E7E5EF] rounded-[20px] p-5 flex flex-col justify-between shadow-sm min-h-[140px] text-left">
-        <div>
-          <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 border border-slate-200 flex items-center justify-center shrink-0">
-            <Server className="w-4.5 h-4.5" />
+        {/* Seção 4 - Ambiente */}
+        <div className="p-5 flex flex-col justify-between min-h-[148px]">
+          <div>
+            <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">Ambiente</span>
+            <p className="mt-3 text-[11px] font-medium text-slate-450 leading-relaxed">
+              Ambiente de {summary.environment === 'production' ? 'Produção' : 'Sandbox'} ativo<br />
+              Região: {summary.company.region}
+            </p>
           </div>
-          <p className="mt-3.5 text-[11.5px] font-semibold text-slate-500 leading-snug capitalize">
-            {summary.environment} ativo · Região: {summary.company.region}
-          </p>
+          <Link 
+            href="/dashboard/settings/environments"
+            className="mt-3 inline-flex items-center gap-1 text-[10px] font-black text-violet-600 hover:text-violet-850 hover:underline cursor-pointer w-fit uppercase tracking-tight"
+          >
+            Gerenciar ambientes
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
-        <Link 
-          href="/dashboard/settings/environments"
-          className="mt-3 inline-flex items-center gap-1 text-[11px] font-black text-brand hover:underline cursor-pointer w-fit"
-        >
-          Gerenciar ambientes
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+
       </div>
 
     </div>

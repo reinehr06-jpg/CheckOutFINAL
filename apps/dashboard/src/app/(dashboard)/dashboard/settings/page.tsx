@@ -8,7 +8,7 @@ import { SettingsCard } from '@/components/settings/SettingsCard';
 import { SettingsCardSpecial } from '@/components/settings/SettingsCardSpecial';
 import { SettingsSummaryGrid } from '@/components/settings/SettingsSummaryGrid';
 import { MOCK_SETTINGS_CARDS, MOCK_SETTINGS_SUMMARY } from './__mocks__/settings';
-import { Check, X, ShieldAlert, Users, Sliders } from 'lucide-react';
+import { Check, X, ShieldAlert, Users, Sliders, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function SettingsHubPage() {
@@ -82,32 +82,34 @@ export default function SettingsHubPage() {
         </div>
       )}
 
-      {/* Role Simulator Toolbar (Awesome for showing card lock behavior in tests) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-violet-50/50 border border-[#E8DDFD] p-3 rounded-2xl">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-          <Users className="w-4 h-4 text-brand" />
-          <span>Simulador de Permissões (Cargo ativo):</span>
+      {/* Role Simulator Toolbar (Only visible in development environment) */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-violet-50/50 border border-[#E8DDFD] p-3 rounded-2xl">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+            <Users className="w-4 h-4 text-brand" />
+            <span>Simulador de Permissões (Cargo ativo):</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {(['owner', 'admin', 'financial', 'developer', 'support', 'auditor'] as const).map((role) => (
+              <button
+                key={role}
+                onClick={() => {
+                  setUserRole(role);
+                  triggerToast(`Visualizando configurações como ${role.toUpperCase()}.`);
+                }}
+                className={cn(
+                  "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all cursor-pointer",
+                  userRole === role
+                    ? "bg-brand border-brand text-white shadow-sm"
+                    : "bg-white border-[#E8DDFD] text-slate-600 hover:bg-slate-50"
+                )}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {(['owner', 'admin', 'financial', 'developer', 'support', 'auditor'] as const).map((role) => (
-            <button
-              key={role}
-              onClick={() => {
-                setUserRole(role);
-                triggerToast(`Visualizando configurações como ${role.toUpperCase()}.`);
-              }}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border transition-all cursor-pointer",
-                userRole === role
-                  ? "bg-brand border-brand text-white shadow-sm"
-                  : "bg-white border-[#E8DDFD] text-slate-600 hover:bg-slate-50"
-              )}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Header section (Section 4) */}
       <SettingsHeader 
@@ -125,32 +127,32 @@ export default function SettingsHubPage() {
         }} 
       />
 
-      {/* Search Bar & Tabs Container */}
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <SettingsTabs activeTab={activeTab} onTabChange={(tab) => {
-            setActiveTab(tab);
-            triggerToast(`Filtrando por categoria: ${tab.toUpperCase()}.`);
-          }} />
+      {/* Search Bar & Tabs Container - Compact and horizontal aligned */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#E8DDFD]/60 pb-0 w-full">
+        <SettingsTabs activeTab={activeTab} onTabChange={(tab) => {
+          setActiveTab(tab);
+          triggerToast(`Filtrando por categoria: ${tab.toUpperCase()}.`);
+        }} />
 
-          {/* Search box input */}
-          <div className="relative w-full md:w-72 shrink-0">
-            <input
-              type="text"
-              placeholder="Buscar configurações..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-3.5 pr-8 bg-white border border-[#E8DDFD] rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-brand placeholder:text-slate-350"
-            />
-            {searchQuery ? (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : null}
-          </div>
+        {/* Search box input - Aligned to the right, 42px height, soft lilac border */}
+        <div className="relative w-full md:w-[320px] shrink-0 pb-2">
+          <input
+            type="text"
+            placeholder="Buscar configurações..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-[42px] pl-3.5 pr-9 bg-white border border-[#E8DDFD]/90 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:border-brand placeholder:text-slate-350 shadow-sm shadow-slate-50/20"
+          />
+          {searchQuery ? (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-[14px] text-slate-400 hover:text-slate-700"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <Search className="w-3.5 h-3.5 text-slate-350 absolute right-3.5 top-[14px]" />
+          )}
         </div>
       </div>
 
@@ -159,7 +161,7 @@ export default function SettingsHubPage() {
         // Skeleton loader
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
           {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} className="h-[162px] bg-slate-100 rounded-[20px] border border-slate-200" />
+            <div key={i} className="h-[148px] bg-slate-100 rounded-[20px] border border-slate-200" />
           ))}
         </div>
       ) : filteredCards.length === 0 ? (

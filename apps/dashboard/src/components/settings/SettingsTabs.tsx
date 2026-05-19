@@ -21,8 +21,8 @@ const tabsList: { value: SettingsTabValue; label: string }[] = [
 
 export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
   return (
-    <div className="flex border-b border-[#E7E5EF] w-full overflow-x-auto no-scrollbar">
-      <div className="flex gap-2">
+    <div className="flex overflow-x-auto no-scrollbar shrink-0">
+      <div className="flex gap-1">
         {tabsList.map((tab) => {
           const isActive = activeTab === tab.value;
           return (
@@ -30,10 +30,10 @@ export function SettingsTabs({ activeTab, onTabChange }: SettingsTabsProps) {
               key={tab.value}
               onClick={() => onTabChange(tab.value)}
               className={cn(
-                "relative py-3.5 px-4 text-xs font-black uppercase tracking-[0.08em] transition-all whitespace-nowrap cursor-pointer",
+                "relative pb-3 pt-1 px-3 text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer -mb-[1px]",
                 isActive
-                  ? "text-brand border-b-2 border-brand"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "text-brand border-b-2 border-brand font-black"
+                  : "text-slate-400 hover:text-slate-700 font-semibold"
               )}
             >
               {tab.label}
