@@ -179,60 +179,6 @@ print(f"URL de checkout gerada: {checkout.checkout_url}")`
         </div>
       </div>
 
-      {/* Grid de Recursos Principais */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { icon: Key, title: "Gestão de Chaves", desc: "Acesse e gerencie chaves secretas de produção e sandbox.", action: () => onNavigateTab('api-keys') },
-          { icon: FlaskConical, title: "Ambiente Sandbox", desc: "Simulador interativo de checkouts e respostas de gateway.", action: () => onNavigateTab('sandbox') },
-          { icon: Webhook, title: "Retorno Webhooks", desc: "Históricos de delivery e schemas técnicos de payloads.", action: () => onNavigateTab('webhooks') },
-          { icon: ShieldCheck, title: "Logs de Auditoria", desc: "Acompanhe e analise logs de chamadas HTTP integradas.", action: () => onNavigateTab('logs') }
-        ].map((item, i) => (
-          <div 
-            key={i} 
-            onClick={item.action}
-            className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-4.5 hover:shadow-md hover:border-brand/40 transition-all cursor-pointer text-left group flex flex-col justify-between h-full"
-          >
-            <div>
-              <div className="w-8 h-8 bg-slate-50 group-hover:bg-brand/10 text-slate-400 group-hover:text-brand border border-slate-100 rounded-xl flex items-center justify-center mb-3 transition-colors shrink-0">
-                <item.icon className="w-4.5 h-4.5" />
-              </div>
-              <h4 className="text-xs font-black text-slate-800">{item.title}</h4>
-              <p className="text-[10px] font-semibold text-slate-450 mt-1 leading-relaxed">{item.desc}</p>
-            </div>
-            
-            <span className="text-[9px] font-black uppercase tracking-widest text-brand group-hover:underline flex items-center gap-0.5 mt-3 self-start">
-              Acessar
-              <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Mini feed de últimos eventos técnicos */}
-      <div className="bg-slate-50/50 border border-slate-200/50 rounded-[22px] p-5 text-left">
-        <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider block mb-3">
-          Logs de Eventos Recentes na API
-        </span>
-
-        <div className="space-y-2 text-[10px] font-semibold text-slate-600">
-          <div className="flex justify-between items-center py-1.5 border-b border-slate-200/40">
-            <span className="text-emerald-600 font-extrabold">POST /v1/checkouts</span>
-            <span className="text-slate-450">ID: chk_01JTK8X9A214 - Criado por sk_live_bsl_29fa</span>
-            <span className="text-slate-400 font-bold">Hoje, 12:14</span>
-          </div>
-          <div className="flex justify-between items-center py-1.5 border-b border-slate-200/40">
-            <span className="text-amber-500 font-extrabold">GET /v1/payments/pay_7c9d</span>
-            <span className="text-slate-450">Sandbox Query executada por sk_test_bsl_77bc</span>
-            <span className="text-slate-400 font-bold">Hoje, 12:12</span>
-          </div>
-          <div className="flex justify-between items-center py-1.5">
-            <span className="text-red-500 font-extrabold">POST /v1/refunds (401)</span>
-            <span className="text-slate-450">Tentativa falhou: chave revogada sk_live_bsl_00de</span>
-            <span className="text-slate-400 font-bold">Hoje, 12:10</span>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }

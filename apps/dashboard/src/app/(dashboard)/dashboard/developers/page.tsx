@@ -128,29 +128,7 @@ export default function DevelopersPage() {
         isAdmin={isAdmin}
       />
 
-      {/* Simulador de Status / Permissões do Integrador */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200/60 rounded-[20px] p-3 text-left">
-        <div className="flex items-center gap-2">
-          <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider">Simulador de Permissões:</span>
-          
-          <button 
-            onClick={() => {
-              setUserRole(userRole === 'owner' ? 'auditor' : 'owner');
-              triggerFeedback(`Cargo operacional alterado para: ${userRole === 'owner' ? 'Auditor' : 'Owner'}`);
-            }}
-            className={cn(
-              "text-[9px] font-black uppercase px-2 py-1 rounded-lg border transition-all cursor-pointer",
-              isAdmin ? "bg-violet-650 text-white border-violet-750 shadow-sm" : "bg-white text-slate-700 border-slate-350"
-            )}
-          >
-            Cargo: {isAdmin ? 'Desenvolvedor / Admin' : 'Auditor (Leitura)'}
-          </button>
-        </div>
 
-        <span className="text-[9.5px] text-slate-450 font-bold">
-          API Key completa aparece apenas uma vez no momento da criação
-        </span>
-      </div>
 
       {/* KPI Cards Grid */}
       <DevelopersKpiCards 
