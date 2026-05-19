@@ -245,19 +245,7 @@ export default function RoutingPage() {
         </div>
       )}
 
-      {/* Role permission preview selector */}
-      <div className="flex items-center gap-2 bg-slate-100/80 border border-slate-200/50 rounded-xl px-3 py-1.5 w-fit text-left">
-        <span className="text-[10px] font-bold text-slate-500">Perfil operacional ativo:</span>
-        <button 
-          onClick={() => setUserRole(userRole === 'admin' ? 'viewer' : 'admin')}
-          className={cn(
-            "text-[9px] font-black uppercase px-2 py-0.5 rounded border transition-all cursor-pointer",
-            isAdmin ? "bg-violet-600 text-white border-violet-750" : "bg-white text-slate-700 border-slate-300"
-          )}
-        >
-          {userRole === 'admin' ? 'Owner / Admin' : 'Auditor / Viewer (Somente Leitura)'}
-        </button>
-      </div>
+
 
       {/* Outer row split for Desktop simulator stickiness */}
       <div className="flex flex-col lg:flex-row gap-6 w-full items-start">
