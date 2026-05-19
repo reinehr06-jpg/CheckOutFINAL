@@ -1,194 +1,292 @@
 'use client';
 
+import { useState } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { Card } from '@/components/ui/card';
-import { useTrustLayer } from '@/hooks/api/useTrustLayer';
-import { Loader2, Shield, ShieldCheck, ShieldAlert, ShieldX, AlertTriangle, CheckCircle2, Info, ArrowRight } from 'lucide-react';
+import { TrustHeader } from '@/components/trust/TrustHeader';
+import { TrustKpiCards } from '@/components/trust/TrustKpiCards';
+import { TrustTabs, TrustTabValue } from '@/components/trust/TrustTabs';
+import { TrustScoreChart } from '@/components/trust/TrustScoreChart';
+import { TrustScoreHistogram } from '@/components/trust/TrustScoreHistogram';
+import { TrustEventFeed } from '@/components/trust/TrustEventFeed';
+import { TrustEventDetailPanel } from '@/components/trust/TrustEventDetailPanel';
+import { TrustRulesTable } from '@/components/trust/TrustRulesTable';
+import { TrustEventsTable } from '@/components/trust/TrustEventsTable';
+import { TrustScoreSearch } from '@/components/trust/TrustScoreSearch';
+import { TrustReviewQueue } from '@/components/trust/TrustReviewQueue';
+import { TrustRuleForm } from '@/components/trust/TrustRuleForm';
+import { TrustMotorConfigDialog } from '@/components/trust/TrustMotorConfigDialog';
+import { TrustMotorUnavailableBanner } from '@/components/trust/TrustMotorUnavailableBanner';
+import { MOCK_TRUST_RULES, MOCK_TRUST_EVENTS, MOCK_TRUST_KPIS, MOCK_TRUST_MOTOR_CONFIG } from './__mocks__/trust';
+import { TrustRule, TrustEvent, TrustKpi, TrustMotorConfig } from '@/types/trust';
+import { cn } from '@/lib/utils';
+import { ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from 'lucide-react';
 
-function ScoreGauge({ score, size = 'lg' }: { score: number; size?: 'sm' | 'lg' }) {
-  const color = score >= 90 ? '#16A34A' : score >= 70 ? '#F59E0B' : score >= 40 ? '#EA580C' : '#DC2626';
-  const radius = size === 'lg' ? 80 : 40;
-  const stroke = size === 'lg' ? 10 : 6;
-  const circumference = 2 * Math.PI * radius;
-  const progress = (score / 100) * circumference;
-  const dim = (radius + stroke) * 2;
+export default function TrustPage() {
+  const [activeTab, setActiveTab] = useState<TrustTabValue>('overview');
+  const [selectedEvent, setSelectedEvent] = useState<TrustEvent | null>(MOCK_TRUST_EVENTS[0]);
+  const [rules, setRules] = useState<TrustRule[]>(MOCK_TRUST_RULES);
+  const [events, setEvents] = useState<TrustEvent[]>(MOCK_TRUST_EVENTS);
+  const [kpis, setKpis] = useState<TrustKpi>(MOCK_TRUST_KPIS);
+  const [motorConfig, setMotorConfig] = useState<TrustMotorConfig>(MOCK_TRUST_MOTOR_CONFIG);
+  
+  // Simulated UI states
+  const [isMotorUnavailable, setIsMotorUnavailable] = useState(false);
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [showRuleForm, setShowRuleForm] = useState(false);
+  const [editingRule, setEditingRule] = useState<TrustRule | undefined>(undefined);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={dim} height={dim} className="-rotate-90">
-        <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-border" />
-        <circle cx={radius + stroke} cy={radius + stroke} r={radius} fill="none" stroke={color} strokeWidth={stroke}
-          strokeDasharray={circumference} strokeDashoffset={circumference - progress} strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 1s ease-in-out' }} />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`${size === 'lg' ? 'text-4xl' : 'text-xl'} font-bold`} style={{ color }}>{score}</span>
-        <span className={`${size === 'lg' ? 'text-sm' : 'text-xs'} text-ink-muted`}>Trust Score</span>
-      </div>
-    </div>
-  );
-}
+  // Active simulated user permissions
+  const [userRole, setUserRole] = useState<'owner' | 'viewer'>('owner');
+  const isAdmin = userRole === 'owner';
 
-function StatusLabel({ status }: { status: string }) {
-  const cfg: Record<string, { icon: any; color: string; label: string }> = {
-    excellent: { icon: ShieldCheck, color: 'text-success', label: 'Excelente' },
-    healthy:   { icon: Shield, color: 'text-blue-500', label: 'Saudável' },
-    at_risk:   { icon: ShieldAlert, color: 'text-warning', label: 'Em risco' },
-    critical:  { icon: ShieldX, color: 'text-danger', label: 'Crítico' },
+  const triggerFeedback = (msg: string) => {
+    setFeedbackMsg(msg);
+    setTimeout(() => setFeedbackMsg(null), 3000);
   };
-  const c = cfg[status] || cfg.healthy;
-  const Icon = c.icon;
-  return (
-    <div className={`flex items-center gap-2 ${c.color}`}>
-      <Icon size={20} />
-      <span className="font-semibold">{c.label}</span>
-    </div>
-  );
-}
 
-function SignalCard({ signal }: { signal: { type: string; severity: string; message: string; value: string } }) {
-  const sevColors: Record<string, string> = {
-    critical: 'border-l-danger bg-danger-muted/20',
-    high: 'border-l-warning bg-warning-muted/20',
-    medium: 'border-l-yellow-400 bg-yellow-50 dark:bg-yellow-900/10',
-    low: 'border-l-blue-400 bg-blue-50 dark:bg-blue-900/10',
+  // Rule actions handlers
+  const handleToggleRuleStatus = (id: string) => {
+    setRules(rules.map(r => {
+      if (r.id === id) {
+        const nextStatus = r.status === 'active' ? 'inactive' : 'active';
+        triggerFeedback(`Regra "${r.name}" definida como ${nextStatus === 'active' ? 'Ativa' : 'Inativa'}.`);
+        return { ...r, status: nextStatus, executionMode: nextStatus };
+      }
+      return r;
+    }));
   };
-  const sevIcons: Record<string, any> = { critical: ShieldX, high: AlertTriangle, medium: Info, low: CheckCircle2 };
-  const Icon = sevIcons[signal.severity] || Info;
+
+  const handleEditRule = (rule: TrustRule) => {
+    setEditingRule(rule);
+    setShowRuleForm(true);
+  };
+
+  const handleDeleteRule = (id: string) => {
+    setRules(rules.filter(r => r.id !== id));
+    triggerFeedback("Regra de risco excluída com sucesso.");
+  };
+
+  const handleDuplicateRule = (rule: TrustRule) => {
+    const dup: TrustRule = {
+      ...rule,
+      id: `tr_${Math.floor(Math.random() * 1000)}`,
+      name: `${rule.name} (Cópia)`,
+      createdAt: new Date().toISOString(),
+    };
+    setRules([...rules, dup]);
+    triggerFeedback(`Regra "${rule.name}" duplicada.`);
+  };
+
+  const handleSaveRule = (partialRule: Partial<TrustRule>) => {
+    if (editingRule) {
+      // Editing mode
+      setRules(rules.map(r => r.id === editingRule.id ? { ...r, ...partialRule } as TrustRule : r));
+      triggerFeedback(`Regra "${partialRule.name}" atualizada com sucesso.`);
+    } else {
+      // Adding new rule
+      const newR: TrustRule = {
+        ...partialRule,
+        id: `tr_custom_${Math.floor(Math.random() * 1000)}`,
+        triggers7d: 0,
+        falsePositiveRate: 0.0,
+      } as TrustRule;
+      setRules([...rules, newR]);
+      triggerFeedback(`Nova regra "${partialRule.name}" criada e ativada.`);
+    }
+    setShowRuleForm(false);
+    setEditingRule(undefined);
+  };
 
   return (
-    <div className={`border-l-4 rounded-r-lg p-3 ${sevColors[signal.severity] || 'border-l-gray-300 bg-gray-50'}`}>
-      <div className="flex items-start gap-3">
-        <Icon size={16} className="mt-0.5 shrink-0 text-ink-muted" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-ink">{signal.message}</p>
-          <p className="text-xs text-ink-subtle mt-0.5">{signal.value}</p>
+    <PageLayout title="Trust Layer">
+      
+      {/* Toast Notification */}
+      {feedbackMsg && (
+        <div className="fixed bottom-5 right-5 z-60 bg-slate-900 border border-slate-800 text-white rounded-2xl p-4 shadow-2xl flex items-center gap-2 max-w-sm animate-in slide-in-from-bottom-2 duration-300">
+          <span className="w-2 h-2 bg-violet-500 rounded-full shrink-0 animate-ping" />
+          <span className="text-[11px] font-black text-left">{feedbackMsg}</span>
         </div>
+      )}
+
+      {/* TrustHeader */}
+      <TrustHeader 
+        onOpenDoc={() => triggerFeedback("Carregando documentação técnica antifraude...")}
+        onConfigureMotor={() => setShowConfigDialog(true)}
+        onNewRule={() => {
+          setEditingRule(undefined);
+          setShowRuleForm(true);
+        }}
+        isAdmin={isAdmin}
+      />
+
+      {/* Simulator / Permissões / Indisponibilidade Panel */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200/60 rounded-[20px] p-3 text-left">
+        <div className="flex items-center gap-2">
+          <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider">Simulador de Status:</span>
+          
+          {/* Active simulated role toggle */}
+          <button 
+            onClick={() => setUserRole(userRole === 'owner' ? 'viewer' : 'owner')}
+            className={cn(
+              "text-[9px] font-black uppercase px-2 py-1 rounded-lg border transition-all cursor-pointer",
+              isAdmin ? "bg-violet-650 text-white border-violet-750 shadow-sm" : "bg-white text-slate-700 border-slate-350"
+            )}
+          >
+            Cargo: {isAdmin ? 'Owner (Completo)' : 'Auditor (Leitura)'}
+          </button>
+
+          {/* Motor Indisponibilidade checkbox toggle */}
+          <button 
+            onClick={() => setIsMotorUnavailable(!isMotorUnavailable)}
+            className={cn(
+              "text-[9px] font-black uppercase px-2 py-1 rounded-lg border transition-all cursor-pointer",
+              isMotorUnavailable ? "bg-red-600 text-white border-red-700 shadow-sm" : "bg-white text-slate-700 border-slate-350"
+            )}
+          >
+            Simular Indisponibilidade: {isMotorUnavailable ? 'ATIVO' : 'DESATIVADO'}
+          </button>
+        </div>
+
+        <span className="text-[9.5px] text-slate-400 font-bold">
+          Motor v2.4.1 | SLA Fila: 32 min
+        </span>
       </div>
-    </div>
-  );
-}
 
-export default function TrustLayerPage() {
-  const { data, loading } = useTrustLayer();
+      {/* Motor Unavailable Banner */}
+      {isMotorUnavailable && (
+        <TrustMotorUnavailableBanner />
+      )}
 
-  if (loading) {
-    return <PageLayout title="Trust Layer"><div className="flex justify-center py-20"><Loader2 className="animate-spin text-brand" size={32} /></div></PageLayout>;
-  }
+      {/* KPI Cards Grid */}
+      <TrustKpiCards 
+        kpis={kpis} 
+        onFilterReview={() => setActiveTab('review')}
+        onFilterBlocked={() => setActiveTab('events')}
+      />
 
-  if (!data) {
-    return <PageLayout title="Trust Layer"><Card><p className="text-ink-subtle text-center py-10">Não foi possível carregar os dados do Trust Layer.</p></Card></PageLayout>;
-  }
-
-  return (
-    <PageLayout title="Trust Layer — Inteligência Operacional">
-      {/* Main Score */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1">
-          <div className="flex flex-col items-center py-4">
-            <ScoreGauge score={data.score} />
-            <div className="mt-4"><StatusLabel status={data.status} /></div>
-            <p className="text-sm text-ink-muted text-center mt-3 max-w-xs">{data.recommended_action}</p>
-          </div>
-        </Card>
-
-        <Card className="lg:col-span-2" title="Sinais Detectados">
-          {data.signals.length === 0 ? (
-            <div className="flex flex-col items-center py-8 text-center">
-              <ShieldCheck size={48} className="text-success/30 mb-3" />
-              <p className="text-ink-muted">Nenhum sinal de risco detectado.</p>
-              <p className="text-xs text-ink-subtle mt-1">A operação está saudável.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {data.signals.map((signal, i) => (
-                <SignalCard key={i} signal={signal} />
-              ))}
-            </div>
-          )}
-        </Card>
+      {/* Navigation tabs header */}
+      <div className="border-b border-[#E8DDFD]/60 flex items-center justify-between">
+        <TrustTabs 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          activeRulesCount={rules.filter(r => r.status === 'active').length}
+          criticalEventsCount={events.filter(e => e.score >= 70).length}
+          pendingReviewCount={activeTab === 'review' ? 0 : 3} // Dynamic mock queue length
+        />
       </div>
 
-      {/* Explanation */}
-      <Card>
-        <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-brand-muted shrink-0"><Shield size={24} className="text-brand" /></div>
-          <div>
-            <h3 className="font-semibold text-ink mb-1">O que o Trust Layer avalia?</h3>
-            <p className="text-sm text-ink-muted leading-relaxed">
-              O Trust Layer analisa continuamente a saúde da sua operação: gateways ativos, taxa de aprovação, 
-              webhooks funcionando, alertas de segurança e configuração dos checkouts. Cada sinal impacta o score 
-              operacional e pode influenciar decisões de roteamento e publicação de checkouts.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-              {[
-                { range: '90–100', label: 'Excelente', color: 'text-success' },
-                { range: '70–89', label: 'Saudável', color: 'text-blue-500' },
-                { range: '40–69', label: 'Em risco', color: 'text-warning' },
-                { range: '0–39', label: 'Crítico', color: 'text-danger' },
-              ].map(item => (
-                <div key={item.range} className="text-center p-2 rounded border border-border">
-                  <div className={`text-lg font-bold ${item.color}`}>{item.range}</div>
-                  <div className="text-xs text-ink-muted">{item.label}</div>
+      {/* Rule Creator Step-by-Step Drawer / Page */}
+      {showRuleForm ? (
+        <TrustRuleForm 
+          onSave={handleSaveRule} 
+          onCancel={() => {
+            setShowRuleForm(false);
+            setEditingRule(undefined);
+          }}
+          initialRule={editingRule}
+        />
+      ) : (
+        /* Render Selected Tab content */
+        <div className="w-full">
+          
+          {/* Tab 1: Overview (Dashboard visual charts & recent logs list) */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <TrustScoreChart />
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Active Alerts */}
-      {data.alerts && data.alerts.length > 0 && (
-        <Card title="Alertas Ativos que Impactam o Score">
-          <div className="space-y-3">
-            {data.alerts.map((alert: any, i: number) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-background">
-                <AlertTriangle size={16} className={`mt-0.5 shrink-0 ${alert.severity === 'critical' ? 'text-danger' : 'text-warning'}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-medium text-ink">{alert.title}</h4>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${alert.severity === 'critical' ? 'bg-danger-muted text-danger' : 'bg-warning-muted text-warning'}`}>
-                      {alert.severity}
-                    </span>
-                  </div>
-                  <p className="text-xs text-ink-muted mt-1">{alert.message}</p>
-                  {alert.recommended_action && (
-                    <p className="text-xs text-brand mt-1 flex items-center gap-1"><ArrowRight size={10} /> {alert.recommended_action}</p>
-                  )}
+                <div className="lg:col-span-1">
+                  <TrustScoreHistogram />
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
+
+              {/* Main table and right detail drawer grid */}
+              <div className="flex flex-col lg:flex-row gap-6 items-start">
+                <div className="flex-1 min-w-0 w-full">
+                  <TrustEventFeed 
+                    events={events} 
+                    onSelectEvent={setSelectedEvent}
+                    selectedEventId={selectedEvent?.id}
+                  />
+                </div>
+                
+                {selectedEvent && (
+                  <TrustEventDetailPanel 
+                    event={selectedEvent}
+                    onClose={() => setSelectedEvent(null)}
+                    isAdmin={isAdmin}
+                    onActionFeedback={triggerFeedback}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: Rules (Risk Rules) */}
+          {activeTab === 'rules' && (
+            <TrustRulesTable 
+              rules={rules}
+              isAdmin={isAdmin}
+              onToggleStatus={handleToggleRuleStatus}
+              onEdit={handleEditRule}
+              onDelete={handleDeleteRule}
+              onDuplicate={handleDuplicateRule}
+            />
+          )}
+
+          {/* Tab 3: Events (Complete and filterable query) */}
+          {activeTab === 'events' && (
+            <div className="space-y-4">
+              {/* Event specific filters bar placeholder */}
+              <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-4 flex flex-wrap gap-4 text-xs font-semibold items-center text-left">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtros Ativos:</span>
+                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-slate-700">Período: Últimas 24h</span>
+                <span className="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-slate-700">Resultado: Todos</span>
+                <button 
+                  onClick={() => triggerFeedback("Filtros avançados de score redefinidos.")}
+                  className="text-brand hover:underline font-black text-[9.5px] uppercase tracking-wider"
+                >
+                  Limpar tudo
+                </button>
+              </div>
+
+              <TrustEventsTable 
+                events={events}
+                onSelectEvent={setSelectedEvent}
+                selectedEventId={selectedEvent?.id}
+              />
+            </div>
+          )}
+
+          {/* Tab 4: Score (Individual Query Search) */}
+          {activeTab === 'score' && (
+            <TrustScoreSearch />
+          )}
+
+          {/* Tab 5: Review Queue (Manual review SLAs) */}
+          {activeTab === 'review' && (
+            <TrustReviewQueue 
+              onActionFeedback={triggerFeedback}
+              isAdmin={isAdmin}
+            />
+          )}
+
+        </div>
       )}
 
-      {/* Recent Decisions */}
-      {data.recent_decisions && data.recent_decisions.length > 0 && (
-        <Card title="Últimas Decisões do Trust Layer">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-border">
-                <th className="text-left py-2 text-ink-muted font-medium">Entidade</th>
-                <th className="text-left py-2 text-ink-muted font-medium">Decisão</th>
-                <th className="text-left py-2 text-ink-muted font-medium">Score</th>
-                <th className="text-left py-2 text-ink-muted font-medium">Motivo</th>
-                <th className="text-left py-2 text-ink-muted font-medium">Data</th>
-              </tr></thead>
-              <tbody>
-                {data.recent_decisions.map((d: any, i: number) => (
-                  <tr key={i} className="border-b border-border/50">
-                    <td className="py-2 text-ink">{d.entity_type}</td>
-                    <td className="py-2"><span className={`text-xs px-2 py-0.5 rounded font-medium ${d.decision === 'allow' ? 'bg-success-muted text-success' : d.decision === 'warn' ? 'bg-warning-muted text-warning' : 'bg-danger-muted text-danger'}`}>{d.decision}</span></td>
-                    <td className="py-2 font-bold text-ink">{d.score}</td>
-                    <td className="py-2 text-ink-muted text-xs max-w-xs truncate">{d.reason}</td>
-                    <td className="py-2 text-ink-subtle text-xs">{new Date(d.created_at).toLocaleString('pt-BR')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      {/* Global Config Dialog */}
+      <TrustMotorConfigDialog 
+        config={motorConfig}
+        isOpen={showConfigDialog}
+        onClose={() => setShowConfigDialog(false)}
+        onSave={(newConf) => {
+          setMotorConfig({ ...motorConfig, ...newConf } as TrustMotorConfig);
+          triggerFeedback("Thresholds e regras de contingenciamento salvos com sucesso.");
+        }}
+      />
+
     </PageLayout>
   );
 }

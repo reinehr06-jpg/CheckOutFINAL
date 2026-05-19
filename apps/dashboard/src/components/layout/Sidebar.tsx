@@ -16,7 +16,8 @@ import {
   Terminal,
   Settings2,
   ChevronDown,
-  GitBranch
+  GitBranch,
+  ShieldHalf
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +31,7 @@ const menuItems = [
   { name: 'Assinaturas', icon: Repeat, href: '/dashboard/subscriptions' },
   { name: 'Webhooks', icon: Zap, href: '/dashboard/webhooks' },
   { name: 'Roteamento', icon: GitBranch, href: '/dashboard/routing' },
+  { name: 'Trust Layer', icon: ShieldHalf, href: '/dashboard/trust' },
   { name: 'Auditoria', icon: Terminal, href: '/dashboard/audit' },
   { name: 'Configurações', icon: Settings2, href: '/dashboard/settings' },
 ];
