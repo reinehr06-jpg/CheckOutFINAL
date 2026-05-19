@@ -40,7 +40,8 @@ type ActiveTab =
   | 'liquidacao' 
   | 'por_checkout' 
   | 'regras_conversao' 
-  | 'historico';
+  | 'historico'
+  | 'disputas_fx';
 
 export default function FxSettingsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('visao_geral');
@@ -108,6 +109,38 @@ export default function FxSettingsPage() {
   // Live currency feed source
   const [feedSource, setFeedSource] = useState('reuters');
 
+  // Disputas FX states
+  const [fxDisputes, setFxDisputes] = useState([
+    { id: 'dsp_0982', txId: 'tx_72819', currency: 'USD', amount: 150, rateCapture: 5.12, rateDispute: 5.28, variance: 24.00, status: 'Aguardando Conciliação', date: '19/05 16:10' },
+    { id: 'dsp_0983', txId: 'tx_72820', currency: 'EUR', amount: 82, rateCapture: 5.58, rateDispute: 5.72, variance: 11.48, status: 'Aguardando Conciliação', date: '19/05 15:45' },
+    { id: 'dsp_0984', txId: 'tx_72821', currency: 'GBP', amount: 60, rateCapture: 6.53, rateDispute: 6.69, variance: 9.60, status: 'Aguardando Conciliação', date: '19/05 11:20' },
+    { id: 'dsp_0985', txId: 'tx_72822', currency: 'USD', amount: 300, rateCapture: 5.12, rateDispute: 5.35, variance: 69.00, status: 'Aguardando Conciliação', date: '18/05 14:15' }
+  ]);
+
+  const [fxAuditLogs, setFxAuditLogs] = useState([
+    { id: 'adj_001', user: 'Carlos Oliveira', disputeId: 'dsp_0981', variance: 14.20, date: '19/05 14:30', status: 'Sucesso' },
+    { id: 'adj_002', user: 'Carlos Oliveira', disputeId: 'dsp_0980', variance: -8.50, date: '19/05 10:15', status: 'Sucesso' }
+  ]);
+
+  const handleConciliateDispute = (id: string) => {
+    setFxDisputes(prev => prev.map(d => {
+      if (d.id === id) {
+        const newLog = {
+          id: `adj_${Date.now()}`,
+          user: 'Carlos Oliveira',
+          disputeId: d.id,
+          variance: d.variance,
+          date: '19/05 16:13',
+          status: 'Sucesso'
+        };
+        setFxAuditLogs(prevLogs => [newLog, ...prevLogs]);
+        return { ...d, status: 'Conciliado' };
+      }
+      return d;
+    }));
+    triggerToast(`Conciliação de variação concluída com sucesso!`);
+  };
+
   // Disputas FX simulator states
   const [disputeAmount, setDisputeAmount] = useState(150);
   const [disputeDateRate, setDisputeDateRate] = useState(5.12);
@@ -149,6 +182,24 @@ export default function FxSettingsPage() {
     const lossGained = parseFloat((disputeAmount * diff).toFixed(2));
     setCalculatedVariance(lossGained);
     triggerToast(`Diferença cambial calculada: R$ ${Math.abs(lossGained).toLocaleString('pt-BR')} de ${lossGained >= 0 ? 'perda por volatilidade' : 'economia'}`);
+  };
+
+  const handleCreateSimulatedDispute = () => {
+    const diff = disputeChargebackRate - disputeDateRate;
+    const lossGained = parseFloat((disputeAmount * diff).toFixed(2));
+    const newDispute = {
+      id: `dsp_098${fxDisputes.length + 2}`,
+      txId: `tx_${Math.floor(10000 + Math.random() * 90000)}`,
+      currency: 'USD',
+      amount: disputeAmount,
+      rateCapture: disputeDateRate,
+      rateDispute: disputeChargebackRate,
+      variance: lossGained,
+      status: 'Aguardando Conciliação',
+      date: '19/05 16:13'
+    };
+    setFxDisputes(prev => [newDispute, ...prev]);
+    triggerToast("Disputa simulada adicionada à fila de liquidação!");
   };
 
   // Convert amount based on ourRate of selected currency
@@ -239,7 +290,7 @@ export default function FxSettingsPage() {
         </button>
       </header>
 
-      {/* Tab Navigation (9 Abas) */}
+      {/* Tab Navigation (10 Abas) */}
       <div className="flex items-center justify-between border-b border-[#E8DDFD]/65 pb-0 w-full shrink-0 overflow-x-auto no-scrollbar">
         <div className="flex gap-5">
           {[
@@ -251,6 +302,7 @@ export default function FxSettingsPage() {
             { id: 'liquidacao', label: 'Liquidação' },
             { id: 'por_checkout', label: 'Por checkout' },
             { id: 'regras_conversao', label: 'Regras & Conversão' },
+            { id: 'disputas_fx', label: 'Disputas FX' },
             { id: 'historico', label: 'Histórico' }
           ].map((tab) => {
             const isActive = activeTab === tab.id;
@@ -1247,7 +1299,7 @@ export default function FxSettingsPage() {
                   "rounded-2xl p-4.5 border text-left mt-2.5 space-y-1",
                   calculatedVariance >= 0 ? "bg-red-50/50 border-red-100 text-red-700" : "bg-green-50/50 border-green-100 text-green-700"
                 )}>
-                  <span className="text-[9px] font-black uppercase tracking-wider block">Diferença Cambial Calculada:</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider block">Diferença Cambial Cambial:</span>
                   <span className="text-[15px] font-black block">R$ {Math.abs(calculatedVariance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                   <p className="text-[9px] font-semibold leading-relaxed mt-1">
                     {calculatedVariance >= 0 
@@ -1258,6 +1310,288 @@ export default function FxSettingsPage() {
                 </div>
               )}
             </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* disputas_fx Tab Content */}
+      {activeTab === 'disputas_fx' && (
+        <div className="space-y-6 text-left animate-in fade-in duration-300">
+          
+          {/* FX Dispute KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Disputas Cambiais Abertas', val: fxDisputes.filter(d => d.status === 'Aguardando Conciliação').length, color: 'text-amber-600' },
+              { label: 'Perda Cambial Acumulada', val: `R$ ${fxDisputes.filter(d => d.status === 'Aguardando Conciliação').reduce((acc, curr) => acc + curr.variance, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, color: 'text-red-650' },
+              { label: 'Sucesso na Conciliação', val: '92.4%', sub: 'Compensado no saldo', color: 'text-emerald-650' },
+              { label: 'Ajustes Auditados', val: fxAuditLogs.length, sub: 'Rastreabilidade total', color: 'text-brand' }
+            ].map((kpi, idx) => (
+              <div key={idx} className="bg-white border border-[#E8DDFD]/65 rounded-2xl p-4.5 space-y-1">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{kpi.label}</span>
+                <span className={cn("text-[20px] font-black block leading-none", kpi.color)}>{kpi.val}</span>
+                {kpi.sub && <span className="text-[9px] font-bold text-slate-350 block">{kpi.sub}</span>}
+              </div>
+            ))}
+          </div>
+
+          {/* Main open disputes list and Simulator split */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 items-start">
+            
+            {/* Disputes table (col-span-2) */}
+            <div className="xl:col-span-2 bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4">
+              <div className="border-b border-slate-50 pb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Disputas Cambiais Pendentes</h3>
+                  <p className="text-[10.5px] font-bold text-slate-400 mt-1">Monitore a variação cambial histórica de chargebacks e execute compensações financeiras no saldo.</p>
+                </div>
+              </div>
+
+              <div className="w-full overflow-hidden rounded-xl border border-slate-100">
+                <table className="w-full text-left table-fixed">
+                  <thead>
+                    <tr className="border-b border-[#E8DDFD]/40 bg-slate-50/50">
+                      <th className="py-2.5 px-3.5 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[18%]">ID Disputa</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[16%]">Pedido</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[24%]">Original (FX)</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[24%]">Taxas (Cap. vs Disp.)</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[18%]">Variação BRL</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[16%] text-center">Status</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[24%] text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-[10.5px] font-bold text-slate-700">
+                    {fxDisputes.map((d) => (
+                      <tr key={d.id} className="hover:bg-slate-50/50 h-[48px]">
+                        <td className="py-2 px-3.5 font-mono text-[9.5px] text-brand">{d.id}</td>
+                        <td className="py-2 px-2 font-mono text-[9px] text-slate-400">{d.txId}</td>
+                        <td className="py-2 px-2 text-slate-800 font-extrabold">{d.currency} ${d.amount.toFixed(2)}</td>
+                        <td className="py-2 px-2 text-slate-500 font-mono text-[10px] leading-tight">
+                          <span className="block text-slate-400 font-semibold text-[8px] uppercase">Cap: {d.rateCapture.toFixed(2)} BRL</span>
+                          <span className="block text-slate-700 font-black text-[9px] uppercase">Disp: {d.rateDispute.toFixed(2)} BRL</span>
+                        </td>
+                        <td className="py-2 px-2">
+                          <span className={cn(
+                            "font-mono text-[10.5px] font-black",
+                            d.variance >= 0 ? "text-red-650" : "text-emerald-650"
+                          )}>
+                            {d.variance >= 0 ? '+' : ''} R$ {d.variance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider block truncate",
+                            d.status === 'Conciliado' ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700 animate-pulse"
+                          )}>
+                            {d.status}
+                          </span>
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          {d.status === 'Aguardando Conciliação' ? (
+                            <button
+                              onClick={() => handleConciliateDispute(d.id)}
+                              className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[8.5px] font-black uppercase tracking-tight transition-all cursor-pointer shadow-sm shadow-slate-900/10 block w-full text-center"
+                            >
+                              Conciliar
+                            </button>
+                          ) : (
+                            <span className="text-slate-350 text-[8.5px] font-bold block uppercase tracking-wide">Ajustado</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Volatility simulator (col-span-1) */}
+            <div className="xl:col-span-1 bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4">
+              <div className="border-b border-slate-50 pb-2.5 flex items-center justify-between">
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-850 uppercase tracking-wider block">Calculadora de Impacto de Chargeback</h4>
+                  <span className="text-[8.5px] font-bold text-slate-400 block mt-1">Cruze a disputa cambial com o fx_rates do dia do chargeback.</span>
+                </div>
+              </div>
+
+              <div className="space-y-3.5">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Valor do Pedido ($ USD)</label>
+                  <input 
+                    type="number" 
+                    value={disputeAmount}
+                    onChange={(e) => setDisputeAmount(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-800 focus:outline-none" 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Taxa Captura (BRL)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={disputeDateRate}
+                      onChange={(e) => setDisputeDateRate(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800 focus:outline-none" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Taxa Disputa (BRL)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      value={disputeChargebackRate}
+                      onChange={(e) => setDisputeChargebackRate(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800 focus:outline-none" 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={handleCalculateVariance}
+                    className="h-9 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    Simular Variação
+                  </button>
+                  <button 
+                    onClick={handleCreateSimulatedDispute}
+                    className="h-9 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    Inserir Disputa
+                  </button>
+                </div>
+
+                {calculatedVariance !== null && (
+                  <div className={cn(
+                    "rounded-2xl p-4 border text-left mt-2 space-y-1",
+                    calculatedVariance >= 0 ? "bg-red-50/50 border-red-100 text-red-700" : "bg-emerald-50/50 border-emerald-100 text-emerald-700"
+                  )}>
+                    <span className="text-[9px] font-black uppercase tracking-wider block">Variação Cambial a Conciliar:</span>
+                    <span className="text-[15px] font-black block">R$ {Math.abs(calculatedVariance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <p className="text-[9px] font-semibold leading-relaxed mt-1">
+                      {calculatedVariance >= 0 
+                        ? "Diferença desfavorável por oscilação cambial. Compensar variação na liquidação do merchant."
+                        : "Ajuste positivo por valorização do BRL a favor da liquidação cambial do merchant."
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Audit Logs & Laravel Integration split */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 items-stretch">
+            
+            {/* Audit Logs of Adjustments */}
+            <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4">
+              <div className="border-b border-slate-50 pb-2.5">
+                <h4 className="text-[10px] font-black text-slate-850 uppercase tracking-wider block">Trilha de Auditoria Cambial (Dispute Audit Logs)</h4>
+                <span className="text-[8.5px] font-bold text-slate-400 block mt-1">Monitoramento completo das liquidações de variações cambiais de chargebacks.</span>
+              </div>
+
+              <div className="w-full overflow-hidden rounded-xl border border-slate-100">
+                <table className="w-full text-left table-fixed">
+                  <thead>
+                    <tr className="border-b border-[#E8DDFD]/40 bg-slate-50/50">
+                      <th className="py-2.5 px-3.5 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[24%]">Operador</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[24%]">ID Ajuste</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[20%]">Variação</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[18%]">Horário</th>
+                      <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[14%] text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-[10px] font-bold text-slate-700">
+                    {fxAuditLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-slate-50/50 h-[44px]">
+                        <td className="py-2 px-3.5 text-slate-900 truncate font-extrabold">{log.user}</td>
+                        <td className="py-2 px-2 font-mono text-[9.5px] text-brand">{log.id}</td>
+                        <td className="py-2 px-2">
+                          <span className={cn(
+                            "font-mono font-black",
+                            log.variance >= 0 ? "text-red-650" : "text-emerald-650"
+                          )}>
+                            R$ {log.variance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        </td>
+                        <td className="py-2 px-2 text-slate-500 font-semibold">{log.date}</td>
+                        <td className="py-2 px-2 text-center">
+                          <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.2 rounded font-mono text-[8px] font-black uppercase">Liquido</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Laravel Integration Controller hook */}
+            <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4">
+              <div className="border-b border-slate-50 pb-2.5 flex items-center justify-between">
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-850 uppercase tracking-wider block">Controller de Conciliação Cambial (Laravel Backend)</h4>
+                  <span className="text-[8.5px] font-bold text-slate-400 block mt-1">Vincule chargebacks e fx_rates históricos para reconciliar saldos automaticamente.</span>
+                </div>
+                <span className="bg-purple-50 text-brand px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest font-mono">
+                  Laravel Controller
+                </span>
+              </div>
+
+              <div className="font-mono text-[9px] bg-slate-950 border border-slate-900 rounded-xl p-4 leading-relaxed text-slate-350 select-text overflow-x-auto relative">
+                <div className="absolute right-3.5 top-3.5 bg-slate-900 border border-slate-800 rounded px-2 py-0.5 text-[8px] font-black uppercase text-slate-400 pointer-events-none select-none">
+                  FxDisputeController.php
+                </div>
+                <pre className="text-left font-mono">
+                  {`<?php
+
+namespace App\\Http\\Controllers\\Admin;
+
+use App\\Models\\Dispute;
+use App\\Models\\FxRate;
+use App\\Models\\MerchantBalance;
+use Illuminate\\Http\\Request;
+
+class FxDisputeController extends Controller
+{
+    /**
+     * Calcula e concilia a variação cambial entre a captura e o chargeback.
+     */
+    public function conciliate(Request $request, string $disputeId)
+    {
+        $dispute = Dispute::findOrFail($disputeId);
+        
+        // Recupera taxas históricas das datas de captura e disputa
+        $captureRate = FxRate::getHistoricalRate($dispute->currency, $dispute->captured_at);
+        $disputeRate = FxRate::getHistoricalRate($dispute->currency, $dispute->disputed_at);
+        
+        // Calcula a variação financeira
+        $varianceBrl = ($dispute->amount * $disputeRate) - ($dispute->amount * $captureRate);
+        
+        // Executa o ajuste no saldo do merchant
+        MerchantBalance::adjust(
+            $dispute->merchant_id,
+            $varianceBrl,
+            'fx_variance_chargeback',
+            "Variação cambial retroativa do chargeback {$disputeId}"
+        );
+        
+        // Atualiza status da disputa cambial
+        $dispute->update(['fx_status' => 'conciliated', 'variance_brl' => $varianceBrl]);
+        
+        return response()->json([
+            'status' => 'success',
+            'variance_brl' => $varianceBrl,
+            'message' => 'Variação cambial reconciliada no saldo!'
+        ]);
+    }
+}`}
+                </pre>
+              </div>
+            </div>
+
           </div>
 
         </div>
