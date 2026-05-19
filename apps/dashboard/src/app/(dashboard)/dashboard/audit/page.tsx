@@ -25,7 +25,11 @@ import {
   AlertTriangle,
   Play,
   Pause,
-  ChevronDown
+  ChevronDown,
+  RefreshCw,
+  Activity,
+  Zap,
+  Repeat
 } from 'lucide-react';
 import { AuditEvent, AuditLevel, AuditResult, AuditEntityType } from '@/types/audit';
 import { MOCK_AUDIT_EVENTS, MOCK_SUMMARY } from './__mocks__/audit';
@@ -35,17 +39,19 @@ export default function AuditPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<AuditEvent[]>(MOCK_AUDIT_EVENTS);
-  const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(MOCK_AUDIT_EVENTS[0]);
   
   // Realtime Polling state
   const [realtimeActive, setRealtimeActive] = useState(true);
   
-  // Filters State
+  // Filters State (Row 1)
   const [period, setPeriod] = useState('hoje');
   const [filterUser, setFilterUser] = useState('Todos');
   const [filterSystem, setFilterSystem] = useState('Todos');
+  const [filterEventType, setFilterEventType] = useState('Todos');
   const [filterLevel, setFilterLevel] = useState<string>('Todos');
   
+  // Filters State (Row 2)
   const [filterEntity, setFilterEntity] = useState<string>('Todos');
   const [filterEntityId, setFilterEntityId] = useState('');
   const [filterAction, setFilterAction] = useState('Todos');
@@ -114,7 +120,7 @@ export default function AuditPage() {
       };
 
       setEvents(prev => [newEvent, ...prev]);
-    }, 8000);
+    }, 12000);
 
     return () => clearInterval(timer);
   }, [realtimeActive, selectedEvent]);
@@ -141,13 +147,79 @@ export default function AuditPage() {
     triggerToast(`Incidente ${incId} criado e associado ao evento.`);
   };
 
+  const getEventTheme = (level: AuditLevel, category: string) => {
+    if (level === 'critical' || category === 'SEGURANÇA') {
+      return { 
+        icon: ShieldAlert, 
+        bgClass: 'bg-red-50 text-red-650 border-red-200', 
+        dotClass: 'bg-red-600', 
+        badgeClass: 'bg-red-50 text-red-700 border-red-200' 
+      };
+    }
+    if (category === 'PAGAMENTO') {
+      return { 
+        icon: Activity, 
+        bgClass: 'bg-green-50 text-green-600 border-green-200', 
+        dotClass: 'bg-green-600', 
+        badgeClass: 'bg-green-50 text-green-700 border-green-200' 
+      };
+    }
+    if (category === 'WEBHOOK') {
+      return { 
+        icon: Zap, 
+        bgClass: 'bg-blue-50 text-blue-600 border-blue-200', 
+        dotClass: 'bg-blue-600', 
+        badgeClass: 'bg-blue-50 text-blue-700 border-blue-200' 
+      };
+    }
+    if (category === 'ASSINATURA') {
+      return { 
+        icon: Repeat, 
+        bgClass: 'bg-orange-50 text-orange-600 border-orange-200', 
+        dotClass: 'bg-orange-600', 
+        badgeClass: 'bg-orange-50 text-orange-700 border-orange-200' 
+      };
+    }
+    if (level === 'alteration') {
+      return { 
+        icon: PenLine, 
+        bgClass: 'bg-purple-50 text-brand border-purple-200', 
+        dotClass: 'bg-brand', 
+        badgeClass: 'bg-purple-50 text-brand border-purple-200' 
+      };
+    }
+    return { 
+      icon: Info, 
+      bgClass: 'bg-slate-50 text-slate-500 border-slate-200', 
+      dotClass: 'bg-slate-500', 
+      badgeClass: 'bg-slate-50 text-slate-700 border-slate-200' 
+    };
+  };
+
+  const getLevelBadge = (level: AuditLevel) => {
+    switch (level) {
+      case 'critical':
+        return { label: 'Crítico', bg: 'bg-red-50 text-red-700 border-red-200' };
+      case 'alteration':
+        return { label: 'Alteração', bg: 'bg-purple-50 text-brand border-purple-200' };
+      case 'informative':
+        return { label: 'Info', bg: 'bg-blue-50 text-blue-750 border-blue-200' };
+      case 'access':
+        return { label: 'Acesso', bg: 'bg-green-50 text-green-750 border-green-200' };
+      case 'deletion':
+        return { label: 'Exclusão', bg: 'bg-orange-50 text-orange-700 border-orange-200' };
+    }
+  };
+
   // Filter application
   const getFilteredEvents = () => {
     return events.filter(evt => {
       // Search Box
       const matchesSearch = evt.event.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             evt.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (evt.entityId && evt.entityId.toLowerCase().includes(searchQuery.toLowerCase()));
+                            (evt.entityId && evt.entityId.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                            evt.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            evt.system.toLowerCase().includes(searchQuery.toLowerCase());
 
       // Tab selector
       let matchesTab = true;
@@ -160,39 +232,25 @@ export default function AuditPage() {
       const matchesUser = filterUser === 'Todos' ? true : evt.user.name === filterUser;
       const matchesSystem = filterSystem === 'Todos' ? true : evt.system === filterSystem;
       const matchesLevel = filterLevel === 'Todos' ? true : evt.level === filterLevel.toLowerCase();
+      const matchesEventType = filterEventType === 'Todos' ? true : evt.event === filterEventType;
       const matchesEntity = filterEntity === 'Todos' ? true : evt.entityType === filterEntity;
       const matchesEntityId = filterEntityId === '' ? true : evt.entityId?.toLowerCase().includes(filterEntityId.toLowerCase());
       const matchesIp = filterIp === '' ? true : evt.ip.includes(filterIp);
       const matchesResult = filterResult === 'Todos' ? true : evt.result === filterResult.toLowerCase();
 
-      return matchesSearch && matchesTab && matchesUser && matchesSystem && matchesLevel && matchesEntity && matchesEntityId && matchesIp && matchesResult;
+      return matchesSearch && matchesTab && matchesUser && matchesSystem && matchesLevel && matchesEventType && matchesEntity && matchesEntityId && matchesIp && matchesResult;
     });
   };
 
   const filteredEvents = getFilteredEvents();
   const paginatedEvents = filteredEvents.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-  const getLevelBadge = (level: AuditLevel) => {
-    switch (level) {
-      case 'critical':
-        return { label: 'Crítico', bg: 'bg-red-50 text-red-700 border-red-200', dot: 'bg-red-650', icon: ShieldAlert };
-      case 'alteration':
-        return { label: 'Alteração', bg: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500', icon: PenLine };
-      case 'informative':
-        return { label: 'Info', bg: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-600', icon: Info };
-      case 'access':
-        return { label: 'Acesso', bg: 'bg-green-50 text-green-700 border-green-200', dot: 'bg-green-600', icon: LogIn };
-      case 'deletion':
-        return { label: 'Exclusão', bg: 'bg-orange-50 text-orange-700 border-orange-200', dot: 'bg-orange-600', icon: Trash2 };
-    }
-  };
-
   return (
-    <div className="w-full text-left pt-1 pb-10 bg-[#F7F7FA] min-h-screen select-none">
+    <div className="w-full text-left pt-1 pb-10 bg-[#F7F7FA] min-h-screen select-none font-sans">
       
-      {/* Toast message alert */}
+      {/* Toast Alert popup banner */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-55 bg-brand text-white p-3.5 rounded-2xl shadow-xl border border-brand/50 animate-in slide-in-from-top-4 duration-300 flex items-center justify-between gap-3 max-w-sm">
+        <div className="fixed top-6 right-6 z-55 bg-brand text-white p-3.5 rounded-2xl shadow-xl border border-brand/50 flex items-center justify-between gap-3 max-w-sm animate-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-white shrink-0" />
             <span className="text-[11.5px] font-bold">{toastMessage}</span>
@@ -212,11 +270,10 @@ export default function AuditPage() {
               <Terminal className="w-5 h-5 text-brand" />
               <h1 className="text-[18px] 2xl:text-[20px] font-black tracking-tight text-slate-950">Auditoria</h1>
               
-              {/* Tooltip Imutabilidade */}
               <div className="group relative cursor-pointer">
-                <HelpCircle className="w-4 h-4 text-slate-400 hover:text-slate-600" />
+                <HelpCircle className="w-4 h-4 text-slate-400 hover:text-slate-655" />
                 <div className="absolute left-0 bottom-6 hidden group-hover:block bg-slate-900 text-white text-[10px] p-2.5 rounded-xl shadow-lg w-[260px] z-50 leading-relaxed font-semibold">
-                  🛡️ **Imutabilidade total:** todos os logs de auditoria da Basileia Pay são somente-leitura. Nenhum dado pode ser editado, excluído ou alterado por qualquer usuário ou nível de permissão.
+                  🛡️ **Imutabilidade total:** todos os logs de auditoria da Basileia Pay são somente-leitura. Nenhum dado pode ser editado, excluído ou alterado por qualquer usuário.
                 </div>
               </div>
             </div>
@@ -225,32 +282,32 @@ export default function AuditPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button 
-              onClick={() => triggerToast('Filtro salvo como busca rápida.')}
-              className="flex items-center justify-center gap-1.5 px-3 py-1 bg-white border border-[#E7E5EF] hover:bg-brand-soft rounded-xl text-[10px] font-black text-slate-700 shadow-sm transition-all h-[30px]"
+              onClick={() => triggerToast('Filtros salvos como busca rápida.')}
+              className="flex items-center justify-center gap-1 px-2.5 py-1 bg-white border border-[#E7E5EF] hover:bg-brand-soft rounded-xl text-[10px] font-black text-slate-700 shadow-sm transition-all h-[28px]"
             >
               <Bookmark className="w-3.5 h-3.5 text-slate-400" />
               Salvar busca
             </button>
             <button 
-              onClick={() => triggerToast('Exportando logs para CSV...')}
-              className="flex items-center justify-center gap-1.5 px-3 py-1 bg-white border border-[#E7E5EF] hover:bg-brand-soft rounded-xl text-[10px] font-black text-slate-700 shadow-sm transition-all h-[30px]"
+              onClick={() => triggerToast('Exportando logs para planilha...')}
+              className="flex items-center justify-center gap-1 px-2.5 py-1 bg-white border border-[#E7E5EF] hover:bg-brand-soft rounded-xl text-[10px] font-black text-slate-700 shadow-sm transition-all h-[28px]"
             >
               <Download className="w-3.5 h-3.5 text-slate-400" />
               Exportar
             </button>
             <button 
-              onClick={() => triggerToast('Modo de investigação criminal iniciado.')}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-1 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10px] font-black shadow-sm transition-all h-[30px] uppercase tracking-tight"
+              onClick={() => triggerToast('Modo de investigação criminal de logs ativado.')}
+              className="flex items-center justify-center gap-1 px-3 py-1 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10px] font-black shadow-lg shadow-brand/15 transition-all h-[28px] uppercase tracking-tight"
             >
-              <Shield className="w-4 h-4 shrink-0" />
+              <Shield className="w-3.5 h-3.5 shrink-0" />
               Investigação
             </button>
           </div>
         </div>
 
-        {/* Two-row horizontal filters panel */}
+        {/* Filters Grid */}
         <div className="bg-white border border-[#E7E5EF] rounded-2xl p-3 shadow-sm mb-4 space-y-2.5">
           
           {/* Row 1 */}
@@ -260,7 +317,7 @@ export default function AuditPage() {
               <select 
                 value={period}
                 onChange={(e) => setPeriod(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
               >
                 <option value="hoje">Hoje</option>
                 <option value="7d">Últimos 7 dias</option>
@@ -273,7 +330,7 @@ export default function AuditPage() {
               <select 
                 value={filterUser}
                 onChange={(e) => setFilterUser(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
               >
                 <option value="Todos">Todos</option>
                 <option value="Vinícius Admin">Vinícius Admin</option>
@@ -288,7 +345,7 @@ export default function AuditPage() {
               <select 
                 value={filterSystem}
                 onChange={(e) => setFilterSystem(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
               >
                 <option value="Todos">Todos</option>
                 <option value="Basileia Pay">Basileia Pay</option>
@@ -297,44 +354,49 @@ export default function AuditPage() {
             </div>
 
             <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nível</label>
+              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tipo de Evento</label>
               <select 
-                value={filterLevel}
-                onChange={(e) => setFilterLevel(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none"
+                value={filterEventType}
+                onChange={(e) => setFilterEventType(e.target.value)}
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
               >
-                <option value="Todos">Todos</option>
-                <option value="Critical">Crítico</option>
-                <option value="Alteration">Alteração</option>
-                <option value="Informative">Informativo</option>
-                <option value="Access">Acesso</option>
-                <option value="Deletion">Exclusão</option>
+                <option value="Todos">Todos os tipos</option>
+                <option value="Reembolso aprovado">Reembolso aprovado</option>
+                <option value="Checkout atualizado">Checkout atualizado</option>
+                <option value="Login realizado">Login realizado</option>
+                <option value="Chave de API criada">Chave de API criada</option>
+                <option value="Permissão alterada">Permissão alterada</option>
+                <option value="Pagamento capturado">Pagamento capturado</option>
+                <option value="Tentativa de acesso negada">Tentativa de acesso negada</option>
+                <option value="Webhook entregue">Webhook entregue</option>
+                <option value="Assinatura cancelada">Assinatura cancelada</option>
+                <option value="Configuração alterada">Configuração alterada</option>
               </select>
             </div>
 
             <div>
-              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Busca Rápida</label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                <input 
-                  type="text"
-                  placeholder="ID da entidade, usuário..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl pl-8 pr-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none"
-                />
-              </div>
+              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nível</label>
+              <select 
+                value={filterLevel}
+                onChange={(e) => setFilterLevel(e.target.value)}
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
+              >
+                <option value="Todos">Todos os níveis</option>
+                <option value="Critical">Crítico</option>
+                <option value="Alteration">Alteração</option>
+                <option value="Informative">Informativo</option>
+              </select>
             </div>
           </div>
 
           {/* Row 2 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 pt-2 border-t border-slate-50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2.5 pt-2 border-t border-slate-50">
             <div>
               <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Entidade</label>
               <select 
                 value={filterEntity}
                 onChange={(e) => setFilterEntity(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
               >
                 <option value="Todos">Todas</option>
                 <option value="Pagamento">Pagamento</option>
@@ -355,8 +417,24 @@ export default function AuditPage() {
                 placeholder="Ex: REE-2024..."
                 value={filterEntityId}
                 onChange={(e) => setFilterEntityId(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-900 focus:outline-none h-[30px]"
               />
+            </div>
+
+            <div>
+              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Ação</label>
+              <select 
+                value={filterAction}
+                onChange={(e) => setFilterAction(e.target.value)}
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
+              >
+                <option value="Todos">Todas as ações</option>
+                <option value="criação">Criação</option>
+                <option value="alteração">Alteração</option>
+                <option value="exclusão">Exclusão</option>
+                <option value="acesso">Acesso</option>
+                <option value="aprovação">Aprovação</option>
+              </select>
             </div>
 
             <div>
@@ -366,7 +444,7 @@ export default function AuditPage() {
                 placeholder="Ex: 177.12..."
                 value={filterIp}
                 onChange={(e) => setFilterIp(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2.5 py-1 text-xs font-semibold text-slate-900 focus:outline-none h-[30px]"
               />
             </div>
 
@@ -375,7 +453,7 @@ export default function AuditPage() {
               <select 
                 value={filterResult}
                 onChange={(e) => setFilterResult(e.target.value)}
-                className="w-full bg-slate-50 border border-[#E7E5EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none"
+                className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl px-2 py-1 text-xs font-bold text-slate-900 focus:outline-none h-[30px]"
               >
                 <option value="Todos">Todos</option>
                 <option value="Success">Sucesso</option>
@@ -384,192 +462,304 @@ export default function AuditPage() {
               </select>
             </div>
 
-            <div className="flex items-end justify-end gap-1.5 pb-0.5">
-              {(filterUser !== 'Todos' || filterSystem !== 'Todos' || filterLevel !== 'Todos' || filterEntity !== 'Todos' || filterEntityId !== '' || filterIp !== '' || filterResult !== '' || searchQuery !== '') && (
-                <button 
-                  onClick={() => {
-                    setFilterUser('Todos');
-                    setFilterSystem('Todos');
-                    setFilterLevel('Todos');
-                    setFilterEntity('Todos');
-                    setFilterEntityId('');
-                    setFilterIp('');
-                    setFilterResult('Todos');
-                    setSearchQuery('');
-                  }}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-[10px] font-black w-full transition-all h-[32px] border border-red-150"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Limpar Filtros
-                </button>
-              )}
+            <div>
+              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1">Busca Global</label>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-450" />
+                <input 
+                  type="text"
+                  placeholder="Buscar usuário, entidade, evento..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-[#E7E5EF] focus:border-brand/40 rounded-xl pl-6.5 pr-2.5 py-1 text-xs font-semibold text-slate-900 focus:outline-none h-[30px]"
+                />
+              </div>
             </div>
           </div>
 
+          {/* Active filter pills */}
+          {(filterUser !== 'Todos' || filterSystem !== 'Todos' || filterLevel !== 'Todos' || filterEventType !== 'Todos' || filterEntity !== 'Todos' || filterEntityId !== '' || filterIp !== '' || filterResult !== '' || searchQuery !== '') && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-50">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mr-1">Filtros ativos:</span>
+              {filterUser !== 'Todos' && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  Usuário: {filterUser}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterUser('Todos')} />
+                </span>
+              )}
+              {filterSystem !== 'Todos' && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  Sistema: {filterSystem}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterSystem('Todos')} />
+                </span>
+              )}
+              {filterLevel !== 'Todos' && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  Nível: {filterLevel}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterLevel('Todos')} />
+                </span>
+              )}
+              {filterEventType !== 'Todos' && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  Tipo: {filterEventType}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterEventType('Todos')} />
+                </span>
+              )}
+              {filterEntity !== 'Todos' && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  Entidade: {filterEntity}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterEntity('Todos')} />
+                </span>
+              )}
+              {filterEntityId && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  ID: {filterEntityId}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterEntityId('')} />
+                </span>
+              )}
+              {filterIp && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  IP: {filterIp}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterIp('')} />
+                </span>
+              )}
+              {filterResult !== 'Todos' && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  Resultado: {filterResult}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setFilterResult('Todos')} />
+                </span>
+              )}
+              {searchQuery && (
+                <span className="px-2 py-0.5 bg-brand-soft text-brand rounded-lg text-[10px] font-bold flex items-center gap-1">
+                  Busca: {searchQuery}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => setSearchQuery('')} />
+                </span>
+              )}
+              <button 
+                onClick={() => {
+                  setFilterUser('Todos');
+                  setFilterSystem('Todos');
+                  setFilterLevel('Todos');
+                  setFilterEventType('Todos');
+                  setFilterEntity('Todos');
+                  setFilterEntityId('');
+                  setFilterIp('');
+                  setFilterResult('Todos');
+                  setSearchQuery('');
+                }}
+                className="text-[9px] text-red-500 font-bold hover:underline ml-auto"
+              >
+                Limpar todos
+              </button>
+            </div>
+          )}
+
         </div>
 
-        {/* Interactive layout: Timeline and table split */}
-        <div className="flex flex-col lg:flex-row gap-4 items-start w-full relative">
+        {/* Main interactive area: Table + Details Panel side-by-side */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
           
-          {/* Main List Section */}
-          <div className="flex-1 min-w-0 flex flex-col gap-4">
+          {/* Table Container */}
+          <div className="space-y-4">
             
-            <div className="bg-white rounded-2xl border border-[#E7E5EF] shadow-sm overflow-hidden flex flex-col transition-all">
+            <div className="bg-white border border-[#E7E5EF] rounded-2xl shadow-sm overflow-hidden flex flex-col">
               
-              {/* Tab options + Realtime switcher */}
-              <div className="border-b border-slate-100 bg-[#FAF9FF]/40 px-3 py-0 flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-1">
+              {/* Tabs list with counters and live toggle on the right */}
+              <div className="border-b border-slate-100 bg-[#FAF9FF]/40 px-3.5 py-1.5 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
                   {[
-                    { id: 'all', label: 'Todos', count: filteredEvents.length },
-                    { id: 'critical', label: 'Críticos', count: filteredEvents.filter(x => x.level === 'critical').length, error: true },
-                    { id: 'alteration', label: 'Alterações', count: filteredEvents.filter(x => x.level === 'alteration').length },
-                    { id: 'access', label: 'Acessos', count: filteredEvents.filter(x => x.level === 'access' || x.category === 'ACESSO').length },
-                    { id: 'deletion', label: 'Exclusões', count: filteredEvents.filter(x => x.level === 'deletion' || x.category === 'EXCLUSÃO').length }
-                  ].map((t) => {
-                    const isActive = activeTab === t.id;
+                    { id: 'all', label: 'Todos', count: '24.812' },
+                    { id: 'critical', label: 'Críticos', count: '71', badge: 'bg-red-50 text-red-650' },
+                    { id: 'alteration', label: 'Alterações', count: '18.342', badge: 'bg-purple-50 text-brand' },
+                    { id: 'access', label: 'Acessos', count: '3.912', badge: 'bg-blue-50 text-blue-650' },
+                    { id: 'deletion', label: 'Exclusões', count: '187', badge: 'bg-orange-50 text-orange-600' }
+                  ].map((tab) => {
+                    const isActive = activeTab === tab.id;
                     return (
                       <button
-                        key={t.id}
-                        onClick={() => setActiveTab(t.id as any)}
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
                         className={cn(
-                          "px-3 py-2 text-[9.5px] font-black uppercase tracking-wider border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5",
-                          isActive ? "border-brand text-brand font-black" : "border-transparent text-slate-500 hover:text-brand"
+                          "px-3 py-1.5 rounded-xl text-[10.5px] font-black uppercase tracking-tight transition-all flex items-center gap-2 border",
+                          isActive 
+                            ? "bg-white text-brand border-brand shadow-sm" 
+                            : "bg-slate-50 text-slate-500 border-transparent hover:bg-slate-100"
                         )}
                       >
-                        {t.label}
-                        {t.count !== undefined && (
-                          <span className={cn(
-                            "px-1.5 py-0.2 rounded-full text-[8px] font-black leading-none",
-                            isActive ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-500",
-                            t.error && t.count > 0 ? "bg-red-50 text-red-650" : ""
-                          )}>
-                            {t.count}
-                          </span>
-                        )}
+                        <span>{tab.label}</span>
+                        <span className={cn(
+                          "px-2 py-0.2 rounded-lg text-[9px] font-black",
+                          tab.badge || "bg-slate-200 text-slate-700"
+                        )}>
+                          {tab.count}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Real-time green dot switcher */}
-                <button 
-                  onClick={() => setRealtimeActive(prev => !prev)}
-                  className="flex items-center gap-2 px-3 py-2 text-[9.5px] font-black uppercase text-slate-655"
-                >
-                  <div className={cn(
-                    "w-1.5 h-1.5 rounded-full transition-all",
-                    realtimeActive ? 'bg-green-500 animate-pulse' : 'bg-slate-350'
-                  )} />
-                  <span>Tempo Real {realtimeActive ? 'Ativo' : 'Pausado'}</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* Real time dot indicator */}
+                  <button 
+                    onClick={() => setRealtimeActive(prev => !prev)}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tight text-slate-500 hover:text-brand"
+                  >
+                    <span className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      realtimeActive ? "bg-green-500 animate-pulse" : "bg-slate-300"
+                    )} />
+                    <span>Tempo Real {realtimeActive ? 'Ativo' : 'Pausado'}</span>
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setLoading(true);
+                      setTimeout(() => {
+                        setLoading(false);
+                        triggerToast('Logs atualizados com sucesso.');
+                      }, 800);
+                    }}
+                    className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-brand transition-colors"
+                  >
+                    <RefreshCw className={cn("w-3.5 h-3.5", loading ? "animate-spin" : "")} />
+                  </button>
+                </div>
               </div>
 
-              {/* hybrid layout structure: vertical timeline + data table */}
-              <div className="w-full overflow-x-auto no-scrollbar relative flex">
+              {/* Data Table */}
+              <div className="w-full overflow-x-auto relative flex">
                 
-                {/* Timeline column */}
-                <div className="w-[18px] shrink-0 relative flex flex-col items-center">
-                  <div className="absolute top-4 bottom-4 w-0.5 bg-slate-100" />
+                {/* Visual Timeline vertical bar */}
+                <div className="w-[20px] shrink-0 relative flex flex-col items-center">
+                  <div className="absolute top-6 bottom-6 w-0.5 bg-slate-100" />
                   {paginatedEvents.map((evt, idx) => {
-                    const lInfo = getLevelBadge(evt.level);
+                    const theme = getEventTheme(evt.level, evt.category);
                     return (
                       <div 
-                        key={`tl-${evt.id}`}
-                        style={{ height: '54px', top: `${idx * 54 + 20}px` }}
+                        key={`line-dot-${evt.id}`}
+                        style={{ height: '62px', top: `${idx * 62 + 18}px` }}
                         className="absolute flex items-center justify-center w-full"
                       >
-                        <div className={cn("w-2 h-2 rounded-full ring-4 ring-white z-10", lInfo.dot)} />
+                        <div className={cn("w-2 h-2 rounded-full ring-4 ring-white z-10", theme.dotClass)} />
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Tabela */}
-                <table className="w-full min-w-[1000px] text-left text-xs table-fixed flex-1">
+                <table className="w-full min-w-[1100px] text-left text-xs table-fixed flex-1">
                   <colgroup>
-                    <col className="w-[15%]"/>  {/* Data/hora */}
-                    <col className="w-[20%]"/>  {/* Evento */}
-                    <col className="w-[30%]"/>  {/* Detalhes */}
+                    <col className="w-[12%]"/>  {/* Data/Hora */}
+                    <col className="w-[18%]"/>  {/* Evento */}
+                    <col className="w-[22%]"/>  {/* Detalhes */}
                     <col className="w-[15%]"/>  {/* Usuário */}
-                    <col className="w-[10%]"/>  {/* Sistema */}
-                    <col className="w-[10%]"/>  {/* IP */}
+                    <col className="w-[12%]"/>  {/* Sistema */}
+                    <col className="w-[11%]"/>  {/* IP */}
+                    <col className="w-[10%]"/>  {/* Nível */}
                   </colgroup>
                   <thead>
-                    <tr className="border-b border-slate-100 text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50/40">
-                      <th className="px-3 py-2">Data/Hora</th>
-                      <th className="px-3 py-2">Evento</th>
-                      <th className="px-3 py-2">Detalhes</th>
-                      <th className="px-3 py-2">Usuário</th>
-                      <th className="px-3 py-2">Sistema</th>
-                      <th className="px-3 py-2 text-right">IP de Origem</th>
+                    <tr className="border-b border-[#E7E5EF] text-[9.5px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50/40">
+                      <th className="px-3 py-2.5">Data/Hora</th>
+                      <th className="px-3 py-2.5">Evento</th>
+                      <th className="px-3 py-2.5">Detalhes</th>
+                      <th className="px-3 py-2.5">Usuário</th>
+                      <th className="px-3 py-2.5">Sistema</th>
+                      <th className="px-3 py-2.5">IP de Origem</th>
+                      <th className="px-3 py-2.5">Nível</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100/60 font-semibold text-slate-655">
-                    {paginatedEvents.length === 0 ? (
+                  <tbody className="divide-y divide-slate-100 font-semibold text-slate-655">
+                    {loading ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-16 text-center text-slate-400 font-bold">
-                          Nenhum evento forense encontrado para os filtros ativos.
+                        <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
+                          Carregando logs da auditoria...
+                        </td>
+                      </tr>
+                    ) : paginatedEvents.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
+                          Nenhum evento encontrado para os filtros ativos.
                         </td>
                       </tr>
                     ) : (
                       paginatedEvents.map((evt) => {
-                        const lInfo = getLevelBadge(evt.level);
+                        const theme = getEventTheme(evt.level, evt.category);
+                        const lvlInfo = getLevelBadge(evt.level);
                         const isSelected = selectedEvent?.id === evt.id;
                         const isCritical = evt.level === 'critical';
-                        const isReviewed = reviewedEvents.includes(evt.id);
 
                         return (
                           <tr 
                             key={evt.id}
                             onClick={() => setSelectedEvent(evt)}
                             className={cn(
-                              "hover:bg-slate-55/20 cursor-pointer h-[54px] transition-all relative border-l-2",
+                              "hover:bg-[#FAF9FF]/40 cursor-pointer h-[62px] transition-all relative border-l-4",
                               isSelected ? "bg-[#FAF9FF] border-l-brand" : "border-l-transparent",
-                              isCritical && !isSelected ? "bg-red-50/20" : ""
+                              isCritical && !isSelected ? "bg-red-50/15" : ""
                             )}
                           >
-                            <td className="px-3 py-1.5 align-middle">
-                              <span className="text-slate-900 font-black block">
+                            {/* Data/Hora */}
+                            <td className="px-3 py-2 align-middle">
+                              <span className="text-slate-900 font-black block leading-none">
                                 {new Date(evt.timestamp).toLocaleTimeString('pt-BR')}
                               </span>
-                              <span className="text-[10px] text-slate-400 block mt-0.5">
+                              <span className="text-[10px] text-slate-400 block mt-1 font-bold">
                                 {new Date(evt.timestamp).toLocaleDateString('pt-BR')}
                               </span>
                             </td>
-                            <td className="px-3 py-1.5 align-middle">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-slate-900 truncate block max-w-[130px]">{evt.event}</span>
-                                {isReviewed && (
-                                  <span className="px-1.5 py-0.2 bg-green-50 text-green-700 border border-green-200 rounded text-[7.5px] font-black uppercase">
-                                    Revisado
+
+                            {/* Evento */}
+                            <td className="px-3 py-2 align-middle">
+                              <div className="flex items-center gap-2">
+                                <div className={cn("w-5.5 h-5.5 rounded-lg border flex items-center justify-center shrink-0", theme.bgClass)}>
+                                  <theme.icon className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="font-bold text-slate-900 block truncate">{evt.event}</span>
+                                  <span className="text-[8.5px] font-black bg-brand/5 border border-brand/20 text-brand px-1.5 py-0.2 rounded mt-0.5 block w-fit uppercase leading-none">
+                                    {evt.category}
                                   </span>
-                                )}
+                                </div>
                               </div>
-                              <span className="text-[9px] font-black bg-brand/5 border border-brand/20 text-brand px-1.5 py-0.2 rounded mt-0.5 block w-fit leading-none uppercase">
-                                {evt.category}
-                              </span>
                             </td>
-                            <td className="px-3 py-1.5 align-middle truncate max-w-[280px] text-slate-500 font-medium">
+
+                            {/* Detalhes */}
+                            <td className="px-3 py-2 align-middle text-slate-500 font-medium text-[11px] leading-relaxed max-w-[240px] truncate">
                               {evt.details}
                             </td>
-                            <td className="px-3 py-1.5 align-middle">
+
+                            {/* Usuário */}
+                            <td className="px-3 py-2 align-middle">
                               <div className="flex items-center gap-2">
-                                <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
+                                <div className="w-5.5 h-5.5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
                                   <User className="w-3 h-3" />
                                 </div>
                                 <div className="min-w-0">
-                                  <span className="text-slate-800 font-bold block truncate">{evt.user.name}</span>
-                                  <span className="text-[10px] text-slate-400 block">{evt.user.role}</span>
+                                  <span className="text-slate-800 font-bold block truncate leading-none">{evt.user.name}</span>
+                                  <span className="text-[9.5px] text-slate-400 block mt-1 leading-none">{evt.user.role}</span>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-3 py-1.5 align-middle">
-                              <span className="text-slate-850 font-bold block">{evt.system}</span>
-                              <span className="text-[9.5px] text-slate-400 block uppercase font-black">{evt.environment}</span>
+
+                            {/* Sistema */}
+                            <td className="px-3 py-2 align-middle">
+                              <span className="text-slate-850 font-bold block leading-none">{evt.system}</span>
+                              <span className="text-[9px] text-slate-400 block mt-1 uppercase font-black">{evt.environment}</span>
                             </td>
-                            <td className="px-3 py-1.5 align-middle text-right">
-                              <span className="font-mono text-slate-900 block">{evt.ip}</span>
-                              <span className="text-[10px] text-slate-400 block mt-0.5">{evt.ipLocation || 'Desconhecido'}</span>
+
+                            {/* IP de Origem */}
+                            <td className="px-3 py-2 align-middle">
+                              <span className="font-mono text-slate-900 block leading-none">{evt.ip}</span>
+                              <span className="text-[9.5px] text-slate-400 block mt-1">{evt.ipLocation || 'Desconhecido'}</span>
+                            </td>
+
+                            {/* Nível */}
+                            <td className="px-3 py-2 align-middle">
+                              <span className={cn(
+                                "px-2 py-0.5 rounded text-[9.5px] font-black border uppercase block w-fit leading-none",
+                                lvlInfo.bg
+                              )}>
+                                {lvlInfo.label}
+                              </span>
                             </td>
                           </tr>
                         );
@@ -581,25 +771,25 @@ export default function AuditPage() {
               </div>
 
               {/* Paginate selector footer */}
-              <div className="p-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-550 bg-[#FAF9FF]/40 h-[38px]">
-                <span>Mostrando {Math.min(filteredEvents.length, (currentPage - 1) * rowsPerPage + 1)} a {Math.min(filteredEvents.length, currentPage * rowsPerPage)} de {filteredEvents.length} eventos</span>
+              <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500 bg-[#FAF9FF]/40 h-[42px]">
+                <span>Mostrando {Math.min(filteredEvents.length, (currentPage - 1) * rowsPerPage + 1)} a {Math.min(filteredEvents.length, currentPage * rowsPerPage)} de 24.812 eventos</span>
                 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px]">Exibir</span>
+                    <span className="text-[10px]">Linhas por página:</span>
                     <select 
                       value={rowsPerPage} 
                       onChange={(e) => { setRowsPerPage(parseInt(e.target.value) || 10); setCurrentPage(1); }}
-                      className="bg-white border border-[#E7E5EF] rounded px-1.5 py-0.5 text-[10.5px]"
+                      className="bg-white border border-[#E7E5EF] rounded px-1.5 py-0.5 text-[10.5px] font-bold"
                     >
-                      <option value={10}>10 linhas</option>
-                      <option value={25}>25 linhas</option>
-                      <option value={50}>50 linhas</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
                     </select>
                   </div>
 
                   <div className="flex gap-0.5">
-                    {Array.from({ length: Math.ceil(filteredEvents.length / rowsPerPage) }).map((_, idx) => {
+                    {Array.from({ length: Math.min(5, Math.ceil(filteredEvents.length / rowsPerPage)) }).map((_, idx) => {
                       const pageNum = idx + 1;
                       return (
                         <button 
@@ -607,13 +797,24 @@ export default function AuditPage() {
                           onClick={() => setCurrentPage(pageNum)}
                           className={cn(
                             "w-5.5 h-5.5 rounded text-[10px] font-bold flex items-center justify-center transition-colors",
-                            pageNum === currentPage ? 'bg-brand/10 text-brand font-black border border-brand/20' : 'hover:bg-slate-100 text-slate-655'
+                            pageNum === currentPage ? 'bg-brand/10 text-brand font-black border border-brand/20' : 'hover:bg-slate-100 text-slate-500'
                           )}
                         >
                           {pageNum}
                         </button>
                       );
                     })}
+                    {Math.ceil(filteredEvents.length / rowsPerPage) > 5 && (
+                      <>
+                        <span className="px-1 text-slate-400">...</span>
+                        <button 
+                          onClick={() => setCurrentPage(Math.ceil(filteredEvents.length / rowsPerPage))}
+                          className="w-5.5 h-5.5 rounded text-[10px] font-bold flex items-center justify-center hover:bg-slate-100 text-slate-500"
+                        >
+                          2.482
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -622,8 +823,8 @@ export default function AuditPage() {
 
           </div>
 
-          {/* DETALHE DO EVENTO LATERAL (320px) */}
-          <div className="w-full lg:w-[320px] shrink-0 bg-white border border-[#E7E5EF] rounded-2xl p-4 shadow-sm space-y-4">
+          {/* DETALHE DO EVENTO LATERAL (340px) */}
+          <div className="w-full lg:w-[340px] shrink-0 bg-white border border-[#E7E5EF] rounded-2xl p-4 shadow-sm space-y-4">
             <div className="flex justify-between items-center border-b border-slate-50 pb-2">
               <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest leading-none">Detalhes do Evento</span>
               {selectedEvent && (
@@ -698,36 +899,52 @@ export default function AuditPage() {
                 </div>
 
                 {/* Bloco 5: Entidade */}
-                {selectedEvent.entityType && (
-                  <div className="space-y-1">
-                    <span className="text-[8.5px] text-slate-400 uppercase block font-black">Entidade Afetada</span>
-                    <div className="bg-slate-50 p-2 rounded-xl space-y-1.5">
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-500">Tipo</span>
-                        <span className="text-slate-900 font-bold">{selectedEvent.entityType}</span>
-                      </div>
-                      {selectedEvent.entityId && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-500">ID exato</span>
-                          <div className="flex items-center gap-1">
-                            <span className="font-mono text-slate-900 font-bold">{selectedEvent.entityId}</span>
-                            <button 
-                              onClick={() => handleCopyText(selectedEvent.entityId || '', 'entityId')}
-                              className="text-slate-400 hover:text-brand"
-                            >
-                              {copiedField === 'entityId' ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                <div className="space-y-1">
+                  <span className="text-[8.5px] text-slate-400 uppercase block font-black">Entidade Afetada</span>
+                  <div className="bg-slate-50 p-2.5 rounded-xl space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Tipo</span>
+                      <span className="text-slate-900 font-bold">{selectedEvent.entityType}</span>
                     </div>
+                    {selectedEvent.entityId && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">ID da entidade</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-slate-900 font-bold">{selectedEvent.entityId}</span>
+                          <button 
+                            onClick={() => handleCopyText(selectedEvent.entityId || '', 'entityId')}
+                            className="text-slate-400 hover:text-brand"
+                          >
+                            {copiedField === 'entityId' ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {selectedEvent.relatedIds?.orderId && (
+                      <div className="flex justify-between items-center border-t border-slate-100/60 pt-1.5">
+                        <span className="text-slate-500 font-medium">Pedido</span>
+                        <span className="text-brand font-bold hover:underline cursor-pointer flex items-center gap-0.5">
+                          {selectedEvent.relatedIds.orderId}
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </span>
+                      </div>
+                    )}
+                    {selectedEvent.relatedIds?.customerId && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-medium">Cliente</span>
+                        <span className="text-brand font-bold hover:underline cursor-pointer flex items-center gap-0.5">
+                          {selectedEvent.relatedIds.customerId} — Mariana Souza
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Bloco 6: Detalhes */}
                 <div className="space-y-1">
                   <span className="text-[8.5px] text-slate-400 uppercase block font-black">Detalhes da Ação</span>
-                  <p className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-600 text-[11px] leading-relaxed">
+                  <p className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-slate-655 text-[11px] leading-relaxed">
                     {selectedEvent.details}
                   </p>
                 </div>
@@ -749,7 +966,7 @@ export default function AuditPage() {
                       href={`/dashboard/audit/${selectedEvent.id}`}
                       className="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-[9.5px] font-black text-center text-slate-700 block transition-all"
                     >
-                      Ver Detalhes
+                      Ver Entidade
                     </Link>
                     <button 
                       onClick={() => triggerToast(`Histórico da entidade ${selectedEvent.entityId} filtrado.`)}
