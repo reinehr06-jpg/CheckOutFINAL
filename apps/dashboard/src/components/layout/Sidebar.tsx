@@ -12,7 +12,8 @@ import {
   Zap,
   ChevronRight,
   Globe,
-  ChevronLeft
+  ChevronLeft,
+  Terminal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ const menuItems = [
   { name: 'Pagamentos', icon: Activity, href: '/dashboard/payments' },
   { name: 'Assinaturas', icon: Repeat, href: '/dashboard/subscriptions' },
   { name: 'Webhooks', icon: Zap, href: '/dashboard/webhooks' },
+  { name: 'Auditoria', icon: Terminal, href: '/dashboard/audit' },
 ];
 
 export function Sidebar() {
@@ -79,6 +81,39 @@ export function Sidebar() {
             </div>
           </div>
         </nav>
+
+        {/* RESUMO da Auditoria (visível apenas na rota /dashboard/audit) */}
+        {pathname.startsWith('/dashboard/audit') && (
+          <div className="p-4 bg-brand-soft/20 border-t border-border/50 space-y-3 mx-2 rounded-2xl mb-2 text-left animate-in fade-in duration-200">
+            <p className="px-1 text-[9px] font-black text-slate uppercase tracking-widest opacity-40">
+              Resumo da auditoria
+            </p>
+            <p className="px-1 text-[8px] font-bold text-slate-400 uppercase tracking-wider -mt-2.5">
+              Últimas 24 horas
+            </p>
+            <div className="space-y-2">
+              {[
+                { label: 'Eventos registrados', count: '24.812' },
+                { label: 'Usuários ativos', count: '32' },
+                { label: 'Entidades impactadas', count: '158' },
+                { label: 'Sistemas envolvidos', count: '8' },
+                { label: 'Ações críticas', count: '71' },
+              ].map((s) => (
+                <div key={s.label} className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-bold text-ink/75">{s.label}</span>
+                  <span className="text-[11px] font-black text-ink">{s.count}</span>
+                </div>
+              ))}
+            </div>
+            <div className="pt-2 border-t border-border/30 flex items-center justify-between px-1">
+              <span className="text-[10px] font-bold text-slate-400">Último evento</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-black text-ink">10:21:19</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bottom Toggle */}
         <div className="p-3 border-t border-border/50">
