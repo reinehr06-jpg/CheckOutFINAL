@@ -82,37 +82,7 @@ export function Sidebar() {
           </div>
         </nav>
 
-        {/* RESUMO da Auditoria (visível apenas na rota /dashboard/audit) */}
-        {pathname.startsWith('/dashboard/audit') && (
-          <div className="rounded-[20px] border border-[#E8DDFD] bg-white/70 p-4 mx-2.5 mb-3 text-left animate-in fade-in duration-200">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-              Resumo da auditoria
-            </p>
 
-            <p className="mt-1 text-[11px] font-semibold text-slate-400">
-              Últimas 24 horas
-            </p>
-
-            <div className="mt-4 space-y-3">
-              {[
-                { label: 'Eventos registrados', value: '24.812' },
-                { label: 'Usuários ativos', value: '32' },
-                { label: 'Entidades impactadas', value: '158' },
-                { label: 'Sistemas envolvidos', value: '8' },
-                { label: 'Ações críticas', value: '71' }
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500">{item.label}</span>
-                  <span className="text-xs font-black text-slate-950">{item.value}</span>
-                </div>
-              ))}
-              <div className="pt-2 border-t border-[#E8DDFD]/60 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500">Último evento</span>
-                <span className="text-xs font-black text-slate-950">10:21:19</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Bottom Toggle */}
         <div className="p-3 border-t border-border/50">
