@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   Terminal,
   Settings2,
-  ChevronDown
+  ChevronDown,
+  GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,7 @@ const menuItems = [
   { name: 'Pagamentos', icon: Activity, href: '/dashboard/payments' },
   { name: 'Assinaturas', icon: Repeat, href: '/dashboard/subscriptions' },
   { name: 'Webhooks', icon: Zap, href: '/dashboard/webhooks' },
+  { name: 'Roteamento', icon: GitBranch, href: '/dashboard/routing' },
   { name: 'Auditoria', icon: Terminal, href: '/dashboard/audit' },
   { name: 'Configurações', icon: Settings2, href: '/dashboard/settings' },
 ];
