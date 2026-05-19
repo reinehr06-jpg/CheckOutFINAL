@@ -69,7 +69,7 @@ export function SettingsCard({ card, userRole, onActionFeedback }: SettingsCardP
 
   // Card Content Render
   const cardContent = (
-    <div className="relative h-full flex flex-col justify-between p-[18px] bg-white border border-[#E8DDFD]/65 rounded-[20px] shadow-sm shadow-slate-100/50 transition-all duration-300 select-none group text-left">
+    <div className="relative min-h-[154px] flex flex-col justify-between p-4 bg-white border border-[#E8DDFD]/65 rounded-[20px] shadow-sm shadow-slate-100/50 transition-all duration-300 select-none group text-left">
       <div>
         {/* Top Header */}
         <div className="flex items-start justify-between">
@@ -80,7 +80,7 @@ export function SettingsCard({ card, userRole, onActionFeedback }: SettingsCardP
           <div className="relative">
             {!hasPermission ? (
               <div className="duration-200 transition-all">
-                <Lock className="w-3.5 h-3.5 text-slate-350" />
+                <Lock className="w-3.5 h-3.5 text-slate-355" />
               </div>
             ) : card.isExternal ? (
               <ExternalLink className="w-3.5 h-3.5 text-slate-350 opacity-0 group-hover:opacity-100 transition-all duration-300" />
@@ -100,7 +100,7 @@ export function SettingsCard({ card, userRole, onActionFeedback }: SettingsCardP
       </div>
 
       {/* Footer Badges */}
-      <div className="mt-3.5 flex items-center justify-between">
+      <div className="mt-3 flex items-center justify-between">
         <span className={cn("px-2 py-0.5 rounded-md text-[8.5px] font-black uppercase border tracking-wider", currentCategoryStyle)}>
           {card.category}
         </span>
@@ -136,7 +136,7 @@ export function SettingsCard({ card, userRole, onActionFeedback }: SettingsCardP
     return (
       <div 
         onClick={() => onActionFeedback(`Acesso negado: seu perfil não tem permissão para configurar ${card.title}.`)}
-        className="cursor-not-allowed group relative h-[148px]"
+        className="cursor-not-allowed group relative min-h-[154px]"
         title="Sem permissão para acessar"
       >
         {cardContent}
@@ -145,7 +145,7 @@ export function SettingsCard({ card, userRole, onActionFeedback }: SettingsCardP
   }
 
   return (
-    <Link href={card.route} className="block transition-all hover:scale-[1.01] active:scale-[0.99] hover:shadow-md hover:shadow-brand/5 duration-200 h-[148px]">
+    <Link href={card.route} className="block transition-all hover:scale-[1.01] active:scale-[0.99] hover:shadow-md hover:shadow-brand/5 duration-200 min-h-[154px]">
       {cardContent}
     </Link>
   );

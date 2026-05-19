@@ -161,7 +161,7 @@ export default function SettingsHubPage() {
         // Skeleton loader
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
           {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} className="h-[148px] bg-slate-100 rounded-[20px] border border-slate-200" />
+            <div key={i} className="h-[154px] bg-slate-100 rounded-[20px] border border-slate-200" />
           ))}
         </div>
       ) : filteredCards.length === 0 ? (
