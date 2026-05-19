@@ -7,13 +7,15 @@ import {
   Monitor,
   ShoppingCart, 
   CreditCard, 
-  Repeat,
+  Repeat, 
   Activity,
   Zap,
   ChevronRight,
   Globe,
   ChevronLeft,
-  Terminal
+  Terminal,
+  Settings2,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +29,7 @@ const menuItems = [
   { name: 'Assinaturas', icon: Repeat, href: '/dashboard/subscriptions' },
   { name: 'Webhooks', icon: Zap, href: '/dashboard/webhooks' },
   { name: 'Auditoria', icon: Terminal, href: '/dashboard/audit' },
+  { name: 'Configurações', icon: Settings2, href: '/dashboard/settings' },
 ];
 
 export function Sidebar() {
@@ -82,13 +85,45 @@ export function Sidebar() {
           </div>
         </nav>
 
+        {/* Bloco Empresa (acima do avatar, apenas para rota settings) */}
+        {pathname.startsWith('/dashboard/settings') && (
+          <div className="mx-2.5 mb-2.5 p-3 rounded-[16px] border border-[#E8DDFD] bg-white/80 text-left shadow-sm">
+            <div className="flex items-center justify-between cursor-pointer">
+              <span className="text-xs font-black text-slate-800 flex items-center gap-1">
+                🛡 Basileia Corp
+              </span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </div>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-[9px] font-black text-green-700 bg-green-50 px-1.5 py-0.2 rounded uppercase tracking-wider">
+                Produção
+              </span>
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 mt-1">ID: 5312</p>
+          </div>
+        )}
 
-
-        {/* Bottom Toggle */}
+        {/* Bottom Toggle / Usuário Block */}
         <div className="p-3 border-t border-border/50">
-           <button className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-slate/30 hover:text-brand hover:bg-brand-soft transition-all">
-             <ChevronLeft className="w-4 h-4" />
-           </button>
+          {pathname.startsWith('/dashboard/settings') ? (
+            <div className="flex items-center justify-between w-full cursor-pointer px-1">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand to-brand-accent text-white flex items-center justify-center font-black text-xs shadow-md">
+                  GS
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-xs font-black text-slate-900 leading-tight truncate">Gabriel Silva</p>
+                  <p className="text-[10px] font-semibold text-slate-400 leading-none truncate">admin@basileia.com</p>
+                </div>
+              </div>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+            </div>
+          ) : (
+            <button className="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-slate/30 hover:text-brand hover:bg-brand-soft transition-all">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </aside>
