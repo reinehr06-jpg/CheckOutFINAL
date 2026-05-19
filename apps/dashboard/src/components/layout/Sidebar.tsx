@@ -42,7 +42,8 @@ const menuGroups = [
     title: 'OPERAÇÕES',
     items: [
       { name: 'Operações', icon: ShoppingCart, href: '/dashboard/orders' },
-      { name: 'Webhooks', icon: Zap, href: '/dashboard/webhooks' }
+      { name: 'Webhooks', icon: Zap, href: '/dashboard/webhooks' },
+      { name: 'Recovery', icon: Activity, href: '/recovery' }
     ]
   },
   {
