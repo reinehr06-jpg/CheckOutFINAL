@@ -1,14 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ShieldAlert, ArrowRight, ShieldCheck } from 'lucide-react';
 import { MOCK_TRUST_SCORE_BREAKDOWNS } from '@/app/(dashboard)/dashboard/trust/__mocks__/trust';
 import { TrustScoreDetailPage } from './TrustScoreDetailPage';
 
-export function TrustScoreSearch() {
+interface TrustScoreSearchProps {
+  preloadedPaymentId?: string | null;
+  onClearPreload?: () => void;
+}
+
+export function TrustScoreSearch({ preloadedPaymentId, onClearPreload }: TrustScoreSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [breakdown, setBreakdown] = useState<any | null>(null);
   const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    if (preloadedPaymentId) {
+      setSearchQuery(preloadedPaymentId);
+      const found = MOCK_TRUST_SCORE_BREAKDOWNS[preloadedPaymentId] || MOCK_TRUST_SCORE_BREAKDOWNS['pay_8f3a2d7e9b1c'];
+      setBreakdown(found);
+      setSearched(true);
+      if (onClearPreload) {
+        onClearPreload();
+      }
+    }
+  }, [preloadedPaymentId, onClearPreload]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +44,7 @@ export function TrustScoreSearch() {
   };
 
   return (
-    <div className="w-full text-left">
+    <div className="w-full text-left animate-in fade-in duration-300">
       {!searched ? (
         /* Search landing */
         <div className="max-w-2xl mx-auto py-12 space-y-6 text-center">

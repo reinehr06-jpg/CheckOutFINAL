@@ -6,7 +6,6 @@ import { TrustHeader } from '@/components/trust/TrustHeader';
 import { TrustKpiCards } from '@/components/trust/TrustKpiCards';
 import { TrustTabs, TrustTabValue } from '@/components/trust/TrustTabs';
 import { TrustScoreChart } from '@/components/trust/TrustScoreChart';
-import { TrustScoreHistogram } from '@/components/trust/TrustScoreHistogram';
 import { TrustEventFeed } from '@/components/trust/TrustEventFeed';
 import { TrustEventDetailPanel } from '@/components/trust/TrustEventDetailPanel';
 import { TrustRulesTable } from '@/components/trust/TrustRulesTable';
@@ -19,7 +18,7 @@ import { TrustMotorUnavailableBanner } from '@/components/trust/TrustMotorUnavai
 import { MOCK_TRUST_RULES, MOCK_TRUST_EVENTS, MOCK_TRUST_KPIS, MOCK_TRUST_MOTOR_CONFIG } from './__mocks__/trust';
 import { TrustRule, TrustEvent, TrustKpi, TrustMotorConfig } from '@/types/trust';
 import { cn } from '@/lib/utils';
-import { ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw, Activity } from 'lucide-react';
 
 export default function TrustPage() {
   const [activeTab, setActiveTab] = useState<TrustTabValue>('overview');
@@ -35,6 +34,9 @@ export default function TrustPage() {
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [editingRule, setEditingRule] = useState<TrustRule | undefined>(undefined);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  
+  // Transition state for individual forensics breakdown loading
+  const [preloadedPaymentId, setPreloadedPaymentId] = useState<string | null>(null);
 
   // Active simulated user permissions
   const [userRole, setUserRole] = useState<'owner' | 'viewer'>('owner');
@@ -193,33 +195,46 @@ export default function TrustPage() {
           {/* Tab 1: Overview (Dashboard visual charts & recent logs list) */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Top row: Evolution chart on left, Simplified Selected event summary on right */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
                 <div className="lg:col-span-2">
                   <TrustScoreChart />
                 </div>
+                
                 <div className="lg:col-span-1">
-                  <TrustScoreHistogram />
+                  {selectedEvent ? (
+                    <TrustEventDetailPanel 
+                      event={selectedEvent}
+                      onClose={() => setSelectedEvent(null)}
+                      isAdmin={isAdmin}
+                      onActionFeedback={triggerFeedback}
+                      onViewFullAnalysis={(paymentId) => {
+                        setPreloadedPaymentId(paymentId);
+                        setActiveTab('score');
+                      }}
+                    />
+                  ) : (
+                    <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm shadow-slate-100/50 flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[220px]">
+                      <div className="w-10 h-10 bg-slate-50 text-slate-400 border border-slate-100 rounded-xl flex items-center justify-center shrink-0">
+                        <Activity className="w-4 h-4" />
+                      </div>
+                      <span className="text-[11px] font-black uppercase text-slate-700 tracking-wider">Selecione uma transação</span>
+                      <p className="text-[9.5px] font-bold text-slate-400 max-w-[200px] leading-relaxed">
+                        Clique em qualquer registro da tabela de eventos abaixo para carregar o resumo de score nesta coluna.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Main table and right detail drawer grid */}
-              <div className="flex flex-col lg:flex-row gap-6 items-start">
-                <div className="flex-1 min-w-0 w-full">
-                  <TrustEventFeed 
-                    events={events} 
-                    onSelectEvent={setSelectedEvent}
-                    selectedEventId={selectedEvent?.id}
-                  />
-                </div>
-                
-                {selectedEvent && (
-                  <TrustEventDetailPanel 
-                    event={selectedEvent}
-                    onClose={() => setSelectedEvent(null)}
-                    isAdmin={isAdmin}
-                    onActionFeedback={triggerFeedback}
-                  />
-                )}
+              {/* Main table: takes full viewport width, maximizing structural readability */}
+              <div className="w-full">
+                <TrustEventFeed 
+                  events={events} 
+                  onSelectEvent={setSelectedEvent}
+                  selectedEventId={selectedEvent?.id}
+                />
               </div>
             </div>
           )}
@@ -262,7 +277,10 @@ export default function TrustPage() {
 
           {/* Tab 4: Score (Individual Query Search) */}
           {activeTab === 'score' && (
-            <TrustScoreSearch />
+            <TrustScoreSearch 
+              preloadedPaymentId={preloadedPaymentId}
+              onClearPreload={() => setPreloadedPaymentId(null)}
+            />
           )}
 
           {/* Tab 5: Review Queue (Manual review SLAs) */}
