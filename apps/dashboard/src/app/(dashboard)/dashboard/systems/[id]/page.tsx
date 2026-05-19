@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card } from '@/components/ui/card';
 import { Copy, Plus, Trash2, Key, ShieldCheck, Globe, Settings as SettingsIcon } from 'lucide-react';
 
-export default function SystemDetailPage({ params }: { params: { id: string } }) {
+export default function SystemDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const [tab, setTab] = useState<'overview' | 'api-keys' | 'webhooks' | 'settings'>('overview');
   const [newKey, setNewKey] = useState<string | null>(null);
 

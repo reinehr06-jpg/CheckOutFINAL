@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft,
@@ -41,8 +41,9 @@ const STATUS_META: Record<string, { label: string; text: string; bg: string; bor
   'Em análise': { label: 'Em análise', text: 'text-violet-650', bg: 'bg-violet-50/40', border: 'border-violet-200/50', dot: 'bg-violet-400' }
 };
 
-export default function PaymentDetailPage({ params }: { params: { id: string } }) {
-  const paymentId = params.id;
+export default function PaymentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const paymentId = resolvedParams.id;
   const [activeTab, setActiveTab] = useState<'resumo' | 'tentativas' | 'gateway' | 'eventos' | 'recibo' | 'reembolso' | 'auditoria'>('resumo');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);

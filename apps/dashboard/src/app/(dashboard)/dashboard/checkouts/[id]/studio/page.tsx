@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { Layers, Palette, CreditCard, Brain, TrendingUp, Monitor, Smartphone, Save, Rocket, Plus, Settings2, ShieldCheck, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 
-export default function StudioPage({ params }: { params: { id: string } }) {
+export default function StudioPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const [activeTab, setActiveTab] = useState('blocks');
   const [previewMode, setPreviewMode] = useState('desktop');
 

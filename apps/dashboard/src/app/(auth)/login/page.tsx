@@ -136,9 +136,9 @@ export default function LoginPage() {
         // Trigger simulated wrong code error
         triggerToast('Código inválido ou expirado. Verifique o código e tente novamente.');
       } else {
-        triggerToast('Sessão autenticada! Redirecionando para o painel principal...');
+        triggerToast('Sessão autenticada! Redirecionando para o painel de primeiro início (Onboarding)...');
         setTimeout(() => {
-          window.location.href = '/dashboard/bci';
+          window.location.href = '/dashboard/onboarding';
         }, 800);
       }
     }, 1200);

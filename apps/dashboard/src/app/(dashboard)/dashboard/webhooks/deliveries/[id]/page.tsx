@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { 
   ChevronLeft, 
@@ -22,12 +22,13 @@ import { MOCK_DELIVERIES } from '../../__mocks__/webhooks';
 import { cn } from '@/lib/utils';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function WebhookDeliveryDetailsPage({ params }: PageProps) {
+  const resolvedParams = use(params);
   const [delivery, setDelivery] = useState<WebhookDelivery | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
@@ -35,9 +36,9 @@ export default function WebhookDeliveryDetailsPage({ params }: PageProps) {
 
   useEffect(() => {
     // Find delivery in mock deliveries list
-    const found = MOCK_DELIVERIES.find(d => d.id === params.id) || MOCK_DELIVERIES[0];
+    const found = MOCK_DELIVERIES.find(d => d.id === resolvedParams.id) || MOCK_DELIVERIES[0];
     setDelivery(found);
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const triggerSuccessAlert = (message: string) => {
     setSuccessAlert(message);

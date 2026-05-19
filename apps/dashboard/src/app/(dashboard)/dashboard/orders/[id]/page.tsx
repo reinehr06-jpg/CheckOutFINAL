@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft, 
@@ -105,8 +105,9 @@ const ORDER_DETAILS_MAP: Record<string, any> = {
   }
 };
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
-  const orderId = params.id;
+export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const orderId = resolvedParams.id;
   const order = ORDER_DETAILS_MAP[orderId] || ORDER_DETAILS_MAP['ORD-2024-09876'];
 
   const [successAlert, setSuccessAlert] = useState<string | null>(null);

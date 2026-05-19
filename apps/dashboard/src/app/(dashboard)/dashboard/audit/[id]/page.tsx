@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { 
   ChevronLeft, 
@@ -22,12 +22,13 @@ import { MOCK_AUDIT_EVENTS } from '../__mocks__/audit';
 import { cn } from '@/lib/utils';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function AuditEventDetailsPage({ params }: PageProps) {
+  const resolvedParams = use(params);
   const [event, setEvent] = useState<AuditEvent | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
@@ -36,9 +37,9 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
   const [incidentId, setIncidentId] = useState<string | null>(null);
 
   useEffect(() => {
-    const found = MOCK_AUDIT_EVENTS.find(e => e.id === params.id) || MOCK_AUDIT_EVENTS[0];
+    const found = MOCK_AUDIT_EVENTS.find(e => e.id === resolvedParams.id) || MOCK_AUDIT_EVENTS[0];
     setEvent(found);
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const triggerAlert = (msg: string) => {
     setSuccessAlert(msg);

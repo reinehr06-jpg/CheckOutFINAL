@@ -105,7 +105,6 @@ export default function RecoveryPage() {
   return (
     <PageLayout 
       title="Recovery" 
-      subtitle="Recupere vendas perdidas e aumente sua receita com automações inteligentes"
     >
       
       {/* Toast */}
@@ -436,7 +435,7 @@ export default function RecoveryPage() {
             <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4">
               <div className="border-b border-slate-50 pb-2.5">
                 <h4 className="text-[11px] font-black text-slate-850 uppercase tracking-wider block">Fluxos de Comunicação Inteligente</h4>
-                <span className="text-[8.5px] font-bold text-slate-400 block mt-1">Visualize e crie regras lógicas de fallback de multicanais (E-mail -> WhatsApp -> SMS).</span>
+                <span className="text-[8.5px] font-bold text-slate-400 block mt-1">Visualize e crie regras lógicas de fallback de multicanais (E-mail &rarr; WhatsApp &rarr; SMS).</span>
               </div>
               
               <div className="font-mono text-[9px] bg-slate-950 border border-slate-900 rounded-xl p-4 leading-relaxed text-slate-350 overflow-x-auto relative">

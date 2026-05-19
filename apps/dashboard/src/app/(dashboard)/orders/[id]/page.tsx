@@ -2,9 +2,10 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Card } from '@/components/ui/card';
 import { Package, User, Clock, FileText, CheckCircle, Globe } from 'lucide-react';
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   return (
-    <PageLayout title={`Venda #${params.id}`} backHref="/orders">
+    <PageLayout title={`Venda #${resolvedParams.id}`} backHref="/orders">
       
       <div className="flex items-center gap-4 p-4 bg-success-muted/20 border border-success/30 rounded-lg mb-6">
         <div className="p-3 bg-success rounded-full text-white">

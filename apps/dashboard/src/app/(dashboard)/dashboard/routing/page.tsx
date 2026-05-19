@@ -711,16 +711,25 @@ export default function RoutingPage() {
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-slate-700">Motor Ativo</span>
-                    <input 
-                      type="checkbox" 
-                      checked={retriesActive}
-                      onChange={() => {
-                        setRetriesActive(!retriesActive);
-                        triggerFeedback(`Smart Retries ${!retriesActive ? 'ativado' : 'desativado'}`);
-                      }}
-                      className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
-                    />
+                    <button 
+                      onClick={handleOpenNewRetryModal}
+                      className="h-8.5 px-3 bg-brand text-white text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-brand-dark transition-all flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Nova Regra
+                    </button>
+                    <div className="flex items-center gap-2 border-l border-slate-100 pl-3">
+                      <span className="text-xs font-bold text-slate-700">Motor Ativo</span>
+                      <input 
+                        type="checkbox" 
+                        checked={retriesActive}
+                        onChange={() => {
+                          setRetriesActive(!retriesActive);
+                          triggerFeedback(`Smart Retries ${!retriesActive ? 'ativado' : 'desativado'}`);
+                        }}
+                        className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                      />
+                    </div>
                   </div>
                 </div>
 

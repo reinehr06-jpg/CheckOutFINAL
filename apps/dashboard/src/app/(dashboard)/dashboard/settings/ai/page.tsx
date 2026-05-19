@@ -32,7 +32,8 @@ import {
   EyeOff,
   GitFork,
   Check,
-  Play
+  Play,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -71,15 +72,44 @@ export default function AiSettingsPage() {
     { id: 'conteudo', name: 'Geração de Conteúdo', desc: 'E-mails, descrições e textos automáticos.', model: 'gpt-3.5-turbo', modelBadge: 'Standby', provider: 'OpenAI', cost: '$0.0005 / 1K in, $0.0015 / 1K out', fallback: 'Mistral 7B Instruct', icon: Sparkles }
   ]);
 
-  // Prompt Orchestrator Canvas simulated states
+  // Rich Prompt Orchestrator Canvas states
   const [canvasNodes, setCanvasNodes] = useState([
-    { id: 'input', label: 'Payload da Transação', type: 'Input', desc: 'Dados recebidos do checkout' },
-    { id: 'prompt_1', label: 'Análise Antifraude', type: 'System Prompt', desc: 'GPT-4o: Validar anomalias' },
-    { id: 'cond', label: 'Score > 80?', type: 'Condicional', desc: 'Se sim, recusa imediata' },
-    { id: 'webhook', label: 'Disparar Webhook', type: 'Webhook', desc: 'Notifica painel de compliance' }
+    { id: 'input', label: 'Payload da Transação', type: 'Input', desc: 'Dados recebidos do checkout', x: 50, y: 160, model: '—', prompt: '', condition: '', url: '' },
+    { id: 'prompt_1', label: 'Análise Antifraude', type: 'System Prompt', desc: 'GPT-4o: Validar anomalias', x: 240, y: 60, model: 'gpt-4o', prompt: 'Analise o payload de transação recebido e classifique o risco de 0 a 100 com base em IP, dados cadastrais e histórico de chargeback.', condition: '', url: '' },
+    { id: 'cond', label: 'Score > 80?', type: 'Condicional', desc: 'Se sim, recusa imediata', x: 430, y: 160, model: '—', prompt: '', condition: 'risk_score > 80', url: '' },
+    { id: 'webhook', label: 'Disparar Webhook', type: 'Webhook', desc: 'Notifica painel de compliance', x: 620, y: 60, model: '—', prompt: '', condition: '', url: 'https://api.basileiapay.com/compliance/webhook' },
+    { id: 'output', label: 'Autorização Final', type: 'Output', desc: 'Transação aprovada / enviada', x: 620, y: 260, model: '—', prompt: '', condition: '', url: '' }
   ]);
   const [selectedNode, setSelectedNode] = useState<string | null>('prompt_1');
   const [nodePromptText, setNodePromptText] = useState('Analise o payload de transação recebido e classifique o risco de 0 a 100 com base em IP, dados cadastrais e histórico de chargeback.');
+  const [nodeModel, setNodeModel] = useState('gpt-4o');
+  const [nodeCondition, setNodeCondition] = useState('risk_score > 80');
+  const [nodeUrl, setNodeUrl] = useState('https://api.basileiapay.com/compliance/webhook');
+
+  // Connections
+  const [connections, setConnections] = useState([
+    { from: 'input', to: 'prompt_1', label: '' },
+    { from: 'prompt_1', to: 'cond', label: '' },
+    { from: 'cond', to: 'webhook', label: 'Sim' },
+    { from: 'cond', to: 'output', label: 'Não' }
+  ]);
+
+  // Node Drag and Drop states
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Add Node Modal state
+  const [showAddNodeModal, setShowAddNodeModal] = useState(false);
+  const [newNodeLabel, setNewNodeLabel] = useState('Novo Prompt');
+  const [newNodeType, setNewNodeType] = useState<'Input' | 'System Prompt' | 'Condicional' | 'Webhook' | 'Output'>('System Prompt');
+  const [newNodeDesc, setNewNodeDesc] = useState('Executa processamento cognitivo');
+
+  // Simulation states
+  const [simPayload, setSimPayload] = useState('{\n  "amount": 1250.00,\n  "risk_score": 85,\n  "card_brand": "visa"\n}');
+  const [simActiveNode, setSimActiveNode] = useState<string | null>(null);
+  const [simActivePath, setSimActivePath] = useState<string[]>([]);
+  const [simLogs, setSimLogs] = useState<string[]>([]);
+  const [simRunning, setSimRunning] = useState(false);
 
   // Costs and Usage states
   const [monthlyBudget, setMonthlyBudget] = useState(250);
@@ -97,6 +127,29 @@ export default function AiSettingsPage() {
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleSelectNode = (nodeId: string) => {
+    setSelectedNode(nodeId);
+    const node = canvasNodes.find(n => n.id === nodeId);
+    if (node) {
+      setNodePromptText(node.prompt || '');
+      setNodeModel(node.model || 'gpt-4o');
+      setNodeCondition(node.condition || '');
+      setNodeUrl(node.url || '');
+    }
+  };
+
+  const handleSaveNodeParams = () => {
+    if (!selectedNode) return;
+    setCanvasNodes(prev => prev.map(n => n.id === selectedNode ? {
+      ...n,
+      prompt: nodePromptText,
+      model: nodeModel,
+      condition: nodeCondition,
+      url: nodeUrl
+    } : n));
+    triggerToast("Parâmetros do nó atualizados no canvas!");
   };
 
   const handleUpdateFeatureModel = (featureId: string, newProviderName: string) => {
@@ -635,16 +688,30 @@ export default function AiSettingsPage() {
 
       {/* builder_ia Tab (Prompt Orchestrator Canvas) */}
       {activeTab === 'builder_ia' && (
-        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4 text-left animate-in fade-in duration-300">
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-5 text-left animate-in fade-in duration-300">
+          
+          {/* Header block */}
           <div className="flex items-center justify-between border-b border-slate-50 pb-3">
             <div>
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Prompt Orchestrator Canvas</h3>
-              <p className="text-[10.5px] font-bold text-slate-400 mt-1">Canvas visual low-code para encadeamento lógico de decisões cognitivas.</p>
+              <p className="text-[10.5px] font-bold text-slate-400 mt-1">Desenhe, edite e simule pipelines cognitivos encadeando decisões lógicas e chamadas de LLM.</p>
             </div>
             
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => triggerToast("Pipeline compilada com sucesso!")}
+                onClick={() => {
+                  setNewNodeLabel('Novo Prompt');
+                  setNewNodeType('System Prompt');
+                  setNewNodeDesc('Executa processamento cognitivo');
+                  setShowAddNodeModal(true);
+                }}
+                className="h-8.5 px-3.5 border border-[#E8DDFD] hover:bg-slate-50 text-slate-700 rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Adicionar Nó
+              </button>
+              <button 
+                onClick={() => triggerToast("Pipeline compilado e ativo em produção no API Gateway!")}
                 className="h-8.5 px-4 bg-slate-900 text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center gap-1"
               >
                 <GitFork className="w-3.5 h-3.5" />
@@ -653,82 +720,397 @@ export default function AiSettingsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
-            
-            {/* Visual Canvas simulator Board (col-span-3) */}
-            <div className="xl:col-span-3 border border-[#E8DDFD]/60 rounded-2xl p-4.5 bg-[#FAF8FF]/45 h-[400px] relative overflow-hidden flex flex-col justify-between">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block select-none">Simulador Gráfico de Nós</span>
-              
-              {/* Nodes row layout */}
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 my-auto py-5 select-none relative">
-                
-                {canvasNodes.map((node, index) => {
-                  const isSelected = selectedNode === node.id;
-                  return (
-                    <div key={node.id} className="flex flex-col md:flex-row items-center relative">
-                      {/* Connection arrow line */}
-                      {index > 0 && (
-                        <div className="hidden md:block absolute -left-7 top-1/2 -translate-y-1/2 w-4.5 h-[1.5px] bg-[#E8DDFD]" />
-                      )}
+          {/* Add Node Modal */}
+          {showAddNodeModal && (
+            <div className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm z-55 flex items-center justify-center">
+              <div className="bg-white border border-[#E8DDFD] w-[360px] rounded-[24px] p-5.5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Adicionar Nó ao Canvas</span>
+                  <button onClick={() => setShowAddNodeModal(false)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
 
-                      {/* Node box */}
-                      <button 
-                        onClick={() => setSelectedNode(node.id)}
-                        className={cn(
-                          "w-[130px] bg-white border rounded-xl p-3 shadow-sm hover:shadow-md transition-all text-left space-y-1.5 relative border-[#E8DDFD]",
-                          isSelected && "ring-2 ring-brand border-brand"
-                        )}
-                      >
-                        <span className="text-[7.5px] font-black text-brand uppercase tracking-wider block leading-none">{node.type}</span>
-                        <span className="text-[10px] font-black text-slate-900 block truncate">{node.label}</span>
-                        <span className="text-[8px] font-bold text-slate-400 block leading-tight">{node.desc}</span>
-                      </button>
-                    </div>
-                  );
-                })}
-
-              </div>
-
-              {/* Status bar */}
-              <div className="flex justify-between items-center text-[9px] font-bold text-slate-450 border-t border-slate-100 pt-2.5">
-                <span>Clique em um nó para visualizar parâmetros cognitivos.</span>
-                <span className="flex items-center gap-1 text-emerald-650 font-black"><Check className="w-3.5 h-3.5" /> Pipeline Válido</span>
-              </div>
-            </div>
-
-            {/* Selected Node Editor Sidebar (col-span-1) */}
-            <div className="xl:col-span-1 border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20">
-              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">Configuração do Nó</h4>
-              
-              {selectedNode ? (
-                <div className="space-y-3.5">
-                  <div className="space-y-0.5">
-                    <span className="text-[8.5px] font-black text-brand block uppercase tracking-wider">
-                      {canvasNodes.find(n => n.id === selectedNode)?.type}
-                    </span>
-                    <span className="text-xs font-black text-slate-900 block leading-none">
-                      {canvasNodes.find(n => n.id === selectedNode)?.label}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 pt-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">System Prompt Context</label>
-                    <textarea 
-                      value={nodePromptText}
-                      onChange={(e) => setNodePromptText(e.target.value)}
-                      rows={6}
-                      className="w-full bg-white border border-[#E8DDFD] rounded-xl px-2.5 py-2 text-[10px] font-semibold text-slate-700 focus:outline-none leading-relaxed resize-none"
+                <div className="space-y-3.5 text-left">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Nome do Nó</label>
+                    <input 
+                      type="text" 
+                      value={newNodeLabel}
+                      onChange={(e) => setNewNodeLabel(e.target.value)}
+                      className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-700"
                     />
                   </div>
 
-                  <button 
-                    onClick={() => triggerToast(`Nó '${canvasNodes.find(n => n.id === selectedNode)?.label}' salvo com sucesso!`)}
-                    className="w-full h-8.5 bg-slate-900 text-white rounded-xl text-[9.5px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center justify-center gap-1"
-                  >
-                    Salvar Parâmetros
-                  </button>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Tipo de Nó</label>
+                    <select 
+                      value={newNodeType}
+                      onChange={(e: any) => setNewNodeType(e.target.value)}
+                      className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-black text-slate-700 h-8.5 cursor-pointer"
+                    >
+                      <option value="System Prompt">System Prompt (LLM)</option>
+                      <option value="Condicional">Condicional (Router)</option>
+                      <option value="Webhook">Webhook Trigger</option>
+                      <option value="Output">Output (Final)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Descrição Curta</label>
+                    <input 
+                      type="text" 
+                      value={newNodeDesc}
+                      onChange={(e) => setNewNodeDesc(e.target.value)}
+                      className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-700"
+                    />
+                  </div>
                 </div>
-              ) : (
+
+                <button 
+                  onClick={() => {
+                    const newId = `node_${Date.now()}`;
+                    const nodeX = 300 + Math.random() * 50;
+                    const nodeY = 150 + Math.random() * 50;
+                    const newNode = {
+                      id: newId,
+                      label: newNodeLabel,
+                      type: newNodeType,
+                      desc: newNodeDesc,
+                      x: nodeX,
+                      y: nodeY,
+                      model: newNodeType === 'System Prompt' ? 'gpt-4o' : '—',
+                      prompt: newNodeType === 'System Prompt' ? 'Escreva o prompt do nó aqui...' : '',
+                      condition: newNodeType === 'Condicional' ? 'score > 50' : '',
+                      url: newNodeType === 'Webhook' ? 'https://api.domain.com/webhook' : ''
+                    };
+
+                    setCanvasNodes(prev => [...prev, newNode]);
+                    // Add automatic connection from input or last conditional
+                    if (newNodeType === 'Output') {
+                      setConnections(prev => [...prev, { from: 'cond', to: newId, label: 'Default' }]);
+                    } else {
+                      setConnections(prev => [...prev, { from: 'prompt_1', to: newId, label: '' }]);
+                    }
+
+                    setShowAddNodeModal(false);
+                    triggerToast(`Nó '${newNodeLabel}' adicionado ao canvas!`);
+                  }}
+                  className="w-full h-9.5 bg-brand text-white font-black text-xs uppercase tracking-wider rounded-xl hover:bg-brand-dark transition-all"
+                >
+                  Criar Nó
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Main Visual Board Area */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
+            
+            {/* Visual Canvas Simulator Board */}
+            <div 
+              className="xl:col-span-3 border border-[#E8DDFD]/60 rounded-2xl bg-[#FAF8FF]/45 h-[440px] relative overflow-hidden shadow-inner select-none cursor-default"
+              onMouseMove={(e) => {
+                if (!draggingNodeId) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const newX = Math.max(10, Math.min(rect.width - 150, e.clientX - rect.left - dragOffset.x));
+                const newY = Math.max(10, Math.min(rect.height - 90, e.clientY - rect.top - dragOffset.y));
+                setCanvasNodes(prev => prev.map(n => n.id === draggingNodeId ? { ...n, x: newX, y: newY } : n));
+              }}
+              onMouseUp={() => setDraggingNodeId(null)}
+              onMouseLeave={() => setDraggingNodeId(null)}
+            >
+              <div className="absolute top-3 left-4 flex items-center gap-2">
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block">Quadro de Prompt Ops</span>
+                <span className="bg-brand-soft/20 text-brand px-2 py-0.2 rounded font-mono text-[8px] font-black border border-brand/5">
+                  Arraste os nós para posicionar
+                </span>
+              </div>
+
+              {/* Dynamic SVG Connection lines with animated circles */}
+              <svg className="absolute inset-0 pointer-events-none w-full h-full">
+                <defs>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#c084fc" />
+                  </marker>
+                  <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#a855f7" />
+                  </marker>
+                </defs>
+
+                {connections.map((conn, idx) => {
+                  const fromNode = canvasNodes.find(n => n.id === conn.from);
+                  const toNode = canvasNodes.find(n => n.id === conn.to);
+                  if (!fromNode || !toNode) return null;
+
+                  const x1 = fromNode.x + 140;
+                  const y1 = fromNode.y + 40;
+                  const x2 = toNode.x;
+                  const y2 = toNode.y + 40;
+
+                  const isPathActive = simActivePath.includes(`${conn.from}-${conn.to}`);
+
+                  return (
+                    <g key={idx}>
+                      <path 
+                        d={`M ${x1} ${y1} C ${x1 + 60} ${y1}, ${x2 - 60} ${y2}, ${x2} ${y2}`} 
+                        stroke={isPathActive ? "#a855f7" : "#E8DDFD"} 
+                        strokeWidth={isPathActive ? "2.5" : "1.8"} 
+                        fill="none" 
+                        markerEnd={`url(#${isPathActive ? 'arrow-active' : 'arrow'})`}
+                        className="transition-all duration-300"
+                      />
+                      {conn.label && (
+                        <text 
+                          x={(x1 + x2) / 2} 
+                          y={(y1 + y2) / 2 - 8} 
+                          textAnchor="middle" 
+                          fill={isPathActive ? "#a855f7" : "#94a3b8"} 
+                          className="text-[9px] font-black uppercase tracking-wider bg-white px-1"
+                        >
+                          {conn.label}
+                        </text>
+                      )}
+                      {isPathActive && (
+                        <circle r="4.5" fill="#a855f7" className="shadow">
+                          <animateMotion dur="1.8s" repeatCount="indefinite" path={`M ${x1} ${y1} C ${x1 + 60} ${y1}, ${x2 - 60} ${y2}, ${x2} ${y2}`} />
+                        </circle>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+
+              {/* Render Draggable Nodes */}
+              {canvasNodes.map((node) => {
+                const isSelected = selectedNode === node.id;
+                const isActiveInSim = simActiveNode === node.id;
+
+                let nodeColorClass = 'border-teal-200 bg-teal-50/15 text-teal-700';
+                if (node.type === 'System Prompt') nodeColorClass = 'border-violet-200 bg-violet-50/15 text-brand';
+                if (node.type === 'Condicional') nodeColorClass = 'border-amber-250 bg-amber-50/10 text-amber-700';
+                if (node.type === 'Webhook') nodeColorClass = 'border-blue-200 bg-blue-50/10 text-blue-700';
+                if (node.type === 'Output') nodeColorClass = 'border-emerald-250 bg-emerald-50/15 text-emerald-700';
+
+                return (
+                  <div
+                    key={node.id}
+                    className={cn(
+                      "absolute w-[140px] bg-white border rounded-[18px] p-3 shadow-md hover:shadow-lg transition-all duration-150 text-left select-none",
+                      isSelected && "ring-2 ring-brand border-brand",
+                      isActiveInSim && "ring-2 ring-emerald-500 border-emerald-500 scale-105"
+                    )}
+                    style={{ left: node.x, top: node.y }}
+                  >
+                    {/* Position Handle and Header */}
+                    <div 
+                      className="flex items-center justify-between cursor-grab active:cursor-grabbing border-b border-slate-50 pb-1"
+                      onMouseDown={(e) => {
+                        const rect = e.currentTarget.parentElement?.parentElement?.getBoundingClientRect();
+                        if (rect) {
+                          setDraggingNodeId(node.id);
+                          setDragOffset({
+                            x: e.clientX - rect.left - node.x,
+                            y: e.clientY - rect.top - node.y
+                          });
+                        }
+                        handleSelectNode(node.id);
+                      }}
+                    >
+                      <span className="text-[7.5px] font-black uppercase tracking-wider block">{node.type}</span>
+                      {node.model !== '—' && (
+                        <span className="text-[6.5px] font-black bg-purple-50 text-purple-600 px-1 py-0.2 rounded font-mono uppercase">
+                          {node.model}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="pt-2 space-y-1">
+                      <span className="text-[10px] font-black text-slate-900 block truncate leading-none">{node.label}</span>
+                      <span className="text-[8px] font-semibold text-slate-400 block leading-tight">{node.desc}</span>
+                    </div>
+
+                    {/* Position arrows for absolute fine positioning adjustment */}
+                    <div className="flex gap-1.5 mt-2 justify-end opacity-20 hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => setCanvasNodes(prev => prev.map(n => n.id === node.id ? { ...n, x: n.x - 10 } : n))}
+                        className="text-[8px] font-bold text-slate-500 hover:text-slate-900 px-0.8 bg-slate-50 rounded border border-slate-100"
+                      >
+                        ◀
+                      </button>
+                      <button 
+                        onClick={() => setCanvasNodes(prev => prev.map(n => n.id === node.id ? { ...n, y: n.y - 10 } : n))}
+                        className="text-[8px] font-bold text-slate-500 hover:text-slate-900 px-0.8 bg-slate-50 rounded border border-slate-100"
+                      >
+                        ▲
+                      </button>
+                      <button 
+                        onClick={() => setCanvasNodes(prev => prev.map(n => n.id === node.id ? { ...n, y: n.y + 10 } : n))}
+                        className="text-[8px] font-bold text-slate-500 hover:text-slate-900 px-0.8 bg-slate-50 rounded border border-slate-100"
+                      >
+                        ▼
+                      </button>
+                      <button 
+                        onClick={() => setCanvasNodes(prev => prev.map(n => n.id === node.id ? { ...n, x: n.x + 10 } : n))}
+                        className="text-[8px] font-bold text-slate-500 hover:text-slate-900 px-0.8 bg-slate-50 rounded border border-slate-100"
+                      >
+                        ▶
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Status bar */}
+              <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm flex justify-between items-center text-[9px] font-bold text-slate-450 border-t border-slate-100 p-2.5">
+                <span>Clique e arraste pelo topo do nó para reposicioná-lo. Selecione para editar.</span>
+                <span className="flex items-center gap-1 text-emerald-650 font-black">
+                  <Check className="w-3.5 h-3.5" /> Pipeline Válido (DAG OK)
+                </span>
+              </div>
+            </div>
+
+            {/* Selected Node Editor Sidebar */}
+            <div className="xl:col-span-1 border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20">
+              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5 flex items-center justify-between">
+                <span>Configuração do Nó</span>
+                {selectedNode !== 'input' && selectedNode !== 'output' && (
+                  <button 
+                    onClick={() => {
+                      if (!selectedNode) return;
+                      setCanvasNodes(prev => prev.filter(n => n.id !== selectedNode));
+                      setConnections(prev => prev.filter(c => c.from !== selectedNode && c.to !== selectedNode));
+                      setSelectedNode(null);
+                      triggerToast("Nó excluído com sucesso do canvas.");
+                    }}
+                    className="text-red-500 hover:text-red-750 text-[9px] font-black uppercase"
+                  >
+                    Excluir
+                  </button>
+                )}
+              </h4>
+              
+              {selectedNode ? {
+                'Input': (
+                  <div className="space-y-3">
+                    <span className="text-[8.5px] font-black text-brand block uppercase tracking-wider">Nó de Entrada</span>
+                    <span className="text-xs font-black text-slate-900 block leading-none">
+                      {canvasNodes.find(n => n.id === selectedNode)?.label}
+                    </span>
+                    <p className="text-[9.5px] font-semibold text-slate-400">
+                      Recebe as transações enviadas da plataforma Basileia Pay. Nenhum parâmetro extra necessário.
+                    </p>
+                  </div>
+                ),
+                'Output': (
+                  <div className="space-y-3">
+                    <span className="text-[8.5px] font-black text-brand block uppercase tracking-wider">Nó de Autorização</span>
+                    <span className="text-xs font-black text-slate-900 block leading-none">
+                      {canvasNodes.find(n => n.id === selectedNode)?.label}
+                    </span>
+                    <p className="text-[9.5px] font-semibold text-slate-400">
+                      Direciona transações validadas para a adquirente de processamento final.
+                    </p>
+                  </div>
+                ),
+                'System Prompt': (
+                  <div className="space-y-3.5">
+                    <div className="space-y-0.5">
+                      <span className="text-[8.5px] font-black text-brand block uppercase tracking-wider">System Prompt (LLM)</span>
+                      <span className="text-xs font-black text-slate-900 block leading-none">
+                        {canvasNodes.find(n => n.id === selectedNode)?.label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Modelo de LLM</label>
+                      <select 
+                        value={nodeModel}
+                        onChange={(e) => setNodeModel(e.target.value)}
+                        className="w-full bg-white border border-[#E8DDFD] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 focus:outline-none"
+                      >
+                        <option value="gpt-4o">OpenAI GPT-4o</option>
+                        <option value="claude-3-5-sonnet">Anthropic Claude 3.5</option>
+                        <option value="gemini-1.5-pro">Google Gemini 1.5 Pro</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Prompt de Instruções</label>
+                      <textarea 
+                        value={nodePromptText}
+                        onChange={(e) => setNodePromptText(e.target.value)}
+                        rows={6}
+                        className="w-full bg-white border border-[#E8DDFD] rounded-xl px-2.5 py-2 text-[10px] font-semibold text-slate-700 focus:outline-none leading-relaxed resize-none font-sans"
+                      />
+                    </div>
+
+                    <button 
+                      onClick={handleSaveNodeParams}
+                      className="w-full h-8.5 bg-slate-900 text-white rounded-xl text-[9.5px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center justify-center gap-1"
+                    >
+                      Salvar Parâmetros
+                    </button>
+                  </div>
+                ),
+                'Condicional': (
+                  <div className="space-y-3.5">
+                    <div className="space-y-0.5">
+                      <span className="text-[8.5px] font-black text-brand block uppercase tracking-wider">Nó Condicional (Router)</span>
+                      <span className="text-xs font-black text-slate-900 block leading-none">
+                        {canvasNodes.find(n => n.id === selectedNode)?.label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Expressão de Condição</label>
+                      <input 
+                        type="text" 
+                        value={nodeCondition}
+                        onChange={(e) => setNodeCondition(e.target.value)}
+                        className="w-full bg-white border border-[#E8DDFD] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 focus:outline-none font-mono"
+                      />
+                      <span className="text-[8px] font-semibold text-slate-400 leading-normal block">
+                        Suporta campos do payload. Ex: <code>risk_score &gt; 80</code> ou <code>amount &gt; 5000</code>.
+                      </span>
+                    </div>
+
+                    <button 
+                      onClick={handleSaveNodeParams}
+                      className="w-full h-8.5 bg-slate-900 text-white rounded-xl text-[9.5px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center justify-center gap-1"
+                    >
+                      Salvar Parâmetros
+                    </button>
+                  </div>
+                ),
+                'Webhook': (
+                  <div className="space-y-3.5">
+                    <div className="space-y-0.5">
+                      <span className="text-[8.5px] font-black text-brand block uppercase tracking-wider">Webhook Trigger</span>
+                      <span className="text-xs font-black text-slate-900 block leading-none">
+                        {canvasNodes.find(n => n.id === selectedNode)?.label}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Endpoint URI</label>
+                      <input 
+                        type="text" 
+                        value={nodeUrl}
+                        onChange={(e) => setNodeUrl(e.target.value)}
+                        className="w-full bg-white border border-[#E8DDFD] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 focus:outline-none font-mono text-[9px]"
+                      />
+                    </div>
+
+                    <button 
+                      onClick={handleSaveNodeParams}
+                      className="w-full h-8.5 bg-slate-900 text-white rounded-xl text-[9.5px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center justify-center gap-1"
+                    >
+                      Salvar Parâmetros
+                    </button>
+                  </div>
+                )
+              }[canvasNodes.find(n => n.id === selectedNode)?.type || 'Input'] : (
                 <div className="text-center py-10 text-[10px] font-bold text-slate-400">
                   Nenhum nó selecionado no canvas.
                 </div>
@@ -736,6 +1118,130 @@ export default function AiSettingsPage() {
             </div>
 
           </div>
+
+          {/* Dynamic Pipeline Simulator Console */}
+          <div className="bg-slate-50/20 border border-[#E8DDFD]/60 rounded-2xl p-5 space-y-4">
+            <div>
+              <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-wider block">Console de Simulação em Tempo Real</h4>
+              <p className="text-[10px] font-bold text-slate-400 mt-1">Dispare payloads JSON falsos de teste e veja a pipeline animar o caminho lógico.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+              
+              {/* Payload Editor */}
+              <div className="space-y-2 text-left">
+                <span className="text-[9px] font-black text-slate-455 uppercase tracking-wider block">Payload JSON de Entrada</span>
+                <textarea 
+                  value={simPayload}
+                  onChange={(e) => setSimPayload(e.target.value)}
+                  rows={6}
+                  className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2.5 font-mono text-[10px] leading-relaxed text-slate-700 focus:outline-none resize-none h-[140px]"
+                />
+              </div>
+
+              {/* Simulation trace results terminal */}
+              <div className="md:col-span-2 space-y-2 flex flex-col justify-between">
+                <span className="text-[9px] font-black text-slate-455 uppercase tracking-wider block text-left">Logs de Execução da Pipeline</span>
+                <div className="flex-1 bg-slate-950 border border-slate-900 rounded-xl p-3 font-mono text-[9px] leading-relaxed text-emerald-400 space-y-1 overflow-y-auto h-[140px] text-left">
+                  {simLogs.length === 0 ? (
+                    <span className="text-slate-500 select-none block italic">Nenhuma simulação em execução. Clique em 'Iniciar Simulação'.</span>
+                  ) : (
+                    simLogs.map((log, idx) => (
+                      <div key={idx} className="flex gap-1.5 items-start">
+                        <span className="text-slate-600 select-none">&gt;</span>
+                        <span>{log}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Run Button */}
+            <button 
+              onClick={() => {
+                setSimRunning(true);
+                setSimLogs([]);
+                setSimActivePath([]);
+                
+                let logs = ["🔍 Iniciando simulação do pipeline de prompt..."];
+                setSimActiveNode('input');
+                setSimLogs([...logs]);
+                
+                setTimeout(() => {
+                  setSimActivePath(['input-prompt_1']);
+                  setSimActiveNode('prompt_1');
+                  logs.push("🤖 Acionando nó 'Análise Antifraude' via GPT-4o...");
+                  setSimLogs([...logs]);
+                  
+                  setTimeout(() => {
+                    setSimActivePath(['input-prompt_1', 'prompt_1-cond']);
+                    setSimActiveNode('cond');
+                    logs.push("🔀 Avaliando nó Condicional 'Score > 80?'...");
+                    
+                    let score = 85;
+                    try {
+                      const parsed = JSON.parse(simPayload);
+                      score = parsed.risk_score !== undefined ? parsed.risk_score : 85;
+                    } catch (e) {}
+
+                    const condPassed = score > 80;
+                    logs.push(`🔍 Condição calculada: risk_score (${score}) > 80 => ${condPassed ? 'VERDADEIRO' : 'FALSO'}`);
+                    setSimLogs([...logs]);
+
+                    setTimeout(() => {
+                      if (condPassed) {
+                        setSimActivePath(['input-prompt_1', 'prompt_1-cond', 'cond-webhook']);
+                        setSimActiveNode('webhook');
+                        logs.push("🚀 Rota VERDADEIRO: Disparando Webhook para compliance...");
+                        setSimLogs([...logs]);
+
+                        setTimeout(() => {
+                          logs.push("✅ Webhook entregue com sucesso! Código HTTP 200 OK.");
+                          logs.push("🏁 Pipeline executada com sucesso.");
+                          setSimLogs([...logs]);
+                          setSimRunning(false);
+                        }, 1000);
+                      } else {
+                        setSimActivePath(['input-prompt_1', 'prompt_1-cond', 'cond-output']);
+                        setSimActiveNode('output');
+                        logs.push("⬇️ Rota FALSO: Encaminhando para Autorização Final...");
+                        setSimLogs([...logs]);
+
+                        setTimeout(() => {
+                          logs.push("✅ Transação autorizada e enviada para processamento secundário.");
+                          logs.push("🏁 Pipeline executada com sucesso.");
+                          setSimLogs([...logs]);
+                          setSimRunning(false);
+                        }, 1000);
+                      }
+                    }, 1200);
+
+                  }, 1200);
+
+                }, 1200);
+              }}
+              disabled={simRunning}
+              className={cn(
+                "w-full h-9.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5",
+                simRunning && "opacity-75 cursor-not-allowed"
+              )}
+            >
+              {simRunning ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  Simulando...
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5" />
+                  Iniciar Simulação da Pipeline
+                </>
+              )}
+            </button>
+          </div>
+
         </div>
       )}
 

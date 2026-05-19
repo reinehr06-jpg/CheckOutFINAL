@@ -943,32 +943,43 @@ export default function FxSettingsPage() {
             </div>
 
             {/* Hedging trigger config */}
-            <div className="xl:col-span-1 border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20">
-              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">Hedging Engine Gateway</h4>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Hedge Automático Ativo</span>
-                <input 
-                  type="checkbox" 
-                  checked={hedgingActive}
-                  onChange={() => {
-                    setHedgingActive(!hedgingActive);
-                    triggerToast(`Hedging automático ${!hedgingActive ? 'ativado' : 'desativado'}`);
-                  }}
-                  className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
-                />
-              </div>
+            <div className="xl:col-span-1 border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20 flex flex-col justify-between min-h-[220px]">
+              <div>
+                <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">Hedging Engine Gateway</h4>
+                
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-xs font-bold text-slate-700">Hedge Automático Ativo</span>
+                  <input 
+                    type="checkbox" 
+                    checked={hedgingActive}
+                    onChange={() => {
+                      setHedgingActive(!hedgingActive);
+                      triggerToast(`Hedging automático ${!hedgingActive ? 'ativado' : 'desativado'}`);
+                    }}
+                    className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Threshold de Cobertura ($ USD)</label>
-                <input 
-                  type="number" 
-                  value={hedgingThreshold}
-                  onChange={(e) => setHedgingThreshold(parseInt(e.target.value) || 0)}
-                  className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-extrabold text-slate-700 focus:outline-none h-9" 
-                />
+                <div className="space-y-1.5 mt-3">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Threshold de Cobertura ($ USD)</label>
+                  <input 
+                    type="number" 
+                    value={hedgingThreshold}
+                    onChange={(e) => setHedgingThreshold(parseInt(e.target.value) || 0)}
+                    className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-extrabold text-slate-700 focus:outline-none h-9" 
+                  />
+                </div>
               </div>
-              <p className="text-[8.5px] font-semibold text-slate-400 leading-relaxed">Sempre que a exposição cambial líquida em aberto superar o threshold, o motor fecha um swap de câmbio futuro no banco custodiante.</p>
+              
+              <div className="space-y-2">
+                <p className="text-[8.5px] font-semibold text-slate-400 leading-relaxed">Sempre que a exposição cambial líquida em aberto superar o threshold, o motor fecha um swap de câmbio futuro no banco custodiante.</p>
+                <Link 
+                  href="/dashboard/settings/fx/hedging"
+                  className="flex items-center justify-center gap-1 w-full py-2 border border-brand/20 hover:bg-brand-soft/20 text-brand rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition-all"
+                >
+                  Painel de Tesouraria <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
 
             {/* Hedging Logs table */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import Link from 'next/link';
 import { 
   ArrowLeft,
@@ -42,8 +42,9 @@ const STATUS_META: Record<string, { label: string; text: string; bg: string; bor
   'Cancelada': { label: 'Cancelada', text: 'text-slate-500', bg: 'bg-slate-50/40', border: 'border-slate-200/50', dot: 'bg-slate-400' }
 };
 
-export default function SubscriptionDetailPage({ params }: { params: { id: string } }) {
-  const subscriptionId = params.id;
+export default function SubscriptionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const subscriptionId = resolvedParams.id;
   const [activeTab, setActiveTab] = useState<'geral' | 'historico' | 'cobrancas' | 'timeline' | 'notas'>('geral');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
