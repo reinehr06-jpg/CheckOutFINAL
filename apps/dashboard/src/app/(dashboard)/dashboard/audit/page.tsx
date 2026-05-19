@@ -29,7 +29,10 @@ export default function AuditPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<AuditEvent[]>(MOCK_AUDIT_EVENTS);
-  const [selectedEvent, setSelectedEvent] = useState<AuditEvent>(MOCK_AUDIT_EVENTS[0]);
+  
+  // Selected event and Drawer visibility
+  const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   
   // Realtime Polling state
   const [realtimeActive, setRealtimeActive] = useState(true);
@@ -90,6 +93,11 @@ export default function AuditPage() {
     triggerToast(`Incidente ${incId} criado e associado ao evento.`);
   };
 
+  const handleOpenEvent = (event: AuditEvent) => {
+    setSelectedEvent(event);
+    setIsDetailsOpen(true);
+  };
+
   const getEventTheme = (level: string, category: string) => {
     if (level === 'Crítico' || category === 'SEGURANÇA') {
       return { 
@@ -118,7 +126,7 @@ export default function AuditPage() {
     if (category === 'ASSINATURA') {
       return { 
         icon: Repeat, 
-        bgClass: 'bg-orange-50 text-orange-650 border-orange-255', 
+        bgClass: 'bg-orange-50 text-orange-655 border-orange-200', 
         dotClass: 'bg-orange-600', 
         badgeClass: 'bg-orange-50 text-orange-700 border-orange-200' 
       };
@@ -172,13 +180,6 @@ export default function AuditPage() {
   const filteredEvents = getFilteredEvents();
   const paginatedEvents = filteredEvents.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-  // Pre-select first item when list changes or filter updates
-  useEffect(() => {
-    if (paginatedEvents.length > 0) {
-      setSelectedEvent(paginatedEvents[0]);
-    }
-  }, [filterUser, filterSystem, filterLevel, filterEventType, filterEntity, filterEntityId, filterIp, searchQuery, activeTab]);
-
   const hasActiveFilters = 
     filterUser !== 'Todos' || 
     filterSystem !== 'Todos' || 
@@ -205,7 +206,7 @@ export default function AuditPage() {
   if (!mounted) return null;
 
   return (
-    <div className="w-full text-left space-y-5 select-none font-sans">
+    <div className="w-full text-left space-y-5 select-none font-sans relative">
       
       {/* Toast popup */}
       {toastMessage && (
@@ -243,14 +244,14 @@ export default function AuditPage() {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => triggerToast('Filtros salvos como busca rápida.')}
-            className="flex h-10 items-center justify-center gap-1.5 px-4 bg-white border border-[#E8DDFD] hover:bg-slate-50 rounded-xl text-xs font-black text-slate-700 shadow-sm transition-all"
+            className="flex h-10 items-center justify-center gap-1.5 px-4 bg-white border border-[#E8DDFD] hover:bg-slate-50 rounded-xl text-xs font-black text-slate-770 shadow-sm transition-all"
           >
             <Bookmark className="w-3.5 h-3.5 text-slate-400" />
             Salvar busca
           </button>
           <button 
             onClick={() => triggerToast('Exportando logs para planilha...')}
-            className="flex h-10 items-center justify-center gap-1.5 px-4 bg-white border border-[#E8DDFD] hover:bg-slate-50 rounded-xl text-xs font-black text-slate-700 shadow-sm transition-all"
+            className="flex h-10 items-center justify-center gap-1.5 px-4 bg-white border border-[#E8DDFD] hover:bg-slate-50 rounded-xl text-xs font-black text-slate-770 shadow-sm transition-all"
           >
             <Download className="w-3.5 h-3.5 text-slate-400" />
             Exportar
@@ -355,7 +356,7 @@ export default function AuditPage() {
             <select 
               value={filterLevel}
               onChange={(e) => setFilterLevel(e.target.value)}
-              className="w-full bg-transparent text-xs font-black text-slate-950 focus:outline-none appearance-none cursor-pointer pr-4"
+              className="w-full bg-transparent text-xs font-black text-slate-955 focus:outline-none appearance-none cursor-pointer pr-4"
             >
               <option value="Todos">Todos</option>
               <option value="Crítico">Crítico</option>
@@ -436,7 +437,7 @@ export default function AuditPage() {
               placeholder="Ex: 177.12..."
               value={filterIp}
               onChange={(e) => setFilterIp(e.target.value)}
-              className="w-full bg-transparent text-xs font-bold text-slate-950 focus:outline-none placeholder:text-slate-350"
+              className="w-full bg-transparent text-xs font-bold text-slate-955 focus:outline-none placeholder:text-slate-350"
             />
           </div>
 
@@ -498,7 +499,7 @@ export default function AuditPage() {
                 </span>
               )}
               {filterEventType !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-550 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Tipo: {filterEventType}
                   <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterEventType('Todos')} />
                 </span>
@@ -522,7 +523,7 @@ export default function AuditPage() {
                 </span>
               )}
               {filterResult !== 'Todos' && (
-                <span className="px-2 py-0.5 bg-violet-50 text-violet-750 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-755 border border-violet-200 rounded-lg text-[10px] font-bold flex items-center gap-1">
                   Resultado: {filterResult}
                   <X className="w-3.5 h-3.5 cursor-pointer text-slate-400 hover:text-red-500" onClick={() => setFilterResult('Todos')} />
                 </span>
@@ -544,275 +545,279 @@ export default function AuditPage() {
         )}
       </div>
 
-      {/* Main Grid: Tabela + Painel Lateral (Section 2) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start">
+      {/* Main Content Area: Timeline Table ocupando 100% largura (Item 2 & 6) */}
+      <main className="min-w-0 w-full overflow-visible">
         
-        {/* Left Side: Table card */}
-        <section className="min-w-0">
+        <div className="w-full min-w-0 overflow-hidden rounded-[22px] border border-[#E8DDFD] bg-white/85 shadow-sm">
           
-          <div className="overflow-hidden rounded-[22px] border border-[#E8DDFD] bg-white/85 shadow-sm">
-            
-            {/* Tabs de categorias com contadores (Section 5) */}
-            <div className="flex items-center justify-between border-b border-[#E8DDFD] px-4 py-3 bg-[#FAF8FF]">
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { id: 'all', label: 'Todos', count: '24.812' },
-                  { id: 'critical', label: 'Críticos', count: '71' },
-                  { id: 'alteration', label: 'Alterações', count: '18.342' },
-                  { id: 'access', label: 'Acessos', count: '3.912' },
-                  { id: 'deletion', label: 'Exclusões', count: '187' }
-                ].map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
-                      className={cn(
-                        "flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-black uppercase tracking-[0.08em] transition-all",
-                        isActive
-                          ? "border border-violet-300 bg-violet-50 text-violet-750"
-                          : "text-slate-500 hover:bg-slate-50"
-                      )}
-                    >
-                      {tab.label}
-                      <span className={cn(
-                        "rounded-full px-2 py-0.5 text-[10px]",
-                        isActive ? "bg-white text-violet-700 shadow-sm" : "bg-slate-100 text-slate-500"
-                      )}>
-                        {tab.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setRealtimeActive(prev => !prev)}
-                  className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em] text-slate-600 cursor-pointer"
-                >
-                  <span className={cn(
-                    "h-2 w-2 rounded-full",
-                    realtimeActive ? "bg-green-500 animate-pulse" : "bg-slate-350"
-                  )} />
-                  Tempo real
-                </button>
-
-                <button 
-                  onClick={() => {
-                    setLoading(true);
-                    setTimeout(() => {
-                      setLoading(false);
-                      triggerToast('Logs atualizados com sucesso.');
-                    }, 800);
-                  }}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-slate-500"
-                >
-                  <RefreshCw className={cn("h-4 w-4", loading ? "animate-spin" : "")} />
-                </button>
-              </div>
+          {/* Tabs de categorias com contadores (Section 5) */}
+          <div className="flex items-center justify-between border-b border-[#E8DDFD] px-4 py-3 bg-[#FAF8FF]">
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { id: 'all', label: 'Todos', count: '24.812' },
+                { id: 'critical', label: 'Críticos', count: '71' },
+                { id: 'alteration', label: 'Alterações', count: '18.342' },
+                { id: 'access', label: 'Acessos', count: '3.912' },
+                { id: 'deletion', label: 'Exclusões', count: '187' }
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={cn(
+                      "flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-black uppercase tracking-[0.08em] transition-all",
+                      isActive
+                        ? "border border-violet-300 bg-violet-50 text-violet-750"
+                        : "text-slate-500 hover:bg-slate-50"
+                    )}
+                  >
+                    {tab.label}
+                    <span className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px]",
+                      isActive ? "bg-white text-violet-700 shadow-sm" : "bg-slate-100 text-slate-500"
+                    )}>
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Table data body */}
-            <div className="overflow-x-auto relative">
-              <table className="w-full min-w-[980px] table-fixed text-left">
-                <colgroup>
-                  <col className="w-[140px]" />
-                  <col className="w-[210px]" />
-                  <col />
-                  <col className="w-[180px]" />
-                  <col className="w-[150px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[110px]" />
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-[#E8DDFD] bg-[#FAF8FF]">
-                    {["Data/Hora", "Evento", "Detalhes", "Usuário", "Sistema", "IP", "Nível"].map((header) => (
-                      <th
-                        key={header}
-                        className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
-                      >
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-semibold">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
-                        Carregando logs da auditoria...
-                      </td>
-                    </tr>
-                  ) : paginatedEvents.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
-                        Nenhum evento encontrado para os filtros selecionados.
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedEvents.map((event) => {
-                      const theme = getEventTheme(event.level, event.category);
-                      const isSelected = selectedEvent?.id === event.id;
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setRealtimeActive(prev => !prev)}
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em] text-slate-600 cursor-pointer"
+              >
+                <span className={cn(
+                  "h-2 w-2 rounded-full",
+                  realtimeActive ? "bg-green-500 animate-pulse" : "bg-slate-350"
+                )} />
+                Tempo real
+              </button>
 
-                      return (
-                        <tr 
-                          key={event.id}
-                          onClick={() => setSelectedEvent(event)}
-                          className={cn(
-                            "cursor-pointer border-b border-slate-100 transition h-[68px]",
-                            isSelected ? "bg-violet-50/70" : "hover:bg-[#FAF8FF]"
-                          )}
-                        >
-                          {/* Data/Hora */}
-                          <td className="relative px-4 py-3 align-middle">
-                            <div className="absolute left-5 top-0 h-full w-px bg-slate-200 pointer-events-none" />
-
-                            <div className="relative flex items-center gap-3">
-                              <span className={cn(
-                                "z-10 h-3 w-3 rounded-full ring-4 ring-white shrink-0",
-                                theme.dotClass
-                              )} />
-
-                              <div>
-                                <p className="text-sm font-black text-slate-950">{event.time}</p>
-                                <p className="text-[11px] font-semibold text-slate-400">{event.relative}</p>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Evento */}
-                          <td className="px-4 py-3 align-middle">
-                            <div className="flex items-center gap-3">
-                              <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0 border", theme.bgClass)}>
-                                <theme.icon className="h-4 w-4" />
-                              </div>
-
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-black text-slate-950">
-                                  {event.title}
-                                </p>
-
-                                <span className="mt-1 inline-flex rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
-                                  {event.category}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Detalhes */}
-                          <td className="min-w-0 px-4 py-3 align-middle">
-                            <p className="truncate text-sm font-semibold text-slate-700">
-                              {event.details}
-                            </p>
-                            <p className="mt-1 truncate text-[11px] font-medium text-slate-400">
-                              {event.meta}
-                            </p>
-                          </td>
-
-                          {/* Usuário */}
-                          <td className="px-4 py-3 align-middle">
-                            <div className="flex items-center gap-2">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 shrink-0 border border-slate-200">
-                                <User className="h-4 w-4 text-slate-500" />
-                              </div>
-
-                              <div>
-                                <p className="text-sm font-black text-slate-950">{event.user}</p>
-                                <p className="text-[11px] font-semibold text-slate-400">{event.role}</p>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Sistema */}
-                          <td className="px-4 py-3 align-middle">
-                            <p className="text-sm font-black text-slate-950">{event.system}</p>
-                            <p className="text-[11px] font-semibold text-slate-400">{event.environment}</p>
-                          </td>
-
-                          {/* IP */}
-                          <td className="px-4 py-3 align-middle">
-                            <p className="text-sm font-bold text-slate-700 font-mono">{event.ip}</p>
-                            <p className="text-[10px] text-slate-400 font-semibold">{event.location || 'Brasil'}</p>
-                          </td>
-
-                          {/* Nível */}
-                          <td className="px-4 py-3 align-middle">
-                            <span className={cn(
-                              "inline-flex rounded-lg px-2.5 py-1 text-[10px] font-black uppercase border",
-                              event.level === "Crítico" && "bg-red-50 text-red-650 border-red-200",
-                              event.level === "Alteração" && "bg-violet-50 text-violet-700 border-violet-200",
-                              event.level === "Informativo" && "bg-slate-100 text-slate-600 border-slate-200"
-                            )}>
-                              {event.level}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+              <button 
+                onClick={() => {
+                  setLoading(true);
+                  setTimeout(() => {
+                    setLoading(false);
+                    triggerToast('Logs atualizados com sucesso.');
+                  }, 800);
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-slate-500"
+              >
+                <RefreshCw className={cn("h-4 w-4", loading ? "animate-spin" : "")} />
+              </button>
             </div>
-
-            {/* Paginação da tabela (Section 22) */}
-            <div className="flex h-[58px] items-center justify-between border-t border-[#E8DDFD] px-5 bg-[#FAF8FF]/40">
-              <p className="text-xs font-semibold text-slate-500">
-                Mostrando {Math.min(filteredEvents.length, (currentPage - 1) * rowsPerPage + 1)} a {Math.min(filteredEvents.length, currentPage * rowsPerPage)} de 24.812 eventos
-              </p>
-
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setCurrentPage(1)} 
-                  className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 1 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50')}
-                >
-                  1
-                </button>
-                <button 
-                  onClick={() => setCurrentPage(2)} 
-                  disabled={Math.ceil(filteredEvents.length / rowsPerPage) < 2}
-                  className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 2 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50 disabled:opacity-50')}
-                >
-                  2
-                </button>
-                <button 
-                  onClick={() => setCurrentPage(3)} 
-                  disabled={Math.ceil(filteredEvents.length / rowsPerPage) < 3}
-                  className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 3 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50 disabled:opacity-50')}
-                >
-                  3
-                </button>
-                <span className="text-slate-400 text-xs px-1">...</span>
-                <button 
-                  onClick={() => setCurrentPage(Math.ceil(filteredEvents.length / rowsPerPage) || 1)} 
-                  className="h-8 rounded-xl border border-[#E8DDFD] bg-white px-3 text-xs font-bold hover:bg-slate-50"
-                >
-                  2.482
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-400">Linhas por página</span>
-                <select 
-                  value={rowsPerPage} 
-                  onChange={(e) => { setRowsPerPage(parseInt(e.target.value) || 10); setCurrentPage(1); }}
-                  className="h-8 rounded-xl border border-[#E8DDFD] bg-white px-3 text-xs font-bold focus:outline-none cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </select>
-              </div>
-            </div>
-
           </div>
 
-        </section>
+          {/* Table Data Container */}
+          <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[1180px] table-fixed text-left">
+              <colgroup>
+                <col className="w-[140px]" />
+                <col className="w-[220px]" />
+                <col />
+                <col className="w-[180px]" />
+                <col className="w-[160px]" />
+                <col className="w-[140px]" />
+                <col className="w-[120px]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-[#E8DDFD] bg-[#FAF8FF]">
+                  {["Data/Hora", "Evento", "Detalhes", "Usuário", "Sistema", "IP", "Nível"].map((header) => (
+                    <th
+                      key={header}
+                      className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.18em] text-slate-400"
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-semibold">
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
+                      Carregando logs da auditoria...
+                    </td>
+                  </tr>
+                ) : paginatedEvents.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-16 text-center text-slate-400 font-bold">
+                      Nenhum evento encontrado para os filtros selecionados.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedEvents.map((event) => {
+                    const theme = getEventTheme(event.level, event.category);
+                    const isSelected = selectedEvent?.id === event.id && isDetailsOpen;
 
-        {/* Right Side: Event details card (Section 16 & 17) */}
-        <aside className="w-[360px] shrink-0 sticky top-4">
-          {selectedEvent ? (
-            <div className="rounded-[22px] border border-[#E8DDFD] bg-white/90 p-5 shadow-sm space-y-4">
+                    return (
+                      <tr 
+                        key={event.id}
+                        onClick={() => handleOpenEvent(event)}
+                        className={cn(
+                          "cursor-pointer border-b border-slate-100 transition h-[68px]",
+                          isSelected ? "bg-violet-50/70" : "hover:bg-[#FAF8FF]"
+                        )}
+                      >
+                        {/* Data/Hora */}
+                        <td className="relative px-4 py-3 align-middle">
+                          <div className="absolute left-5 top-0 h-full w-px bg-slate-200 pointer-events-none" />
+
+                          <div className="relative flex items-center gap-3">
+                            <span className={cn(
+                              "z-10 h-3 w-3 rounded-full ring-4 ring-white shrink-0",
+                              theme.dotClass
+                            )} />
+
+                            <div>
+                              <p className="text-sm font-black text-slate-955">{event.time}</p>
+                              <p className="text-[11px] font-semibold text-slate-400">{event.relative}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Evento */}
+                        <td className="px-4 py-3 align-middle">
+                          <div className="flex items-center gap-3">
+                            <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0 border", theme.bgClass)}>
+                              <theme.icon className="h-4 w-4" />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-black text-slate-950">
+                                {event.title}
+                              </p>
+
+                              <span className="mt-1 inline-flex rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-black uppercase text-violet-700">
+                                {event.category}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Detalhes */}
+                        <td className="min-w-0 px-4 py-3 align-middle">
+                          <p className="truncate text-sm font-semibold text-slate-700">
+                            {event.details}
+                          </p>
+                          <p className="mt-1 truncate text-[11px] font-medium text-slate-400">
+                            {event.meta}
+                          </p>
+                        </td>
+
+                        {/* Usuário */}
+                        <td className="px-4 py-3 align-middle">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 shrink-0 border border-slate-200">
+                              <User className="h-4 w-4 text-slate-500" />
+                            </div>
+
+                            <div>
+                              <p className="text-sm font-black text-slate-950">{event.user}</p>
+                              <p className="text-[11px] font-semibold text-slate-400">{event.role}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Sistema */}
+                        <td className="px-4 py-3 align-middle">
+                          <p className="text-sm font-black text-slate-955">{event.system}</p>
+                          <p className="text-[11px] font-semibold text-slate-400">{event.environment}</p>
+                        </td>
+
+                        {/* IP */}
+                        <td className="px-4 py-3 align-middle">
+                          <p className="text-sm font-bold text-slate-700 font-mono">{event.ip}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold">{event.location || 'Brasil'}</p>
+                        </td>
+
+                        {/* Nível */}
+                        <td className="px-4 py-3 align-middle">
+                          <span className={cn(
+                            "inline-flex rounded-lg px-2.5 py-1 text-[10px] font-black uppercase border",
+                            event.level === "Crítico" && "bg-red-50 text-red-655 border-red-200",
+                            event.level === "Alteração" && "bg-violet-50 text-violet-700 border-violet-200",
+                            event.level === "Informativo" && "bg-slate-100 text-slate-600 border-slate-200"
+                          )}>
+                            {event.level}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginação da tabela (Section 22) */}
+          <div className="flex h-[58px] items-center justify-between border-t border-[#E8DDFD] px-5 bg-[#FAF8FF]/40">
+            <p className="text-xs font-semibold text-slate-500">
+              Mostrando {Math.min(filteredEvents.length, (currentPage - 1) * rowsPerPage + 1)} a {Math.min(filteredEvents.length, currentPage * rowsPerPage)} de 24.812 eventos
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setCurrentPage(1)} 
+                className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 1 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50')}
+              >
+                1
+              </button>
+              <button 
+                onClick={() => setCurrentPage(2)} 
+                disabled={Math.ceil(filteredEvents.length / rowsPerPage) < 2}
+                className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 2 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50 disabled:opacity-50')}
+              >
+                2
+              </button>
+              <button 
+                onClick={() => setCurrentPage(3)} 
+                disabled={Math.ceil(filteredEvents.length / rowsPerPage) < 3}
+                className={cn("h-8 w-8 rounded-xl border border-[#E8DDFD] bg-white text-xs font-bold transition-all", currentPage === 3 ? 'border-violet-300 bg-violet-50 text-violet-700 font-black' : 'hover:bg-slate-50 disabled:opacity-50')}
+              >
+                3
+              </button>
+              <span className="text-slate-400 text-xs px-1">...</span>
+              <button 
+                onClick={() => setCurrentPage(Math.ceil(filteredEvents.length / rowsPerPage) || 1)} 
+                className="h-8 rounded-xl border border-[#E8DDFD] bg-white px-3 text-xs font-bold hover:bg-slate-50"
+              >
+                2.482
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400">Linhas por página</span>
+              <select 
+                value={rowsPerPage} 
+                onChange={(e) => { setRowsPerPage(parseInt(e.target.value) || 10); setCurrentPage(1); }}
+                className="h-8 rounded-xl border border-[#E8DDFD] bg-white px-3 text-xs font-bold focus:outline-none cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
+
+      {/* Drawer sobreposto à direita para Detalhes do Evento (Item 4 & 5) */}
+      {isDetailsOpen && selectedEvent && (
+        <div 
+          className="fixed inset-0 z-50 flex justify-end bg-slate-955/20 backdrop-blur-[2px] transition-all"
+          onClick={() => setIsDetailsOpen(false)}
+        >
+          <aside 
+            className="h-full w-full max-w-[420px] lg:max-w-[440px] overflow-y-auto border-l border-[#E8DDFD] bg-white p-6 shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col justify-between"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-4">
               
               {/* Header */}
               <div className="flex items-start justify-between">
@@ -823,7 +828,7 @@ export default function AuditPage() {
                 </div>
 
                 <button 
-                  onClick={() => triggerToast('Inspeção lateral mantida ativa.')}
+                  onClick={() => setIsDetailsOpen(false)}
                   className="flex h-8 w-8 items-center justify-center rounded-xl border border-[#E8DDFD] bg-white text-slate-400 hover:text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
                 >
                   <X className="h-4 w-4" />
@@ -928,48 +933,43 @@ export default function AuditPage() {
                 </div>
               )}
 
-              {/* Action Buttons (Section 21) */}
-              <div className="grid grid-cols-2 gap-2 pt-1.5">
-                <button 
-                  onClick={() => triggerToast('Exibindo entidade relacionada...')}
-                  className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-750 transition-colors"
-                >
-                  Ver entidade
-                </button>
-
-                <button 
-                  onClick={() => triggerToast(`Histórico da entidade ${selectedEvent.entityId || ''} filtrado.`)}
-                  className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-750 transition-colors"
-                >
-                  Investigar histórico
-                </button>
-
-                <button 
-                  onClick={() => handleMarkAsReviewed(selectedEvent.id)}
-                  disabled={reviewedEvents.includes(selectedEvent.id)}
-                  className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-750 transition-colors disabled:opacity-50"
-                >
-                  {reviewedEvents.includes(selectedEvent.id) ? 'Revisado' : 'Marcar revisado'}
-                </button>
-
-                <button 
-                  onClick={() => handleOpenIncident(selectedEvent.id)}
-                  className="h-10 rounded-xl border border-red-100 bg-red-50 hover:bg-red-100 text-xs font-black text-red-650 transition-colors"
-                >
-                  {incidents[selectedEvent.id] ? `Incid: ${incidents[selectedEvent.id]}` : 'Abrir incidente'}
-                </button>
-              </div>
-
             </div>
-          ) : (
-            <div className="rounded-[22px] border border-[#E8DDFD] bg-white/90 p-5 shadow-sm text-center py-20 text-slate-400 font-bold text-xs space-y-2">
-              <Terminal className="w-8 h-8 mx-auto text-slate-300" />
-              <p>Selecione um evento na timeline para inspecionar os logs de auditoria.</p>
-            </div>
-          )}
-        </aside>
 
-      </div>
+            {/* Action Buttons (Section 21) */}
+            <div className="grid grid-cols-2 gap-2 pt-4">
+              <button 
+                onClick={() => triggerToast('Exibindo entidade relacionada...')}
+                className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-750 transition-colors"
+              >
+                Ver entidade
+              </button>
+
+              <button 
+                onClick={() => triggerToast(`Histórico da entidade ${selectedEvent.entityId || ''} filtrado.`)}
+                className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-755 transition-colors"
+              >
+                Investigar histórico
+              </button>
+
+              <button 
+                onClick={() => handleMarkAsReviewed(selectedEvent.id)}
+                disabled={reviewedEvents.includes(selectedEvent.id)}
+                className="h-10 rounded-xl border border-[#E8DDFD] bg-white hover:bg-slate-50 text-xs font-black text-slate-755 transition-colors disabled:opacity-50"
+              >
+                {reviewedEvents.includes(selectedEvent.id) ? 'Revisado' : 'Marcar revisado'}
+              </button>
+
+              <button 
+                onClick={() => handleOpenIncident(selectedEvent.id)}
+                className="h-10 rounded-xl border border-red-100 bg-red-50 hover:bg-red-100 text-xs font-black text-red-655 transition-colors"
+              >
+                {incidents[selectedEvent.id] ? `Incid: ${incidents[selectedEvent.id]}` : 'Abrir incidente'}
+              </button>
+            </div>
+
+          </aside>
+        </div>
+      )}
 
     </div>
   );
