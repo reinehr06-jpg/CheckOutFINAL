@@ -1,118 +1,241 @@
 'use client';
 
+import { useState } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { Card } from '@/components/ui/card';
-import { useApiKeys } from '@/hooks/api/useApiKeys';
-import { Loader2, AlertCircle, Plus, Code, Key, ExternalLink, Copy, Webhook } from 'lucide-react';
+import { DevelopersHeader } from '@/components/developers/DevelopersHeader';
+import { DevelopersKpiCards } from '@/components/developers/DevelopersKpiCards';
+import { DevelopersTabs, DeveloperTabValue } from '@/components/developers/DevelopersTabs';
+import { DevelopersQuickStart } from '@/components/developers/DevelopersQuickStart';
+import { DevelopersApiStatusPanel } from '@/components/developers/DevelopersApiStatusPanel';
+import { DeveloperApiKeysTable } from '@/components/developers/DeveloperApiKeysTable';
+import { DeveloperDocsViewer } from '@/components/developers/DeveloperDocsViewer';
+import { DeveloperSandboxPanel } from '@/components/developers/DeveloperSandboxPanel';
+import { DeveloperWebhookSummary } from '@/components/developers/DeveloperWebhookSummary';
+import { DeveloperLogsTable } from '@/components/developers/DeveloperLogsTable';
+
+import { MOCK_DEVELOPER_SUMMARY, MOCK_API_KEYS, MOCK_DEVELOPER_LOGS } from './__mocks__/developers';
+import { DeveloperSummary, DeveloperApiKey, DeveloperLog, SandboxRequest } from '@/types/developers';
+import { cn } from '@/lib/utils';
+import { ShieldCheck, ShieldAlert, Key } from 'lucide-react';
 
 export default function DevelopersPage() {
-  const { keys, loading, error, refetch } = useApiKeys();
+  const [activeTab, setActiveTab] = useState<DeveloperTabValue>('overview');
+  const [apiKeys, setApiKeys] = useState<DeveloperApiKey[]>(MOCK_API_KEYS);
+  const [logs, setLogs] = useState<DeveloperLog[]>(MOCK_DEVELOPER_LOGS);
+  const [summary, setSummary] = useState<DeveloperSummary>(MOCK_DEVELOPER_SUMMARY);
+  
+  // Toast notifications
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+  // Simulated Roles & Permissions
+  const [userRole, setUserRole] = useState<'owner' | 'auditor'>('owner');
+  const isAdmin = userRole === 'owner';
+
+  const triggerFeedback = (msg: string) => {
+    setFeedbackMsg(msg);
+    setTimeout(() => setFeedbackMsg(null), 3500);
+  };
+
+  const handleSaveKey = (newKeyData: Partial<DeveloperApiKey>) => {
+    const keyId = `key_${Math.floor(Math.random() * 1000)}`;
+    const freshKey: DeveloperApiKey = {
+      id: keyId,
+      name: newKeyData.name || 'Nova Chave de API',
+      prefix: newKeyData.prefix || 'sk_live_bsl_abcd',
+      systemId: newKeyData.systemId || 'sys_custom',
+      systemName: newKeyData.systemName || 'Integração Customizada',
+      environment: newKeyData.environment || 'production',
+      scopes: newKeyData.scopes || ['payments.read'],
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      createdBy: isAdmin ? 'Carlos Oliveira (Owner)' : 'Audit Bot',
+    };
+
+    setApiKeys([freshKey, ...apiKeys]);
+    
+    // Simulate updating counts
+    setSummary({
+      ...summary,
+      apiKeysActive: summary.apiKeysActive + 1
+    });
+
+    triggerFeedback(`Chave "${freshKey.name}" criada com sucesso. Evento de auditoria registrado.`);
+  };
+
+  const handleRevokeKey = (id: string) => {
+    setApiKeys(apiKeys.map(k => k.id === id ? { ...k, status: 'revoked' } : k));
+    
+    // Simulate updating counts
+    setSummary({
+      ...summary,
+      apiKeysActive: Math.max(0, summary.apiKeysActive - 1)
+    });
+
+    triggerFeedback("Chave de API revogada permanentemente. Log de auditoria gerado.");
+  };
+
+  const handleAddSandboxRequest = (sandboxReq: SandboxRequest) => {
+    // Add to logs feed
+    const newLog: DeveloperLog = {
+      id: `log_${Math.floor(Math.random() * 10000)}`,
+      requestId: sandboxReq.id.replace('req_sb_', 'req_'),
+      timestamp: sandboxReq.timestamp,
+      method: sandboxReq.method,
+      endpoint: sandboxReq.endpoint,
+      systemName: 'Portal Sandbox',
+      apiKeyPrefix: sandboxReq.apiKeyPrefix,
+      environment: 'sandbox',
+      statusCode: sandboxReq.statusCode,
+      latencyMs: sandboxReq.latencyMs,
+      ip: '177.34.89.21',
+      userAgent: 'Basileia Engine (Sandbox Simulator)',
+      requestPayload: JSON.stringify({ simulated: true }, null, 2),
+      responsePayload: JSON.stringify({ status: "created", simulated: true }, null, 2)
+    };
+
+    setLogs([newLog, ...logs]);
+
+    // Update sandbox metrics counts
+    setSummary({
+      ...summary,
+      sandboxRequests24h: summary.sandboxRequests24h + 1,
+      apiCalls24h: summary.apiCalls24h + 1
+    });
+  };
+
+  // Determine if side panel should render next to active tab
+  const showSidePanel = activeTab === 'overview' || activeTab === 'docs' || activeTab === 'webhooks';
 
   return (
-    <PageLayout
-      title="Desenvolvedores"
-      action={
-        <button className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-deep transition-colors">
-          <Plus size={16} /> Criar Chave de API
-        </button>
-      }
-    >
-      <div className="space-y-6">
-        <Card title="Recursos para Integração">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="#" className="p-4 border border-border rounded-lg hover:border-brand hover:bg-brand/5 transition-all group">
-              <Code className="text-ink-muted group-hover:text-brand mb-2" size={24} />
-              <div className="font-bold text-ink text-sm">Documentação API</div>
-              <p className="text-xs text-ink-subtle mt-1">Guia completo para integrar sistemas via HTTP.</p>
-            </a>
-            <a href="#" className="p-4 border border-border rounded-lg hover:border-brand hover:bg-brand/5 transition-all group">
-              <ExternalLink className="text-ink-muted group-hover:text-brand mb-2" size={24} />
-              <div className="font-bold text-ink text-sm">SDK JavaScript</div>
-              <p className="text-xs text-ink-subtle mt-1">Pacote NPM para checkouts embutidos.</p>
-            </a>
-            <a href="#" className="p-4 border border-border rounded-lg hover:border-brand hover:bg-brand/5 transition-all group">
-              <Webhook className="text-ink-muted group-hover:text-brand mb-2" size={24} />
-              <div className="font-bold text-ink text-sm">Explorador de Eventos</div>
-              <p className="text-xs text-ink-subtle mt-1">Simule e visualize payloads de webhooks.</p>
-            </a>
-          </div>
-        </Card>
+    <PageLayout title="Desenvolvedores">
+      
+      {/* Toast Notification */}
+      {feedbackMsg && (
+        <div className="fixed bottom-5 right-5 z-60 bg-slate-900 border border-slate-800 text-white rounded-2xl p-4 shadow-2xl flex items-center gap-2 max-w-sm animate-in slide-in-from-bottom-2 duration-300">
+          <span className="w-2 h-2 bg-violet-500 rounded-full shrink-0 animate-ping" />
+          <span className="text-[11px] font-black text-left">{feedbackMsg}</span>
+        </div>
+      )}
 
-        <Card title="Minhas Chaves de API">
-          <div className="overflow-x-auto">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="animate-spin text-brand" size={32} />
-                <p className="text-ink-subtle text-sm">Carregando chaves...</p>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
-                <AlertCircle className="text-danger" size={32} />
-                <div>
-                  <p className="text-ink font-medium">Erro ao carregar chaves</p>
-                  <p className="text-ink-subtle text-sm mt-1">{error}</p>
-                </div>
-                <button 
-                  onClick={() => refetch()}
-                  className="mt-2 px-4 py-2 bg-brand text-white rounded-md text-sm font-medium hover:bg-brand-deep transition-colors"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            ) : keys.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
-                <div className="w-16 h-16 bg-surface-raised rounded-full flex items-center justify-center mb-2">
-                  <Key className="text-ink-subtle" size={24} />
-                </div>
-                <div>
-                  <p className="text-ink font-medium">Nenhuma chave de API</p>
-                  <p className="text-ink-subtle text-sm mt-1">
-                    Crie uma chave para começar a realizar transações via integração.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <table className="w-full text-left text-sm text-ink">
-                <thead className="border-b border-border bg-surface-raised text-ink-muted">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Nome</th>
-                    <th className="px-4 py-3 font-medium">Ambiente</th>
-                    <th className="px-4 py-3 font-medium">Sistema</th>
-                    <th className="px-4 py-3 font-medium">Chave</th>
-                    <th className="px-4 py-3 font-medium">Último Uso</th>
-                    <th className="px-4 py-3 font-medium">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {keys.map((key) => (
-                    <tr key={key.id} className="border-b border-border hover:bg-surface-raised/50 transition-colors">
-                      <td className="px-4 py-3 font-medium text-ink">{key.name}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                          key.environment === 'production' ? 'bg-brand-muted text-brand' : 'bg-surface-raised text-ink-muted'
-                        }`}>
-                          {key.environment.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-ink-subtle">{key.system_name}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-ink-subtle">
-                        <div className="flex items-center gap-2">
-                          {key.key_preview}
-                          <button className="text-ink-muted hover:text-brand" title="Copiar"><Copy size={12} /></button>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-ink-subtle whitespace-nowrap">{key.last_used_at}</td>
-                      <td className="px-4 py-3">
-                        <button className="text-danger hover:underline font-medium">Revogar</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Header component */}
+      <DevelopersHeader 
+        onOpenDoc={() => setActiveTab('docs')}
+        onOpenSandboxTest={() => setActiveTab('sandbox')}
+        onNewKey={() => {
+          setActiveTab('api-keys');
+          triggerFeedback("Preencha as credenciais na tabela abaixo clicando em 'Nova Chave'.");
+        }}
+        isAdmin={isAdmin}
+      />
+
+      {/* Simulador de Status / Permissões do Integrador */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200/60 rounded-[20px] p-3 text-left">
+        <div className="flex items-center gap-2">
+          <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider">Simulador de Permissões:</span>
+          
+          <button 
+            onClick={() => {
+              setUserRole(userRole === 'owner' ? 'auditor' : 'owner');
+              triggerFeedback(`Cargo operacional alterado para: ${userRole === 'owner' ? 'Auditor' : 'Owner'}`);
+            }}
+            className={cn(
+              "text-[9px] font-black uppercase px-2 py-1 rounded-lg border transition-all cursor-pointer",
+              isAdmin ? "bg-violet-650 text-white border-violet-750 shadow-sm" : "bg-white text-slate-700 border-slate-350"
             )}
-          </div>
-        </Card>
+          >
+            Cargo: {isAdmin ? 'Desenvolvedor / Admin' : 'Auditor (Leitura)'}
+          </button>
+        </div>
+
+        <span className="text-[9.5px] text-slate-450 font-bold">
+          API Key completa aparece apenas uma vez no momento da criação
+        </span>
       </div>
+
+      {/* KPI Cards Grid */}
+      <DevelopersKpiCards 
+        summary={summary}
+        onFilterTab={setActiveTab}
+      />
+
+      {/* Navigation tabs header */}
+      <div className="border-b border-[#E8DDFD]/60 flex items-center justify-between">
+        <DevelopersTabs 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          activeKeysCount={apiKeys.filter(k => k.status === 'active').length}
+          activeWebhooksCount={summary.activeWebhooks}
+        />
+      </div>
+
+      {/* Split layout or Full width depending on active Tab */}
+      <div className="w-full">
+        {showSidePanel ? (
+          /* Split layout: Content on left (66%), Health API status panel on right (33%) */
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            
+            <div className="flex-1 min-w-0 w-full">
+              {activeTab === 'overview' && (
+                <DevelopersQuickStart 
+                  onActionFeedback={triggerFeedback}
+                  onNavigateTab={setActiveTab}
+                />
+              )}
+
+              {activeTab === 'docs' && (
+                <DeveloperDocsViewer 
+                  onActionFeedback={triggerFeedback}
+                />
+              )}
+
+              {activeTab === 'webhooks' && (
+                <DeveloperWebhookSummary 
+                  onActionFeedback={triggerFeedback}
+                  onNavigateTab={setActiveTab}
+                />
+              )}
+            </div>
+
+            <DevelopersApiStatusPanel 
+              uptime={summary.apiStatus.uptime}
+              latency={summary.apiStatus.latencyP95}
+              errorRate={summary.apiStatus.errorP95}
+              region={summary.apiStatus.region}
+            />
+
+          </div>
+        ) : (
+          /* Full width layout: to maximize tables and log drawers horizontal space */
+          <div className="w-full">
+            
+            {activeTab === 'api-keys' && (
+              <DeveloperApiKeysTable 
+                keys={apiKeys}
+                onActionFeedback={triggerFeedback}
+                isAdmin={isAdmin}
+                onSaveKey={handleSaveKey}
+                onRevokeKey={handleRevokeKey}
+              />
+            )}
+
+            {activeTab === 'sandbox' && (
+              <DeveloperSandboxPanel 
+                onActionFeedback={triggerFeedback}
+                onAddSandboxRequest={handleAddSandboxRequest}
+              />
+            )}
+
+            {activeTab === 'logs' && (
+              <DeveloperLogsTable 
+                logs={logs}
+                onActionFeedback={triggerFeedback}
+              />
+            )}
+
+          </div>
+        )}
+      </div>
+
     </PageLayout>
   );
 }
