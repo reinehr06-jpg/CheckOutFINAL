@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_KEY=${APP_KEY:-base64:7x/rsIo0EgeWpySgaruzspY+loHN0EaKPUBOBZY1+9Y=}
+      - DB_CONNECTION=${DB_CONNECTION:-pgsql}
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_DATABASE=${DB_DATABASE:-basileia}
+      - DB_USERNAME=${DB_USERNAME:-basileia}
+      - DB_PASSWORD=${DB_PASSWORD:-basileia_secret}
+      - SESSION_DRIVER=database
+      - CACHE_STORE=database
+      - QUEUE_CONNECTION=database
+      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost:3000}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - basileia
+
+  dashboard:
+    build:
+      context: ./apps/dashboard
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://api:8000}
+      - NODE_ENV=production
+    depends_on:
+      - api
+    networks:
+      - basileia
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-basileia}
+      POSTGRES_USER: ${DB_USERNAME:-basileia}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-basileia_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-basileia} -d ${DB_DATABASE:-basileia}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - basileia
+
+volumes:
+  pgdata:
+
+networks:
+  basileia:
+    driver: bridge
