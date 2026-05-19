@@ -31,7 +31,6 @@ const menuGroups = [
       { name: 'Sistemas', icon: Monitor, href: '/dashboard/systems' },
       { name: 'Transações', icon: ShoppingCart, href: '/dashboard/orders' },
       { name: 'Checkouts', icon: CreditCard, href: '/dashboard/checkouts' },
-      { name: 'Clientes', icon: Users, href: '/dashboard/clients' },
       { name: 'Assinaturas', icon: Repeat, href: '/dashboard/subscriptions' },
       { name: 'Relatórios', icon: BarChart3, href: '/dashboard/reports' },
       { name: 'Alertas', icon: Bell, href: '/dashboard/alerts' },
