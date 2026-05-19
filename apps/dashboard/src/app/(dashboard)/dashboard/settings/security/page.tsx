@@ -322,6 +322,106 @@ export default function SecuritySettingsPage() {
               onNavigateToAudit={() => triggerFeedback("Direcionando para o módulo completo de Auditoria...")}
             />
           )}
+
+          {activeTab === 'lgpd' && (
+            <div className="space-y-6 text-left animate-in fade-in duration-300">
+              
+              {/* LGPD Header and Switches */}
+              <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Controles de Privacidade LGPD (Strict Mode)</h3>
+                    <p className="text-[10.5px] font-semibold text-slate-400 mt-1">
+                      Monitore a conformidade regulatória de dados de titulares. Criptografe e sanitize PII de payloads automaticamente.
+                    </p>
+                  </div>
+                  
+                  <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border border-indigo-100/50 shrink-0">
+                    Strict Mode Ativo
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* 1. Mascaramento CPF */}
+                  <div className="border border-[#E8DDFD]/60 rounded-2xl p-4 bg-slate-50/15 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Mascarar CPF do Comprador</span>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked
+                        onChange={(e) => triggerFeedback(`Mascaramento de CPF ${e.target.checked ? 'ativado' : 'desativado'}`)}
+                        className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                      />
+                    </div>
+                    <p className="text-[9.5px] font-semibold text-slate-400 leading-relaxed">Substitui dígitos centrais do CPF (`***.123.***-**`) em grids de vendas para operadores de Suporte.</p>
+                  </div>
+
+                  {/* 2. Criptografia Dinâmica */}
+                  <div className="border border-[#E8DDFD]/60 rounded-2xl p-4 bg-slate-50/15 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Criptografia a Nível de Campo (PII)</span>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked
+                        onChange={(e) => triggerFeedback(`Criptografia de PII ${e.target.checked ? 'ativada' : 'desativada'}`)}
+                        className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                      />
+                    </div>
+                    <p className="text-[9.5px] font-semibold text-slate-400 leading-relaxed">Aplica hashing criptográfico (AES-256-GCM) nos campos sensíveis em repouso no banco de dados.</p>
+                  </div>
+
+                  {/* 3. Sanitização Logs */}
+                  <div className="border border-[#E8DDFD]/60 rounded-2xl p-4 bg-slate-50/15 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800">Sanitizar Payloads nos Logs</span>
+                      <input 
+                        type="checkbox" 
+                        defaultChecked
+                        onChange={(e) => triggerFeedback(`Sanitização de logs ${e.target.checked ? 'ativada' : 'desativada'}`)}
+                        className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                      />
+                    </div>
+                    <p className="text-[9.5px] font-semibold text-slate-400 leading-relaxed">Limpa chaves privadas, senhas e tokens de acesso de qualquer stacktrace ou log de erro.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data masking simulator preview */}
+              <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4">
+                <div className="border-b border-slate-50 pb-2.5">
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider">Painel Simulador de Mascaramento PII</h4>
+                  <span className="text-[8.5px] font-bold text-slate-400 block mt-1">Veja como as informações de titulares são exibidas nos logs conforme o papel RBAC do operador.</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* Vista Admin */}
+                  <div className="border border-slate-100 rounded-xl p-4 bg-[#FAF8FF]/45 text-left space-y-2">
+                    <span className="text-[9px] font-black text-brand uppercase tracking-wider block">Exibição para Carlos Oliveira (Owner/Admin)</span>
+                    <div className="font-mono text-[10px] bg-white border border-[#E8DDFD]/60 rounded-lg p-3 space-y-1.5 leading-normal text-slate-700">
+                      <div><span className="text-slate-400">Nome:</span> João da Silva Medeiros</div>
+                      <div><span className="text-slate-400">E-mail:</span> joao.silva@gmail.com</div>
+                      <div><span className="text-slate-400">CPF:</span> 098.241.872-91</div>
+                      <div><span className="text-slate-400">Celular:</span> (11) 98765-4321</div>
+                    </div>
+                  </div>
+
+                  {/* Vista Suporte */}
+                  <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 text-left space-y-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Exibição para Operador de Suporte/Auditor</span>
+                    <div className="font-mono text-[10px] bg-white border border-[#E8DDFD]/60 rounded-lg p-3 space-y-1.5 leading-normal text-slate-700">
+                      <div><span className="text-slate-400">Nome:</span> João da S*** M***</div>
+                      <div><span className="text-slate-400">E-mail:</span> j***.s***@gmail.com</div>
+                      <div><span className="text-slate-400">CPF:</span> ***.241.***-**</div>
+                      <div><span className="text-slate-400">Celular:</span> (11) 9****-**21</div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          )}
         </div>
 
         {/* Bottom Horizontal Tarja Banner */}

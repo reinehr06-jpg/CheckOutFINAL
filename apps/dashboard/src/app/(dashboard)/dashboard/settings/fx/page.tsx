@@ -22,7 +22,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowRightLeft,
-  X
+  X,
+  CreditCard,
+  Building,
+  Clock,
+  Briefcase,
+  AlertOctagon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,19 +49,70 @@ export default function FxSettingsPage() {
   
   // Interactive Live Currency rates state
   const [exchangeRates, setExchangeRates] = useState([
-    { code: 'USD', name: 'Dólar Americano', pair: 'USD/BRL', interbank: 5.1275, ourRate: 5.2520, markup: '2,43%', var24h: 0.42, lock: 'Sim', status: 'Ativa', flag: '🇺🇸' },
-    { code: 'EUR', name: 'Euro', pair: 'EUR/BRL', interbank: 5.5842, ourRate: 5.7200, markup: '2,43%', var24h: 0.31, lock: 'Não', status: 'Ativa', flag: '🇪🇺' },
-    { code: 'GBP', name: 'Libra Esterlina', pair: 'GBP/BRL', interbank: 6.5341, ourRate: 6.6950, markup: '2,46%', var24h: -0.12, lock: 'Sim', status: 'Ativa', flag: '🇬🇧' },
-    { code: 'CAD', name: 'Dólar Canadense', pair: 'CAD/BRL', interbank: 3.7221, ourRate: 3.8150, markup: '2,50%', var24h: 0.28, lock: 'Não', status: 'Ativa', flag: '🇨🇦' },
-    { code: 'AUD', name: 'Dólar Australiano', pair: 'AUD/BRL', interbank: 3.3684, ourRate: 3.4520, markup: '2,48%', var24h: 0.18, lock: 'Não', status: 'Ativa', flag: '🇦🇺' },
-    { code: 'JPY', name: 'Iene Japonês', pair: 'JPY/BRL', interbank: 0.03321, ourRate: 0.03400, markup: '2,38%', var24h: -0.09, lock: 'Não', status: 'Ativa', flag: '🇯🇵' },
-    { code: 'CHF', name: 'Franco Suíço', pair: 'CHF/BRL', interbank: 5.8223, ourRate: 5.9650, markup: '2,45%', var24h: 0.22, lock: 'Sim', status: 'Ativa', flag: '🇨🇭' },
-    { code: 'MXN', name: 'Peso Mexicano', pair: 'MXN/BRL', interbank: 0.2648, ourRate: 0.2710, markup: '2,34%', var24h: 0.35, lock: 'Não', status: 'Ativa', flag: '🇲🇽' },
+    { code: 'USD', name: 'Dólar Americano', pair: 'USD/BRL', interbank: 5.1275, ourRate: 5.2520, markup: '2,43%', var24h: 0.42, lock: 'Sim', status: 'Ativa', flag: '🇺🇸', bid: 5.1260, ask: 5.1290 },
+    { code: 'EUR', name: 'Euro', pair: 'EUR/BRL', interbank: 5.5842, ourRate: 5.7200, markup: '2,43%', var24h: 0.31, lock: 'Não', status: 'Ativa', flag: '🇪🇺', bid: 5.5820, ask: 5.5864 },
+    { code: 'GBP', name: 'Libra Esterlina', pair: 'GBP/BRL', interbank: 6.5341, ourRate: 6.6950, markup: '2,46%', var24h: -0.12, lock: 'Sim', status: 'Ativa', flag: '🇬🇧', bid: 6.5312, ask: 6.5370 },
+    { code: 'CAD', name: 'Dólar Canadense', pair: 'CAD/BRL', interbank: 3.7221, ourRate: 3.8150, markup: '2,50%', var24h: 0.28, lock: 'Não', status: 'Ativa', flag: '🇨🇦', bid: 3.7201, ask: 3.7241 },
+    { code: 'AUD', name: 'Dólar Australiano', pair: 'AUD/BRL', interbank: 3.3684, ourRate: 3.4520, markup: '2,48%', var24h: 0.18, lock: 'Não', status: 'Ativa', flag: '🇦🇺', bid: 3.3660, ask: 3.3708 },
+    { code: 'JPY', name: 'Iene Japonês', pair: 'JPY/BRL', interbank: 0.03321, ourRate: 0.03400, markup: '2,38%', var24h: -0.09, lock: 'Não', status: 'Ativa', flag: '🇯🇵', bid: 0.03318, ask: 0.03324 },
+    { code: 'CHF', name: 'Franco Suíço', pair: 'CHF/BRL', interbank: 5.8223, ourRate: 5.9650, markup: '2,45%', var24h: 0.22, lock: 'Sim', status: 'Ativa', flag: '🇨🇭', bid: 5.8201, ask: 5.8245 },
+    { code: 'MXN', name: 'Peso Mexicano', pair: 'MXN/BRL', interbank: 0.2648, ourRate: 0.2710, markup: '2,34%', var24h: 0.35, lock: 'Não', status: 'Ativa', flag: '🇲🇽', bid: 0.2642, ask: 0.2654 },
   ]);
 
   // Quick Converter Input State
   const [convertAmount, setConvertAmount] = useState<number>(1000);
   const [selectedConvertCurrency, setSelectedConvertCurrency] = useState<string>('USD');
+
+  // DCC and Hedging settings states
+  const [dccActive, setDccActive] = useState(true);
+  const [dccWindow, setDccWindow] = useState('30m');
+  const [hedgingActive, setHedgingActive] = useState(true);
+  const [hedgingThreshold, setHedgingThreshold] = useState(5000);
+  const [hedgingLogs, setHedgingLogs] = useState([
+    { id: 'HDG-001', pair: 'USD/BRL', amount: '$12,450.00', rate: '5.1275', status: 'Executado', date: '19/05 15:42' },
+    { id: 'HDG-002', pair: 'EUR/BRL', amount: '€8,200.00', rate: '5.5842', status: 'Executado', date: '19/05 14:10' },
+    { id: 'HDG-003', pair: 'GBP/BRL', amount: '£6,000.00', rate: '6.5341', status: 'Executado', date: '19/05 11:25' }
+  ]);
+
+  // Whitelisted currencies list state
+  const [whitelistedCurrencies, setWhitelistedCurrencies] = useState([
+    { code: 'USD', name: 'Dólar Americano', enabled: true, min: '1.00', max: '10,000.00', flag: '🇺🇸' },
+    { code: 'EUR', name: 'Euro', enabled: true, min: '1.00', max: '10,000.00', flag: '🇪🇺' },
+    { code: 'GBP', name: 'Libra Esterlina', enabled: true, min: '5.00', max: '5,000.00', flag: '🇬🇧' },
+    { code: 'CAD', name: 'Dólar Canadense', enabled: true, min: '1.00', max: '8,000.00', flag: '🇨🇦' },
+    { code: 'AUD', name: 'Dólar Australiano', enabled: true, min: '1.00', max: '8,000.00', flag: '🇦🇺' },
+    { code: 'JPY', name: 'Iene Japonês', enabled: true, min: '100.00', max: '1,000,000.00', flag: '🇯🇵' },
+    { code: 'CHF', name: 'Franco Suíço', enabled: true, min: '5.00', max: '5,000.00', flag: '🇨🇭' },
+    { code: 'MXN', name: 'Peso Mexicano', enabled: true, min: '10.00', max: '50,000.00', flag: '🇲🇽' },
+    { code: 'CNY', name: 'Yuan Chinês', enabled: false, min: '10.00', max: '20,000.00', flag: '🇨🇳' },
+    { code: 'ARS', name: 'Peso Argentino', enabled: false, min: '100.00', max: '5,000,000.00', flag: '🇦🇷' }
+  ]);
+
+  // Rounding and tax configs state
+  const [roundingRule, setRoundingRule] = useState('.99');
+  const [embedIof, setEmbedIof] = useState(true);
+  const [importTax, setImportTax] = useState(false);
+
+  // Settlement accounts state
+  const [settlementCurrency, setSettlementCurrency] = useState('BRL');
+  const [settlementSchedule, setSettlementSchedule] = useState('D+2');
+  const [settlementAccount, setSettlementAccount] = useState('basileia_corp');
+
+  // Checkout currency override state
+  const [checkoutOverrides, setCheckoutOverrides] = useState([
+    { id: 'chk-001', name: 'Checkout Principal', defaultCurrency: 'BRL', forceCurrency: false, customMarkup: '—' },
+    { id: 'chk-002', name: 'Checkout Internacional EUA', defaultCurrency: 'USD', forceCurrency: true, customMarkup: '2.10%' },
+    { id: 'chk-003', name: 'Checkout Europeu', defaultCurrency: 'EUR', forceCurrency: true, customMarkup: '2.20%' }
+  ]);
+
+  // Live currency feed source
+  const [feedSource, setFeedSource] = useState('reuters');
+
+  // Disputas FX simulator states
+  const [disputeAmount, setDisputeAmount] = useState(150);
+  const [disputeDateRate, setDisputeDateRate] = useState(5.12);
+  const [disputeChargebackRate, setDisputeChargebackRate] = useState(5.28);
+  const [calculatedVariance, setCalculatedVariance] = useState<number | null>(null);
 
   // Modal to add currency
   const [showAddModal, setShowAddModal] = useState(false);
@@ -71,7 +127,6 @@ export default function FxSettingsPage() {
     triggerToast("Buscando últimas taxas interbancárias em tempo real...");
     setTimeout(() => {
       setIsUpdating(false);
-      // Simulate slight rate updates
       setExchangeRates(prev => prev.map(rate => {
         const factor = 1 + (Math.random() * 0.004 - 0.002);
         const newInter = parseFloat((rate.interbank * factor).toFixed(4));
@@ -80,11 +135,20 @@ export default function FxSettingsPage() {
           ...rate,
           interbank: newInter,
           ourRate: newOur,
+          bid: parseFloat((newInter * 0.999).toFixed(4)),
+          ask: parseFloat((newInter * 1.001).toFixed(4)),
           var24h: parseFloat((rate.var24h + (Math.random() * 0.1 - 0.05)).toFixed(2))
         };
       }));
       triggerToast("Taxas de câmbio ao vivo atualizadas com sucesso!");
     }, 1200);
+  };
+
+  const handleCalculateVariance = () => {
+    const diff = disputeChargebackRate - disputeDateRate;
+    const lossGained = parseFloat((disputeAmount * diff).toFixed(2));
+    setCalculatedVariance(lossGained);
+    triggerToast(`Diferença cambial calculada: R$ ${Math.abs(lossGained).toLocaleString('pt-BR')} de ${lossGained >= 0 ? 'perda por volatilidade' : 'economia'}`);
   };
 
   // Convert amount based on ourRate of selected currency
@@ -196,7 +260,7 @@ export default function FxSettingsPage() {
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id as ActiveTab);
-                  triggerToast(`Navegando para: ${tab.label}`);
+                  triggerToast(`Aba carregada: ${tab.label}`);
                 }}
                 className={cn(
                   "pb-2.5 text-[12px] font-black relative transition-all tracking-tight whitespace-nowrap cursor-pointer",
@@ -228,7 +292,6 @@ export default function FxSettingsPage() {
                 <span className="text-[9px] font-bold text-slate-400 block mt-1.5">moedas ativas</span>
                 <span className="text-[8px] font-black text-slate-350 block mt-0.5 uppercase tracking-wider">Atualizado há 12s</span>
               </div>
-              {/* Sparkline mini line chart SVG */}
               <div className="w-14 h-8 text-emerald-500 shrink-0">
                 <svg viewBox="0 0 50 20" className="w-full h-full stroke-current fill-none stroke-[2.5] stroke-linecap-round">
                   <path d="M 0,15 L 10,13 L 20,16 L 30,10 L 40,12 L 50,5" />
@@ -243,7 +306,6 @@ export default function FxSettingsPage() {
                 <span className="text-[20px] font-black text-slate-900 leading-none block mt-2.5">2,45%</span>
                 <span className="text-[9px] font-bold text-slate-400 block mt-1.5">Sobre taxa interbancária</span>
               </div>
-              {/* Sparkline mini chart in purple */}
               <div className="w-14 h-8 text-brand shrink-0">
                 <svg viewBox="0 0 50 20" className="w-full h-full stroke-current fill-none stroke-[2.5] stroke-linecap-round">
                   <path d="M 0,18 L 10,14 L 20,10 L 30,12 L 40,8 L 50,2" />
@@ -299,7 +361,7 @@ export default function FxSettingsPage() {
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Taxas de câmbio ao vivo</h3>
                     <p className="text-[9px] font-black text-emerald-650 flex items-center gap-1.5 mt-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Atualizado em 24/05/2025 14:32:12
+                      Atualizado em tempo real
                     </p>
                   </div>
                   
@@ -381,7 +443,7 @@ export default function FxSettingsPage() {
                 </div>
 
                 <div className="pt-2 text-center select-none">
-                  <button className="text-brand font-black text-[10.5px] uppercase tracking-wider hover:underline">
+                  <button onClick={() => setActiveTab('taxas_ao_vivo')} className="text-brand font-black text-[10.5px] uppercase tracking-wider hover:underline">
                     Ver todas as moedas e taxas &gt;
                   </button>
                 </div>
@@ -401,15 +463,13 @@ export default function FxSettingsPage() {
                       {[
                         { chk: 'Checkout Padrão', active: 8, mk: '2,45%', lock: 'Ativa', liq: 'D+2' },
                         { chk: 'Checkout Internacional', active: 6, mk: '2,20%', lock: 'Ativa', liq: 'D+1' },
-                        { chk: 'Marketplace', active: 5, mk: '2,60%', lock: 'Ativa', liq: 'D+3' },
-                        { chk: 'Checkout Corporativo', active: 8, mk: '1,90%', lock: 'Ativa', liq: 'D+1' }
+                        { chk: 'Marketplace', active: 5, mk: '2,60%', lock: 'Ativa', liq: 'D+3' }
                       ].map((c) => (
                         <div key={c.chk} className="py-2 flex items-center justify-between gap-1.5">
                           <span className="font-extrabold text-slate-800 truncate flex-1 leading-tight">{c.chk}</span>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <span className="bg-slate-50 text-slate-600 px-1 py-0.2 rounded border border-slate-200/50 leading-none">{c.active} moedas</span>
                             <span className="font-black text-slate-800 leading-none">{c.mk}</span>
-                            <span className="bg-violet-50 text-brand px-1 py-0.2 rounded border border-brand/10 leading-none">{c.liq}</span>
                           </div>
                         </div>
                       ))}
@@ -417,7 +477,7 @@ export default function FxSettingsPage() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 text-center">
-                    <button className="text-brand font-black text-[9.5px] uppercase tracking-wider hover:underline">
+                    <button onClick={() => setActiveTab('por_checkout')} className="text-brand font-black text-[9.5px] uppercase tracking-wider hover:underline">
                       Ver todas as configurações &gt;
                     </button>
                   </div>
@@ -433,8 +493,7 @@ export default function FxSettingsPage() {
                     <div className="divide-y divide-slate-100 text-[10px] font-semibold text-slate-500 mt-2.5">
                       {[
                         { id: 'LCK-8732', ref: 'Pedido #93221', pair: 'USD/BRL', rate: '5,2450', exp: '2h 15m' },
-                        { id: 'LCK-8721', ref: 'Pedido #93011', pair: 'EUR/BRL', rate: '5,7150', exp: '4h 42m' },
-                        { id: 'LCK-8710', ref: 'Assinatura #7212', pair: 'GBP/BRL', rate: '6,6850', exp: '6h 08m' }
+                        { id: 'LCK-8721', ref: 'Pedido #93011', pair: 'EUR/BRL', rate: '5,7150', exp: '4h 42m' }
                       ].map((l) => (
                         <div key={l.id} className="py-2 flex items-center justify-between gap-1.5">
                           <div>
@@ -443,7 +502,6 @@ export default function FxSettingsPage() {
                           </div>
                           <div className="text-right">
                             <span className="font-mono font-black text-slate-900 block leading-tight">{l.rate}</span>
-                            <span className="text-[9px] text-emerald-650 font-black uppercase tracking-wider block mt-0.5">Expira em: {l.exp}</span>
                           </div>
                         </div>
                       ))}
@@ -451,7 +509,7 @@ export default function FxSettingsPage() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 text-center">
-                    <button className="text-brand font-black text-[9.5px] uppercase tracking-wider hover:underline">
+                    <button onClick={() => setActiveTab('trava_cambio')} className="text-brand font-black text-[9.5px] uppercase tracking-wider hover:underline">
                       Ver todas as travas &gt;
                     </button>
                   </div>
@@ -464,40 +522,26 @@ export default function FxSettingsPage() {
                       Liquidação
                     </h4>
                     
-                    <div className="space-y-3.5 mt-3.5 text-[10px] font-bold text-slate-500">
+                    <div className="space-y-3 mt-3.5 text-[10px] font-bold text-slate-500">
                       <div className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 bg-slate-50 border border-slate-200/50 rounded flex items-center justify-center shrink-0">🕒</span>
+                        <Clock className="w-4 h-4 text-slate-400" />
                         <div className="leading-tight">
                           <span className="text-slate-400 block">Prazo padrão</span>
                           <span className="font-black text-slate-800 block mt-0.5">D+2 dias úteis</span>
                         </div>
                       </div>
                       <div className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 bg-slate-50 border border-slate-200/50 rounded flex items-center justify-center shrink-0">🌐</span>
+                        <Globe className="w-4 h-4 text-slate-400" />
                         <div className="leading-tight">
-                          <span className="text-slate-400 block">Moeda base de liquidação</span>
-                          <span className="font-black text-slate-800 block mt-0.5">BRL - Real Brasileiro</span>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 bg-slate-50 border border-slate-200/50 rounded flex items-center justify-center shrink-0">🏦</span>
-                        <div className="leading-tight text-left min-w-0">
-                          <span className="text-slate-400 block">Conta de liquidação</span>
-                          <span className="font-black text-slate-800 block mt-0.5 truncate">Basileia Corp - Principal</span>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-5 h-5 bg-slate-50 border border-slate-200/50 rounded flex items-center justify-center shrink-0">📅</span>
-                        <div className="leading-tight">
-                          <span className="text-slate-400 block">Janelas de liquidação</span>
-                          <span className="font-black text-slate-800 block mt-0.5">02:00, 08:00, 14:00 e 20:00</span>
+                          <span className="text-slate-400 block">Moeda base</span>
+                          <span className="font-black text-slate-800 block mt-0.5">BRL - Real</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 text-center">
-                    <button className="text-brand font-black text-[9.5px] uppercase tracking-wider hover:underline">
+                    <button onClick={() => setActiveTab('liquidacao')} className="text-brand font-black text-[9.5px] uppercase tracking-wider hover:underline">
                       Configurar liquidação &gt;
                     </button>
                   </div>
@@ -521,8 +565,7 @@ export default function FxSettingsPage() {
                     { label: 'Moedas ativas', val: '8', bold: true },
                     { label: 'Travas ativas', val: '3', bold: true },
                     { label: 'Markup médio', val: '2,45%', bold: true },
-                    { label: 'Melhor taxa vs cartão', val: '-3,12%', green: true },
-                    { label: 'Cobertura cambial (mês)', val: '68%', bold: true }
+                    { label: 'Melhor taxa vs cartão', val: '-3,12%', green: true }
                   ].map((item) => (
                     <div key={item.label} className="flex justify-between border-b border-slate-50 pb-2">
                       <span>{item.label}</span>
@@ -532,108 +575,6 @@ export default function FxSettingsPage() {
                       )}>{item.val}</span>
                     </div>
                   ))}
-                </div>
-
-                <button 
-                  onClick={() => triggerToast("Relatório analítico completo do FX carregado.")}
-                  className="w-full h-9 border border-[#E8DDFD] bg-white hover:bg-slate-50 text-brand rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm transition-all"
-                >
-                  Ver relatório completo
-                </button>
-              </div>
-
-              {/* Distribuição por moeda (mês) - CSS/SVG Donut Chart */}
-              <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-4.5 shadow-sm space-y-4 text-left">
-                <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-50 pb-2">
-                  Distribuição por moeda (mês)
-                </h4>
-
-                <div className="flex items-center gap-4 py-1.5">
-                  {/* SVG Donut Chart with precision paths */}
-                  <div className="w-18 h-18 shrink-0 relative flex items-center justify-center select-none">
-                    <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                      {/* Segment 1: USD 48% (color brand) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#6C1D9F" strokeWidth="4" strokeDasharray="48 52" strokeDashoffset="0" />
-                      {/* Segment 2: EUR 22% (color blue) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2563EB" strokeWidth="4" strokeDasharray="22 78" strokeDashoffset="-48" />
-                      {/* Segment 3: GBP 12% (color teal) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#0D9488" strokeWidth="4" strokeDasharray="12 88" strokeDashoffset="-70" />
-                      {/* Segment 4: CAD 8% (color red) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray="8 92" strokeDashoffset="-82" />
-                      {/* Segment 5: Outros 10% (color gray) */}
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#E2E8F0" strokeWidth="4" strokeDasharray="10 90" strokeDashoffset="-90" />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[9px] font-black text-slate-800">FX</span>
-                    </div>
-                  </div>
-
-                  {/* Legend */}
-                  <div className="flex-1 space-y-1 text-[9.5px] font-bold text-slate-500">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 bg-[#6C1D9F] rounded-full shrink-0" />
-                        <span>USD</span>
-                      </div>
-                      <span className="font-extrabold text-slate-800">48%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 bg-[#2563EB] rounded-full shrink-0" />
-                        <span>EUR</span>
-                      </div>
-                      <span className="font-extrabold text-slate-800">22%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 bg-[#0D9488] rounded-full shrink-0" />
-                        <span>GBP</span>
-                      </div>
-                      <span className="font-extrabold text-slate-800">12%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 bg-[#EF4444] rounded-full shrink-0" />
-                        <span>CAD</span>
-                      </div>
-                      <span className="font-extrabold text-slate-800">8%</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 bg-[#E2E8F0] rounded-full shrink-0" />
-                        <span>Outras</span>
-                      </div>
-                      <span className="font-extrabold text-slate-800">10%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Alertas & Monitoramento */}
-              <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-4.5 shadow-sm space-y-4 text-left">
-                <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-50 pb-2">
-                  Alertas & Monitoramento
-                </h4>
-
-                <div className="space-y-3 text-[10.5px] font-bold text-slate-650 leading-relaxed">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span>Todas as moedas operando normalmente.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <span>Alta volatilidade detectada no par GBP/BRL.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 text-brand shrink-0 mt-0.5" />
-                    <span>Trava expira em 2h para o Pedido #93221.</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 text-center border-t border-slate-50">
-                  <button className="text-brand font-black text-[9.5px] uppercase tracking-wider hover:underline">
-                    Ver todos os alertas &gt;
-                  </button>
                 </div>
               </div>
 
@@ -697,12 +638,6 @@ export default function FxSettingsPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Details subtext */}
-                  <div className="pt-2 border-t border-slate-50 text-[9px] font-bold text-slate-450 leading-relaxed space-y-0.5">
-                    <p>Taxa aplicada: 1 {selectedConvertCurrency} = {exchangeRates.find(c => c.code === selectedConvertCurrency)?.ourRate.toFixed(4)} BRL</p>
-                    <p>Markup: {exchangeRates.find(c => c.code === selectedConvertCurrency)?.markup}</p>
-                  </div>
                 </div>
               </div>
 
@@ -713,24 +648,618 @@ export default function FxSettingsPage() {
         </div>
       )}
 
-      {/* RENDER FALLBACK TABS */}
-      {activeTab !== 'visao_geral' && (
-        <div className="bg-white border border-[#E8DDFD]/60 rounded-[24px] p-20 flex flex-col items-center justify-center text-center gap-3.5 shadow-sm h-[400px]">
-          <div className="w-12 h-12 rounded-full bg-[#FAF8FF] border border-[#E8DDFD] flex items-center justify-center text-violet-400">
-            <Coins className="w-6 h-6 animate-pulse" />
+      {/* taxas_ao_vivo Tab Content */}
+      {activeTab === 'taxas_ao_vivo' && (
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-6 text-left animate-in fade-in duration-300">
+          <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Painel Financeiro de Taxas ao Vivo</h3>
+              <p className="text-[10.5px] font-bold text-slate-400 mt-1">Monitore bids, asks e cotações das principais moedas em tempo real.</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700">
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider">Fonte de Feed:</span>
+                <select 
+                  value={feedSource}
+                  onChange={(e) => {
+                    setFeedSource(e.target.value);
+                    triggerToast(`Feed financeiro alterado para ${e.target.value.toUpperCase()}`);
+                  }}
+                  className="bg-transparent border-none outline-none font-black text-slate-800 cursor-pointer"
+                >
+                  <option value="reuters">Reuters Global</option>
+                  <option value="bloomberg">Bloomberg Terminal</option>
+                  <option value="bcb">Banco Central (BCB)</option>
+                  <option value="oanda">Oanda Rates</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="text-slate-900 font-black text-base">Aba em Desenvolvimento</h3>
-            <p className="text-slate-550 text-xs mt-1 max-w-sm font-semibold leading-relaxed">
-              Esta seção das configurações de FX está sendo compilada pela inteligência de moedas. A Visão Geral contém o centro operacional completo em tempo real.
-            </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {exchangeRates.map((c) => {
+              const varColor = c.var24h >= 0 ? 'text-green-600 bg-green-50 border-green-100/50' : 'text-red-500 bg-red-50 border-red-100/50';
+              return (
+                <div key={c.code} className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 hover:shadow-md transition-all relative overflow-hidden bg-gradient-to-tr from-white to-slate-50/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl leading-none">{c.flag}</span>
+                      <div>
+                        <span className="text-xs font-black text-slate-900 block">{c.code}/BRL</span>
+                        <span className="text-[9.5px] font-semibold text-slate-400 block">{c.name}</span>
+                      </div>
+                    </div>
+                    <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-lg border", varColor)}>
+                      {c.var24h >= 0 ? '+' : ''}{c.var24h}%
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-2 text-left">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Bid (Compra)</span>
+                      <span className="font-mono text-xs font-extrabold text-slate-850 block mt-0.5">{c.bid.toFixed(4)}</span>
+                    </div>
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-2 text-left">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">Ask (Venda)</span>
+                      <span className="font-mono text-xs font-extrabold text-slate-850 block mt-0.5">{c.ask.toFixed(4)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[9px] font-semibold text-slate-450 border-t border-slate-100/60 pt-2.5">
+                    <span>Nossa Taxa Aplicada:</span>
+                    <span className="font-mono font-black text-brand text-xs">R$ {c.ourRate.toFixed(4)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <button 
-            onClick={() => setActiveTab('visao_geral')}
-            className="px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-all shadow-md"
-          >
-            Voltar para Visão geral
-          </button>
+        </div>
+      )}
+
+      {/* moedas Tab Content */}
+      {activeTab === 'moedas' && (
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4 text-left animate-in fade-in duration-300">
+          <div className="border-b border-slate-50 pb-3">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Moedas Habilitadas (Whitelist)</h3>
+            <p className="text-[10.5px] font-bold text-slate-400 mt-1">Controle quais moedas estrangeiras estão ativas nos checkouts e configure thresholds.</p>
+          </div>
+
+          <div className="w-full overflow-hidden rounded-xl border border-slate-100">
+            <table className="w-full text-left table-fixed">
+              <thead>
+                <tr className="border-b border-[#E8DDFD]/40 bg-slate-50/50">
+                  <th className="py-2.5 px-3.5 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[8%] text-center">Ativa</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[22%]">Moeda</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[15%]">Código</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[25%]">Mínimo de Transação</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[25%]">Máximo de Transação</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[15%] text-center">Compliance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-[11px] font-bold text-slate-700">
+                {whitelistedCurrencies.map((c, idx) => (
+                  <tr key={c.code} className={cn("hover:bg-slate-50/50 h-[50px]", !c.enabled && "opacity-60")}>
+                    <td className="py-2 px-2 text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={c.enabled}
+                        onChange={() => {
+                          const updated = [...whitelistedCurrencies];
+                          updated[idx].enabled = !updated[idx].enabled;
+                          setWhitelistedCurrencies(updated);
+                          triggerToast(`Status da moeda ${c.code} atualizado!`);
+                        }}
+                        className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4 h-4"
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base leading-none">{c.flag}</span>
+                        <span className="font-extrabold text-slate-900">{c.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 font-mono font-black text-slate-650">{c.code}</td>
+                    <td className="py-2 px-2">
+                      <input 
+                        type="text" 
+                        value={c.min}
+                        onChange={(e) => {
+                          const updated = [...whitelistedCurrencies];
+                          updated[idx].min = e.target.value;
+                          setWhitelistedCurrencies(updated);
+                        }}
+                        className="bg-slate-50 border border-[#E8DDFD] rounded-xl px-2.5 py-1 text-xs font-mono font-bold w-[120px]" 
+                      />
+                    </td>
+                    <td className="py-2 px-2">
+                      <input 
+                        type="text" 
+                        value={c.max}
+                        onChange={(e) => {
+                          const updated = [...whitelistedCurrencies];
+                          updated[idx].max = e.target.value;
+                          setWhitelistedCurrencies(updated);
+                        }}
+                        className="bg-slate-50 border border-[#E8DDFD] rounded-xl px-2.5 py-1 text-xs font-mono font-bold w-[140px]" 
+                      />
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-100 text-[9px] uppercase tracking-wider font-black">Aprovado</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* markup_spread Tab Content */}
+      {activeTab === 'markup_spread' && (
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-5 text-left animate-in fade-in duration-300">
+          <div className="border-b border-slate-50 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Markup & Spread Corporativo</h3>
+              <p className="text-[10.5px] font-bold text-slate-400 mt-1">Configure o spread administrativo aplicado sobre a taxa de câmbio interbancária comercial.</p>
+            </div>
+            <button 
+              onClick={() => triggerToast("Parâmetros globais de markup atualizados!")}
+              className="h-8.5 px-4 bg-brand text-white text-[10.5px] font-black uppercase tracking-wider rounded-xl hover:bg-brand-dark transition-all"
+            >
+              Salvar Configurações
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 bg-slate-50/20">
+              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block">Spread Padrão (Semana)</span>
+              <div className="flex items-center gap-2">
+                <input type="text" defaultValue="2.45" className="bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-extrabold text-slate-800 w-[100px]" />
+                <span className="text-xs font-extrabold text-slate-500">% sobre taxa base</span>
+              </div>
+              <p className="text-[9.5px] font-semibold text-slate-400 leading-relaxed">Taxa administrativa aplicada de Segunda a Sexta em horário bancário oficial.</p>
+            </div>
+
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 bg-slate-50/20">
+              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block">Spread Final de Semana</span>
+              <div className="flex items-center gap-2">
+                <input type="text" defaultValue="2.95" className="bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-extrabold text-slate-800 w-[100px]" />
+                <span className="text-xs font-extrabold text-slate-500">% sobre taxa base</span>
+              </div>
+              <p className="text-[9.5px] font-semibold text-slate-400 leading-relaxed">Markup de segurança estendido para compensar a volatilidade de fechamento bancário no final de semana.</p>
+            </div>
+
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 bg-slate-50/20">
+              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block">Tiers Regressivos</span>
+              <div className="space-y-1.5 text-[9.5px] font-bold text-slate-500">
+                <div className="flex justify-between"><span>Até R$ 50k/mês:</span><span className="text-slate-900 font-extrabold">2.45%</span></div>
+                <div className="flex justify-between"><span>De R$ 50k a R$ 200k/mês:</span><span className="text-slate-900 font-extrabold">2.20%</span></div>
+                <div className="flex justify-between"><span>Acima de R$ 200k/mês:</span><span className="text-slate-900 font-extrabold">1.90%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* trava_cambio Tab Content */}
+      {activeTab === 'trava_cambio' && (
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-5 text-left animate-in fade-in duration-300">
+          <div className="border-b border-slate-50 pb-3">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Trava de Câmbio (DCC & Hedging Engine Gateway)</h3>
+            <p className="text-[10.5px] font-bold text-slate-400 mt-1">Gerencie a Dynamic Currency Conversion (DCC) e o motor de cobertura cambial de tesouraria.</p>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 items-start">
+            
+            {/* DCC form config */}
+            <div className="xl:col-span-1 border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20">
+              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">Configuração DCC</h4>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Conversão Dinâmica (DCC)</span>
+                <input 
+                  type="checkbox" 
+                  checked={dccActive}
+                  onChange={() => {
+                    setDccActive(!dccActive);
+                    triggerToast(`DCC ${!dccActive ? 'ativado' : 'desativado'}`);
+                  }}
+                  className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Janela de Fixação da Taxa</label>
+                <div className="relative">
+                  <select 
+                    value={dccWindow}
+                    onChange={(e) => {
+                      setDccWindow(e.target.value);
+                      triggerToast(`Janela de DCC definida para ${e.target.value}`);
+                    }}
+                    className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-black text-slate-700 focus:outline-none appearance-none cursor-pointer h-9"
+                  >
+                    <option value="5m">5 Minutos</option>
+                    <option value="10m">10 Minutos</option>
+                    <option value="30m">30 Minutos (Recomendado)</option>
+                    <option value="1h">1 Hora</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Hedging trigger config */}
+            <div className="xl:col-span-1 border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20">
+              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">Hedging Engine Gateway</h4>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Hedge Automático Ativo</span>
+                <input 
+                  type="checkbox" 
+                  checked={hedgingActive}
+                  onChange={() => {
+                    setHedgingActive(!hedgingActive);
+                    triggerToast(`Hedging automático ${!hedgingActive ? 'ativado' : 'desativado'}`);
+                  }}
+                  className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Threshold de Cobertura ($ USD)</label>
+                <input 
+                  type="number" 
+                  value={hedgingThreshold}
+                  onChange={(e) => setHedgingThreshold(parseInt(e.target.value) || 0)}
+                  className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-extrabold text-slate-700 focus:outline-none h-9" 
+                />
+              </div>
+              <p className="text-[8.5px] font-semibold text-slate-400 leading-relaxed">Sempre que a exposição cambial líquida em aberto superar o threshold, o motor fecha um swap de câmbio futuro no banco custodiante.</p>
+            </div>
+
+            {/* Hedging Logs table */}
+            <div className="xl:col-span-1 border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3 bg-slate-50/20">
+              <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1.5">Logs de Hedging Executados</h4>
+              
+              <div className="divide-y divide-slate-100 text-[10px] font-semibold text-slate-500">
+                {hedgingLogs.map((log) => (
+                  <div key={log.id} className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <span className="font-extrabold text-slate-800 block leading-tight">{log.id} • {log.pair}</span>
+                      <span className="text-[8.5px] text-slate-400 block mt-0.5">{log.date}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-black text-slate-900 block leading-tight">{log.amount}</span>
+                      <span className="text-[8.5px] text-emerald-650 font-black block mt-0.5 uppercase tracking-wider">{log.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* liquidacao Tab Content */}
+      {activeTab === 'liquidacao' && (
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-5 text-left animate-in fade-in duration-300">
+          <div className="border-b border-slate-50 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Liquidação Financeira</h3>
+              <p className="text-[10.5px] font-bold text-slate-400 mt-1">Configure as contas bancárias de destino de recebíveis e o calendário de repasse.</p>
+            </div>
+            <button 
+              onClick={() => triggerToast("Regras de liquidação bancária salvas!")}
+              className="h-8.5 px-4 bg-brand text-white text-[10.5px] font-black uppercase tracking-wider rounded-xl hover:bg-brand-dark transition-all"
+            >
+              Salvar Alterações
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 bg-slate-50/20">
+              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block">Moeda de Liquidação</span>
+              <div className="relative">
+                <select 
+                  value={settlementCurrency}
+                  onChange={(e) => setSettlementCurrency(e.target.value)}
+                  className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-black text-slate-700 focus:outline-none h-9 appearance-none"
+                >
+                  <option value="BRL">BRL - Real Brasileiro</option>
+                  <option value="USD">USD - Dólar Americano</option>
+                  <option value="EUR">EUR - Euro</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 bg-slate-50/20">
+              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block">Janela de Payout</span>
+              <div className="relative">
+                <select 
+                  value={settlementSchedule}
+                  onChange={(e) => setSettlementSchedule(e.target.value)}
+                  className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-black text-slate-700 focus:outline-none h-9 appearance-none"
+                >
+                  <option value="D+1">D+1 (1 Dia Útil)</option>
+                  <option value="D+2">D+2 (2 Dias Úteis)</option>
+                  <option value="D+3">D+3 (3 Dias Úteis)</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 bg-slate-50/20">
+              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block">Conta Bancária de Destino</span>
+              <div className="relative">
+                <select 
+                  value={settlementAccount}
+                  onChange={(e) => setSettlementAccount(e.target.value)}
+                  className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-black text-slate-700 focus:outline-none h-9 appearance-none"
+                >
+                  <option value="basileia_corp">Basileia Corp Principal (Itaú)</option>
+                  <option value="basileia_secundária">Basileia Sweep (Banco Rendimento)</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* por_checkout Tab Content */}
+      {activeTab === 'por_checkout' && (
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4 text-left animate-in fade-in duration-300">
+          <div className="border-b border-slate-50 pb-3">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Configurações Customizadas Por Checkout</h3>
+            <p className="text-[10.5px] font-bold text-slate-400 mt-1">Force moedas estrangeiras ou markups individualizados em frentes de venda específicas.</p>
+          </div>
+
+          <div className="w-full overflow-hidden rounded-xl border border-slate-100">
+            <table className="w-full text-left table-fixed">
+              <thead>
+                <tr className="border-b border-[#E8DDFD]/40 bg-slate-50/50">
+                  <th className="py-2.5 px-3.5 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[35%]">Checkout</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[20%]">Moeda Padrão</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[25%] text-center">Forçar Exibição Moeda</th>
+                  <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[20%] text-center">Markup Especial</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-[11px] font-bold text-slate-700">
+                {checkoutOverrides.map((c, idx) => (
+                  <tr key={c.id} className="hover:bg-slate-50/50 h-[50px]">
+                    <td className="py-2 px-3.5">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-brand shrink-0" />
+                        <span className="font-extrabold text-slate-900">{c.name}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 font-mono font-black text-slate-650">{c.defaultCurrency}</td>
+                    <td className="py-2 px-2 text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={c.forceCurrency}
+                        onChange={() => {
+                          const updated = [...checkoutOverrides];
+                          updated[idx].forceCurrency = !updated[idx].forceCurrency;
+                          setCheckoutOverrides(updated);
+                          triggerToast(`Exibição forçada de moeda atualizada para ${c.name}`);
+                        }}
+                        className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4 h-4 mx-auto"
+                      />
+                    </td>
+                    <td className="py-2 px-2 text-center">
+                      <input 
+                        type="text" 
+                        value={c.customMarkup}
+                        onChange={(e) => {
+                          const updated = [...checkoutOverrides];
+                          updated[idx].customMarkup = e.target.value;
+                          setCheckoutOverrides(updated);
+                        }}
+                        className="bg-slate-50 border border-[#E8DDFD] rounded-xl px-2 py-0.5 text-xs font-bold text-center w-[80px] mx-auto block" 
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* regras_conversao Tab Content */}
+      {activeTab === 'regras_conversao' && (
+        <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-5 text-left animate-in fade-in duration-300">
+          <div className="border-b border-slate-50 pb-3 flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Regras de Conversão & Impostos</h3>
+              <p className="text-[10.5px] font-bold text-slate-400 mt-1">Defina regras lógicas de arredondamento de valores e inclusão automática de taxas.</p>
+            </div>
+            <button 
+              onClick={() => triggerToast("Parâmetros de conversão e impostos atualizados!")}
+              className="h-8.5 px-4 bg-brand text-white text-[10.5px] font-black uppercase tracking-wider rounded-xl hover:bg-brand-dark transition-all"
+            >
+              Salvar Regras
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-3.5 bg-slate-50/20">
+              <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider block">Arredondamento Centavos</span>
+              <div className="relative">
+                <select 
+                  value={roundingRule}
+                  onChange={(e) => {
+                    setRoundingRule(e.target.value);
+                    triggerToast(`Regra de arredondamento definida para ${e.target.value}`);
+                  }}
+                  className="w-full bg-white border border-[#E8DDFD] rounded-xl px-3 py-2 text-xs font-black text-slate-700 focus:outline-none h-9 appearance-none"
+                >
+                  <option value="none">Sem Arredondamento</option>
+                  <option value=".99">Terminar com .99 (ex: $12.99)</option>
+                  <option value=".90">Terminar com .90 (ex: $12.90)</option>
+                  <option value="round">Arredondar para inteiro próximo</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Embutir IOF em Cartões</span>
+                <input 
+                  type="checkbox" 
+                  checked={embedIof}
+                  onChange={() => {
+                    setEmbedIof(!embedIof);
+                    triggerToast(`Embutir IOF ${!embedIof ? 'ativado' : 'desativado'}`);
+                  }}
+                  className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                />
+              </div>
+              <p className="text-[8.5px] font-semibold text-slate-400 leading-relaxed">Embutir automaticamente a taxa de IOF (4,38%) no valor total convertido exibido no checkout final para o comprador.</p>
+            </div>
+
+            <div className="border border-[#E8DDFD]/60 rounded-2xl p-4.5 space-y-4 bg-slate-50/20">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Taxas de Importação</span>
+                <input 
+                  type="checkbox" 
+                  checked={importTax}
+                  onChange={() => {
+                    setImportTax(!importTax);
+                    triggerToast(`Taxas de importação ${!importTax ? 'ativadas' : 'desativadas'}`);
+                  }}
+                  className="rounded border-[#E8DDFD] text-brand focus:ring-brand cursor-pointer w-4.5 h-4.5"
+                />
+              </div>
+              <p className="text-[8.5px] font-semibold text-slate-400 leading-relaxed">Adicionar estimativa de custos de taxas de alfândegas internacionais conforme destino do comprador.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* historico Tab Content */}
+      {activeTab === 'historico' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 items-start">
+          
+          {/* Main audit history table (col-span-2) */}
+          <div className="xl:col-span-2 bg-white border border-[#E8DDFD]/65 rounded-[22px] p-5 shadow-sm space-y-4 text-left animate-in fade-in duration-300">
+            <div className="border-b border-slate-50 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Histórico de Reconciliações FX</h3>
+                <p className="text-[10.5px] font-bold text-slate-400 mt-1">Logs e transações convertidas de recebimentos transfronteiriços.</p>
+              </div>
+            </div>
+
+            <div className="w-full overflow-hidden rounded-xl border border-slate-100">
+              <table className="w-full text-left table-fixed">
+                <thead>
+                  <tr className="border-b border-[#E8DDFD]/40 bg-slate-50/50">
+                    <th className="py-2.5 px-3.5 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[18%]">ID Transação</th>
+                    <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[24%]">Conversão</th>
+                    <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[18%]">Cotação</th>
+                    <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[24%]">Valor Equivalente</th>
+                    <th className="py-2.5 px-2 text-[9px] font-black uppercase text-slate-400 tracking-wider w-[16%] text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-[10.5px] font-bold text-slate-700">
+                  {[
+                    { id: 'tx_87f9e8a', from: 'USD $150.00', rate: '5.2520 BRL', to: 'R$ 787,80', status: 'Liquidado' },
+                    { id: 'tx_87f9e8b', from: 'EUR €82.00', rate: '5.7200 BRL', to: 'R$ 469,04', status: 'Liquidado' },
+                    { id: 'tx_87f9e8c', from: 'GBP £60.00', rate: '6.6950 BRL', to: 'R$ 401,70', status: 'Liquidado' },
+                    { id: 'tx_87f9e8d', from: 'USD $20.00', rate: '5.2520 BRL', to: 'R$ 105,04', status: 'Liquidado' }
+                  ].map((h) => (
+                    <tr key={h.id} className="hover:bg-slate-50/50 h-[48px]">
+                      <td className="py-2 px-3.5 font-mono text-[9.5px] text-brand">{h.id}</td>
+                      <td className="py-2 px-2 text-slate-800 font-extrabold">{h.from}</td>
+                      <td className="py-2 px-2 font-mono text-[10px] text-slate-500">{h.rate}</td>
+                      <td className="py-2 px-2 text-slate-900 font-black">{h.to}</td>
+                      <td className="py-2 px-2 text-center">
+                        <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-lg text-[8.5px] font-black uppercase tracking-wider">✓ {h.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Conceptual Disputas FX simulator (col-span-1) */}
+          <div className="xl:col-span-1 bg-white border border-[#E8DDFD]/65 rounded-[22px] p-4.5 shadow-sm space-y-4 text-left animate-in fade-in duration-300">
+            <div className="flex items-center gap-2 border-b border-slate-50 pb-2.5">
+              <div className="w-6 h-6 rounded-lg bg-red-50 text-red-500 border border-red-100 flex items-center justify-center">
+                <AlertOctagon className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-wider leading-none">Simulador de Disputas FX</h4>
+                <span className="text-[8px] font-bold text-slate-400 block mt-1 leading-none">Módulo conceitual de perda por volatilidade de chargeback</span>
+              </div>
+            </div>
+
+            <div className="space-y-3.5 text-xs font-semibold text-slate-650">
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Valor do Pedido ($ USD)</label>
+                <input 
+                  type="number" 
+                  value={disputeAmount}
+                  onChange={(e) => setDisputeAmount(parseFloat(e.target.value) || 0)}
+                  className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-extrabold text-slate-800 focus:outline-none" 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Taxa Captura (BRL)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={disputeDateRate}
+                    onChange={(e) => setDisputeDateRate(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800 focus:outline-none" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Taxa Disputa (BRL)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={disputeChargebackRate}
+                    onChange={(e) => setDisputeChargebackRate(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-800 focus:outline-none" 
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={handleCalculateVariance}
+                className="w-full h-9.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-800 transition-all flex items-center justify-center gap-1.5"
+              >
+                Calcular Perda Retroativa
+              </button>
+
+              {calculatedVariance !== null && (
+                <div className={cn(
+                  "rounded-2xl p-4.5 border text-left mt-2.5 space-y-1",
+                  calculatedVariance >= 0 ? "bg-red-50/50 border-red-100 text-red-700" : "bg-green-50/50 border-green-100 text-green-700"
+                )}>
+                  <span className="text-[9px] font-black uppercase tracking-wider block">Diferença Cambial Calculada:</span>
+                  <span className="text-[15px] font-black block">R$ {Math.abs(calculatedVariance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  <p className="text-[9px] font-semibold leading-relaxed mt-1">
+                    {calculatedVariance >= 0 
+                      ? "O merchant deve compensar a perda de variação cambial retroativa na liquidação final para cobrir a oscilação."
+                      : "Economia cambial gerada a favor da tesouraria da Basileia Pay."
+                    }
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       )}
 

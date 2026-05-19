@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 
-export type SecurityTabValue = 'users' | 'roles' | 'sessions' | '2fa' | 'password' | 'ips' | 'activity';
+export type SecurityTabValue = 'users' | 'roles' | 'sessions' | '2fa' | 'password' | 'ips' | 'activity' | 'lgpd';
 
 interface SecurityTabsProps {
   activeTab: SecurityTabValue;
@@ -36,6 +36,7 @@ export function SecurityTabs({
     { id: 'password', label: 'Política de Senha' },
     { id: 'ips', label: 'Allowlist IP', badge: allowlistCount, badgeColor: 'bg-slate-100 text-slate-650' },
     { id: 'activity', label: 'Eventos Segurança', badge: `${criticalEventsCount} logs`, badgeColor: criticalEventsCount > 50 ? 'bg-red-50 text-red-600 font-black' : 'bg-slate-150 text-slate-500 font-bold' },
+    { id: 'lgpd', label: 'Privacidade LGPD', badge: 'Strict', badgeColor: 'bg-indigo-50 text-indigo-650 font-black' }
   ];
 
   return (
@@ -50,7 +51,7 @@ export function SecurityTabs({
               "flex items-center gap-1.5 pb-2.5 px-3 text-[11px] font-black uppercase tracking-wider transition-all border-b-2 -mb-[2px] cursor-pointer",
               isActive 
                 ? "border-brand text-brand font-black" 
-                : "border-transparent text-slate-400 hover:text-slate-700 font-bold"
+                 : "border-transparent text-slate-400 hover:text-slate-700 font-bold"
             )}
           >
             <span>{tab.label}</span>
@@ -68,3 +69,4 @@ export function SecurityTabs({
     </div>
   );
 }
+

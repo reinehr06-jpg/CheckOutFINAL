@@ -2,16 +2,17 @@
 
 import { cn } from '@/lib/utils';
 
-export type RoutingTabValue = 'rules' | 'fallbacks' | 'history';
+export type RoutingTabValue = 'rules' | 'fallbacks' | 'retries' | 'history';
 
 interface RoutingTabsProps {
   activeTab: RoutingTabValue;
   onTabChange: (tab: RoutingTabValue) => void;
   activeRulesCount: number;
   fallbacksCount: number;
+  retriesCount?: number;
 }
 
-export function RoutingTabs({ activeTab, onTabChange, activeRulesCount, fallbacksCount }: RoutingTabsProps) {
+export function RoutingTabs({ activeTab, onTabChange, activeRulesCount, fallbacksCount, retriesCount = 6 }: RoutingTabsProps) {
   return (
     <div className="flex overflow-x-auto no-scrollbar shrink-0">
       <div className="flex gap-1">
@@ -54,6 +55,25 @@ export function RoutingTabs({ activeTab, onTabChange, activeRulesCount, fallback
           </span>
         </button>
 
+        {/* Smart Retries */}
+        <button
+          onClick={() => onTabChange('retries')}
+          className={cn(
+            "relative pb-3 pt-1 px-3 text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer -mb-[1px] flex items-center gap-1.5",
+            activeTab === 'retries'
+              ? "text-brand border-b-2 border-brand font-black"
+              : "text-slate-400 hover:text-slate-700 font-semibold"
+          )}
+        >
+          <span>Smart Retries</span>
+          <span className={cn(
+            "px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-normal leading-none shrink-0",
+            activeTab === 'retries' ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-400"
+          )}>
+            {retriesCount} ativas
+          </span>
+        </button>
+
         {/* Histórico */}
         <button
           onClick={() => onTabChange('history')}
@@ -69,7 +89,7 @@ export function RoutingTabs({ activeTab, onTabChange, activeRulesCount, fallback
             "px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-normal leading-none shrink-0",
             activeTab === 'history' ? "bg-brand/10 text-brand" : "bg-slate-100 text-slate-400"
           )}>
-            Nas últimas 1h
+            Últimas 24h
           </span>
         </button>
 
@@ -77,3 +97,4 @@ export function RoutingTabs({ activeTab, onTabChange, activeRulesCount, fallback
     </div>
   );
 }
+
