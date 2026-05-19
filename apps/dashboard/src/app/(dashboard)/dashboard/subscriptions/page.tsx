@@ -226,7 +226,7 @@ const initialSubscriptions: Subscription[] = [
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
-  const [selectedSub, setSelectedSub] = useState<Subscription | null>(initialSubscriptions[0]);
+  const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
