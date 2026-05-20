@@ -1,7 +1,12 @@
-import { useReducer, useState, useCallback } from 'react';
-import type { BreakpointId } from './core/types';
-import { sceneReducer } from './core/sceneReducer';
+import { useState, useCallback, useEffect } from 'react';
+import type { BreakpointId, Scene } from './core/types';
+import { sceneReducer, genId } from './core/sceneReducer';
+import type { SceneAction } from './core/sceneReducer';
 import { createDefaultScene } from './core/initialScene';
+import { TEMPLATES, type Template } from './core/templates';
+import { analyzeTrust, type TrustScore } from './core/trustRadar';
+import { useUndoRedo } from './core/useUndoRedo';
+import { fetchCheckouts, saveCheckout, publishCheckout, type CheckoutScene } from './core/api';
 import { Toolbar } from './editor/Toolbar';
 import { Canvas } from './editor/Canvas';
 import { PropsPanel } from './editor/PropsPanel';
@@ -11,38 +16,93 @@ import { CheckoutRuntime } from './runtime/CheckoutRuntime';
 import './App.css';
 
 type StudioMode = 'builder' | 'preview' | 'split';
+type SidePanel = 'layers' | 'templates' | 'trust' | 'saved';
 
 export default function App() {
-  const [scene, dispatch] = useReducer(sceneReducer, null, createDefaultScene);
+  const { scene, dispatch, undo, redo, canUndo, canRedo, setScene } = useUndoRedo(createDefaultScene());
   const [mode, setMode] = useState<StudioMode>('builder');
   const [breakpoint, setBreakpoint] = useState<BreakpointId>('desktop');
   const [selectedId, setSelectedId] = useState<string | undefined>();
+  const [sidePanel, setSidePanel] = useState<SidePanel>('layers');
+  const [trustScore, setTrustScore] = useState<TrustScore | null>(null);
+  const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
+  const [savedCheckouts, setSavedCheckouts] = useState<CheckoutScene[]>([]);
+  const [checkoutName, setCheckoutName] = useState('Meu Checkout');
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Analyze trust on scene change
+  useEffect(() => {
+    setTrustScore(analyzeTrust(scene));
+  }, [scene]);
+
+  // Load saved checkouts
+  useEffect(() => {
+    fetchCheckouts().then(data => {
+      setSavedCheckouts(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    const result = await saveCheckout({ name: checkoutName, config: scene as unknown as Record<string, unknown>, status: 'draft' });
+    setSaving(false);
+    if (result) {
+      showToast('Checkout salvo com sucesso!');
+      fetchCheckouts().then(setSavedCheckouts);
+    } else {
+      showToast('Erro ao salvar. Verifique a conexao com a API.');
+    }
+  }, [checkoutName, scene, showToast]);
+
+  const handlePublish = useCallback(async () => {
+    setPublishing(true);
+    const result = await publishCheckout(checkoutName);
+    setPublishing(false);
+    if (result) showToast('Checkout publicado!');
+    else showToast('Erro ao publicar.');
+  }, [checkoutName, showToast]);
+
+  const handleLoadTemplate = useCallback((tpl: Template) => {
+    setScene(tpl.scene);
+    setCheckoutName(tpl.name);
+    showToast(`Template "${tpl.name}" carregado`);
+  }, [setScene, showToast]);
+
+  const handleLoadCheckout = useCallback(async (id: string) => {
+    showToast('Carregando checkout...');
+    // In production, fetch full checkout by ID
+    showToast('Checkout carregado');
+  }, [showToast]);
 
   const handleExportJSON = useCallback(() => {
     const blob = new Blob([JSON.stringify(scene, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `checkout-scene-${Date.now()}.json`;
+    a.download = `checkout-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [scene]);
+    showToast('Exportado com sucesso');
+  }, [scene, showToast]);
 
-  const handleMove = useCallback(
-    (nodeId: string, newParentId: string, index?: number) => {
-      dispatch({ type: 'MOVE_NODE', nodeId, newParentId, index });
-    },
-    []
-  );
+  const handleMove = useCallback((nodeId: string, newParentId: string, index?: number) => {
+    dispatch({ type: 'MOVE_NODE', nodeId, newParentId, index } as SceneAction);
+  }, [dispatch]);
 
-  // Determine which parent to add components into
   const addTarget = selectedId
     ? (() => {
         const node = scene.nodes[selectedId];
         if (!node) return scene.rootId;
-        // If selected node can have children (section/stack/page), use it
         if (node.kind !== 'element') return node.id;
-        // Otherwise use its parent
         return node.parentId ?? scene.rootId;
       })()
     : scene.rootId;
@@ -52,64 +112,112 @@ export default function App() {
 
   return (
     <div className="studio-app">
+      {toast && <div className="studio-toast">{toast}</div>}
+
       <Toolbar
         mode={mode}
         onModeChange={setMode}
         breakpoint={breakpoint}
         onBreakpointChange={setBreakpoint}
         onExportJSON={handleExportJSON}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
       />
 
       <div className="studio-body">
-        {/* Left sidebar: Layers + Components */}
+        {/* Left sidebar */}
         {showCanvas && (
           <div className="studio-sidebar-left">
-            <LayersPanel
-              scene={scene}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              dispatch={dispatch}
-            />
+            <div className="sidebar-tabs">
+              <button className={sidePanel === 'layers' ? 'active' : ''} onClick={() => setSidePanel('layers')}>Layers</button>
+              <button className={sidePanel === 'templates' ? 'active' : ''} onClick={() => setSidePanel('templates')}>Templates</button>
+              <button className={sidePanel === 'trust' ? 'active' : ''} onClick={() => setSidePanel('trust')}>Trust</button>
+              <button className={sidePanel === 'saved' ? 'active' : ''} onClick={() => setSidePanel('saved')}>Saved</button>
+            </div>
+
+            {sidePanel === 'layers' && <LayersPanel scene={scene} selectedId={selectedId} onSelect={setSelectedId} dispatch={dispatch} />}
+            {sidePanel === 'templates' && (
+              <div className="templates-panel">
+                <h4 className="palette-title">Templates</h4>
+                <div className="templates-grid">
+                  {templates.map(t => (
+                    <button key={t.id} className="template-card" onClick={() => handleLoadTemplate(t)}>
+                      <span className="template-icon">{t.category === 'pix' ? 'QR' : t.category === 'card' ? 'CC' : 'SUB'}</span>
+                      <span className="template-name">{t.name}</span>
+                      <span className="template-desc">{t.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {sidePanel === 'trust' && trustScore && (
+              <div className="trust-panel">
+                <h4 className="palette-title">Trust Radar</h4>
+                <div className="trust-score-display">
+                  <div className="trust-circle" style={{ background: `conic-gradient(${trustScore.score > 70 ? '#10b981' : trustScore.score > 40 ? '#f59e0b' : '#ef4444'} ${trustScore.score * 3.6}deg, #1e293b 0deg)` }}>
+                    <span className="trust-value">{trustScore.score}</span>
+                  </div>
+                  <span className="trust-label">/ 100</span>
+                </div>
+                {trustScore.issues.map(issue => (
+                  <div key={issue.id} className={`trust-issue ${issue.severity}`}>
+                    <span className="issue-severity">{issue.severity === 'critical' ? 'CRIT' : issue.severity === 'warning' ? 'WARN' : 'INFO'}</span>
+                    <div>
+                      <strong>{issue.message}</strong>
+                      <p>{issue.suggestion}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="trust-breakdown">
+                  {Object.entries(trustScore.breakdown).map(([key, val]) => (
+                    <div key={key} className="trust-bar">
+                      <span>{key}</span>
+                      <div className="bar-bg"><div className="bar-fill" style={{ width: `${val * 10}%` }} /></div>
+                      <span>{val}/15</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {sidePanel === 'saved' && (
+              <div className="saved-panel">
+                <h4 className="palette-title">Checkouts Salvos</h4>
+                {loading ? <p className="loading-text">Carregando...</p> : savedCheckouts.length === 0 ? <p className="empty-text">Nenhum checkout salvo</p> : savedCheckouts.map(sc => (
+                  <button key={sc.id || sc.name} className="saved-item" onClick={() => handleLoadCheckout(sc.id || '')}>
+                    <span>{sc.name}</span>
+                    <span className="saved-status">{sc.status}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <ComponentPalette targetParentId={addTarget} dispatch={dispatch} />
           </div>
         )}
 
-        {/* Main canvas / preview area */}
+        {/* Main canvas / preview */}
         <main className={`studio-main ${mode === 'split' ? 'studio-main-split' : ''}`}>
           {showCanvas && (
             <div className={mode === 'split' ? 'studio-half' : 'studio-full'}>
-              <Canvas
-                scene={scene}
-                breakpoint={breakpoint}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                onMove={handleMove}
-              />
+              <div className="checkout-name-bar">
+                <input className="checkout-name-input" value={checkoutName} onChange={e => setCheckoutName(e.target.value)} placeholder="Nome do checkout" />
+                <button className="btn-save" onClick={handleSave} disabled={saving}>{saving ? 'Salvando...' : 'Salvar'}</button>
+                <button className="btn-publish" onClick={handlePublish} disabled={publishing}>{publishing ? 'Publicando...' : 'Publicar'}</button>
+              </div>
+              <Canvas scene={scene} breakpoint={breakpoint} selectedId={selectedId} onSelect={setSelectedId} onMove={handleMove} />
             </div>
           )}
           {showPreview && (
             <div className={mode === 'split' ? 'studio-half' : 'studio-full'}>
               <div className="preview-badge">PREVIEW</div>
-              <CheckoutRuntime
-                scene={scene}
-                breakpoint={breakpoint}
-                state={{ step: 'payment', method: 'pix' }}
-                onPixPay={() => console.log('Simular Pix')}
-                onCardPay={() => console.log('Simular Cartão')}
-              />
+              <CheckoutRuntime scene={scene} breakpoint={breakpoint} state={{ step: 'payment', method: 'pix' }} onPixPay={() => showToast('Pix gerado!')} onCardPay={() => showToast('Cartao processado!')} />
             </div>
           )}
         </main>
 
         {/* Right sidebar: Props */}
-        {showCanvas && (
-          <PropsPanel
-            scene={scene}
-            selectedId={selectedId}
-            breakpoint={breakpoint}
-            dispatch={dispatch}
-          />
-        )}
+        {showCanvas && <PropsPanel scene={scene} selectedId={selectedId} breakpoint={breakpoint} dispatch={dispatch} />}
       </div>
     </div>
   );
