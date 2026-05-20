@@ -1,44 +1,31 @@
 #!/bin/bash
 
-# Force DB_HOST to postgres if localhost
-if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "localhost" ] || [ "$DB_HOST" = "127.0.0.1" ]; then
-    export DB_HOST="postgres"
-fi
-
 echo "=== Starting Basileia Checkout ==="
 echo "DB_HOST=$DB_HOST"
 
 # Ensure .env exists
 if [ ! -f .env ]; then
-    if [ -f .env.example ]; then
-        cp .env.example .env
-        echo ".env created from .env.example"
-    else
-        touch .env
-        echo "Empty .env created"
-    fi
+    touch .env
+    echo "Empty .env created"
 fi
 
 # Function to safely update .env values
-# Usage: update_env KEY VALUE
 update_env() {
     local key=$1
     local value=$2
     if [ -n "$value" ]; then
-        # Create a temp file without the target key
-        grep -v "^${key}=" .env > .env.tmp || true
-        # Append the new key-value pair
+        grep -v "^${key}=" .env > .env.tmp 2>/dev/null || true
         echo "${key}='${value}'" >> .env.tmp
         mv .env.tmp .env
     fi
 }
 
-# Respect the APP_KEY from environment, or use a valid fallback if missing from both env and .env (or empty in .env)
+# Respect APP_KEY from environment
 if [ -z "$APP_KEY" ] && ! grep -q "^APP_KEY=." .env; then
-    export APP_KEY="base64:YmFzaWxlaWEtY2hlY2tvdXQtc2VjcmV0LWtleS0yMDI="
+    export APP_KEY="base64:7x/rsIo0EgeWpySgaruzspY+loHN0EaKPUBOBZY1+9Y="
 fi
 
-# Update .env with environment variables (if provided)
+# Update .env with environment variables
 update_env "APP_NAME" "${APP_NAME:-Basileia}"
 update_env "APP_ENV" "${APP_ENV:-production}"
 update_env "APP_KEY" "$APP_KEY"
@@ -47,23 +34,18 @@ update_env "APP_URL" "${APP_URL:-http://localhost:8000}"
 update_env "DB_CONNECTION" "pgsql"
 update_env "DB_HOST" "$DB_HOST"
 update_env "DB_PORT" "${DB_PORT:-5432}"
-update_env "DB_DATABASE" "${DB_DATABASE:-checkout}"
+update_env "DB_DATABASE" "${DB_DATABASE:-basileia}"
 update_env "DB_USERNAME" "${DB_USERNAME:-postgres}"
 update_env "DB_PASSWORD" "${DB_PASSWORD:-secret}"
-update_env "SESSION_DRIVER" "file"
-update_env "CACHE_STORE" "file"
+update_env "SESSION_DRIVER" "database"
+update_env "CACHE_STORE" "database"
 update_env "QUEUE_CONNECTION" "sync"
 
-# Gateway credentials are NO LONGER stored in env vars.
-# Each tenant configures their gateway via Dashboard → Gateways.
-# Credentials are stored encrypted in the gateway_configs table.
-# See: GatewayResolver::forTransaction() and AsaasGateway::fromGatewayModel()
-
-
-# Clear config cache and set total permissions
-find storage -type d -exec chmod 777 {} + 2>/dev/null || true
-find storage -type f -exec chmod 666 {} + 2>/dev/null || true
-echo "Permissions set"
+# Clear config cache and set permissions
+find storage -type d -exec chmod 755 {} + 2>/dev/null || true
+find storage -type f -exec chmod 644 {} + 2>/dev/null || true
+mkdir -p storage/framework/sessions storage/framework/cache/data storage/framework/views storage/logs 2>/dev/null || true
+chmod -R 755 storage bootstrap/cache 2>/dev/null || true
 rm -rf bootstrap/cache/*.php 2>/dev/null || true
 
 # Wait for DB and run migrations
@@ -77,30 +59,28 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-# Create admin user safely
-echo "Creating admin user..."
-# Generate hash first
-ADMIN_PASS_HASH=$(php -r "echo password_hash('BasileiaCheck@2026!99[]09', PASSWORD_BCRYPT);")
-export ADMIN_PASS_HASH
-
-# Use tinker to update or insert admin user, using environment variable to avoid bash expansion issues
+# Create super admin user safely
+echo "Creating super admin user..."
 php artisan tinker --execute="
-    \$hash = getenv('ADMIN_PASS_HASH');
-    \DB::table('users')->updateOrInsert(
-        ['email' => 'admin@checkout.com'],
-        [
-            'name' => 'Admin',
-            'password' => \$hash,
-            'role' => 'super_admin',
-            'status' => 'active',
-            'email_verified_at' => now(),
-            'failed_login_attempts' => 0,
-            'locked_until' => null,
-            'must_change_password' => false,
-            'password_changed_at' => now(),
-            'updated_at' => now(),
-        ]
-    );
+    \$email = 'admin@basileia.global';
+    \$user = \App\Models\User::where('email', \$email)->first();
+    if (!\$user) {
+        \$user = new \App\Models\User();
+        \$user->uuid = \Illuminate\Support\Str::uuid();
+        \$user->name = 'Super Admin';
+        \$user->email = \$email;
+        \$user->password = password_hash('Basileia@2026!', PASSWORD_BCRYPT);
+        \$user->role = 'super_admin';
+        \$user->company_id = null;
+        \$user->status = 'active';
+        \$user->email_verified_at = now();
+        \$user->two_factor_enabled = false;
+        \$user->failed_attempts = 0;
+        \$user->save();
+        echo 'Super admin created: ' . \$email . PHP_EOL;
+    } else {
+        echo 'Super admin already exists.' . PHP_EOL;
+    }
 " 2>&1 || echo "WARNING: Could not create admin user"
 
 # Start server

@@ -8,7 +8,7 @@ services:
       - "8000:8000"
     environment:
       - APP_ENV=production
-      - APP_DEBUG=false
+      - APP_DEBUG=true
       - APP_KEY=${APP_KEY:-base64:7x/rsIo0EgeWpySgaruzspY+loHN0EaKPUBOBZY1+9Y=}
       - DB_CONNECTION=pgsql
       - DB_HOST=${DB_HOST:-postgres}
@@ -19,5 +19,27 @@ services:
       - SESSION_DRIVER=database
       - CACHE_STORE=database
       - QUEUE_CONNECTION=database
+      - APP_URL=${APP_URL:-http://localhost:8000}
       - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost:3000}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-basileia}
+      POSTGRES_USER: ${DB_USERNAME:-basileia}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-basileia_secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-basileia} -d ${DB_DATABASE:-basileia}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

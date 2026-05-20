@@ -11,13 +11,8 @@ class DefaultAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminEmail = env('ADMIN_EMAIL');
-        $adminPassword = env('ADMIN_PASSWORD');
-
-        if (!$adminEmail || !$adminPassword) {
-            $this->command->warn("ADMIN_EMAIL ou ADMIN_PASSWORD não definidos no .env. Ignorando criação de admin.");
-            return;
-        }
+        $adminEmail = env('ADMIN_EMAIL', 'admin@basileia.global');
+        $adminPassword = env('ADMIN_PASSWORD', 'Basileia@2026!');
 
         $company = Company::first();
 
@@ -31,11 +26,12 @@ class DefaultAdminSeeder extends Seeder
                 'status' => 'active',
                 'email_verified_at' => now(),
                 'must_change_password' => false,
-                'failed_login_attempts' => 0,
-                'locked_until' => null,
+                'two_factor_enabled' => false,
+                'failed_attempts' => 0,
+                'locked_at' => null,
             ]
         );
 
-        $this->command->info("Admin configurado com as credenciais de ambiente com sucesso.");
+        $this->command->info("Super admin configured: {$adminEmail}");
     }
 }
