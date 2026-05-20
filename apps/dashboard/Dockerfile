@@ -1,9 +1,9 @@
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci --frozen-lockfile
+RUN npm ci --legacy-peer-deps
 
 FROM base AS builder
 ARG NEXT_PUBLIC_API_URL=http://app:8000
