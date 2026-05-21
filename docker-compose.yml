@@ -1,5 +1,5 @@
 services:
-  nginx:
+  app:
     image: nginx:alpine
     restart: unless-stopped
     expose:
@@ -7,10 +7,10 @@ services:
     volumes:
       - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - app
+      - api
       - dashboard
 
-  app:
+  api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
@@ -47,7 +47,7 @@ services:
       - NEXT_PUBLIC_API_URL=/api
       - NODE_ENV=production
     depends_on:
-      - app
+      - api
 
   postgres:
     image: postgres:15-alpine
