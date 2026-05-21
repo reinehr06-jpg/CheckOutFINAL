@@ -19,10 +19,10 @@ services:
       - SESSION_DRIVER=database
       - CACHE_STORE=database
       - QUEUE_CONNECTION=database
-      - APP_URL=${APP_URL:-http://localhost:8000}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
-      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-localhost:3001}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3001,http://localhost:8000}
+      - APP_URL=https://secure.basileia.global
+      - FRONTEND_URL=https://secure.basileia.global
+      - SANCTUM_STATEFUL_DOMAINS=secure.basileia.global
+      - CORS_ALLOWED_ORIGINS=https://secure.basileia.global
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,12 +32,12 @@ services:
       context: ./apps/dashboard
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://app:8000}
+        - NEXT_PUBLIC_API_URL=https://secure.basileia.global/api
     restart: unless-stopped
     ports:
       - "3001:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://app:8000}
+      - NEXT_PUBLIC_API_URL=https://secure.basileia.global/api
       - NODE_ENV=production
     depends_on:
       - app
