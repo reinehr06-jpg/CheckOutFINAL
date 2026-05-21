@@ -224,7 +224,6 @@ export function Sidebar() {
     </aside>
   );
 }
-];
 
 export function Sidebar() {
   const pathname = usePathname();
