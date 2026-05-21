@@ -1,11 +1,20 @@
 services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+      - dashboard
+
   app:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     environment:
       - APP_ENV=production
       - APP_DEBUG=true
@@ -32,12 +41,10 @@ services:
       context: ./apps/dashboard
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=https://secure.basileia.global/api
+        - NEXT_PUBLIC_API_URL=/api
     restart: unless-stopped
-    ports:
-      - "3001:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=https://secure.basileia.global/api
+      - NEXT_PUBLIC_API_URL=/api
       - NODE_ENV=production
     depends_on:
       - app
