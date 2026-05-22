@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\RefreshToken;
 use App\Models\User;
 use App\Services\Audit\AuditService;
 use App\Services\Auth\MasterAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -75,10 +77,12 @@ class AuthController extends Controller
 
     private function createSession(User $user, Request $request, string $tokenName): JsonResponse
     {
-        $tokenInstance = $user->createToken($tokenName);
+        $tokenInstance = $user->createToken($tokenName, ['*'], now()->addMinutes(15));
         $token = $tokenInstance->plainTextToken;
 
-        \Illuminate\Support\Facades\DB::table('user_sessions')->insert([
+        $refreshTokenData = $this->issueRefreshToken($user, $tokenInstance->accessToken->id);
+
+        DB::table('user_sessions')->insert([
             'user_id' => $user->id,
             'token_id' => $tokenInstance->accessToken->id,
             'ip_address' => $request->ip(),
@@ -91,6 +95,8 @@ class AuthController extends Controller
             'success' => true,
             'data' => [
                 'token' => $token,
+                'refresh_token' => $refreshTokenData['plain'],
+                'expires_in' => 900,
                 'user'  => [
                     'id'    => $user->uuid,
                     'name'  => $user->name,
@@ -101,17 +107,53 @@ class AuthController extends Controller
             ]
         ]);
 
-        // Set HttpOnly cookie for proxy.ts
         $response->headers->set('Set-Cookie', implode('; ', [
             "basileia_session={$token}",
             'HttpOnly',
             'Secure',
             'SameSite=Lax',
             'Path=/',
-            'Max-Age=86400',
+            'Max-Age=900',
         ]));
 
         return $response;
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        $data = $request->validate(['refresh_token' => 'required|string']);
+
+        $refreshHash = hash('sha256', $data['refresh_token']);
+        $storedToken = RefreshToken::where('refresh_token_hash', $refreshHash)->first();
+
+        if (!$storedToken || !$storedToken->isValid()) {
+            return response()->json(['message' => 'Refresh token inválido ou expirado.'], 401);
+        }
+
+        $user = User::find($storedToken->user_id);
+        if (!$user || $user->status !== 'active') {
+            return response()->json(['message' => 'Conta inativa.'], 403);
+        }
+
+        $storedToken->update(['revoked_at' => now()]);
+        $user->tokens()->where('id', $storedToken->token_id)->delete();
+
+        return $this->createSession($user, $request, 'dashboard-v1-refresh');
+    }
+
+    private function issueRefreshToken(User $user, int $tokenId): array
+    {
+        $plain = bin2hex(random_bytes(32));
+        $hash = hash('sha256', $plain);
+
+        RefreshToken::create([
+            'user_id' => $user->id,
+            'token_id' => $tokenId,
+            'refresh_token_hash' => $hash,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        return ['plain' => $plain, 'hash' => $hash];
     }
 
     public function me(Request $request): JsonResponse

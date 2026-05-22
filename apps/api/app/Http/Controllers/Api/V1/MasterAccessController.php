@@ -9,10 +9,12 @@ use App\Models\User;
 use App\Models\WebAuthnCredential;
 use App\Services\Auth\MasterAccessService;
 use App\Services\Auth\MasterUrlService;
+use App\Services\Auth\OneTimeMasterLink;
 use App\Services\Auth\SessionBinder;
 use App\Services\Auth\WebAuthnService;
 use App\Services\Audit\AuditService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -351,5 +353,47 @@ class MasterAccessController extends Controller
             'path' => $service->todayPath(),
             'date' => date('Y-m-d'),
         ]);
+    }
+
+    /* ═══════════════════════════════════════
+       One-Time Signed Link (TTL 30s)
+       ═══════════════════════════════════════ */
+
+    public function generateLink(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            return response()->json(['error' => 'Não autorizado.'], 403);
+        }
+
+        $linkService = app(OneTimeMasterLink::class);
+        $urlService = app(MasterUrlService::class);
+
+        $token = $linkService->generate($urlService);
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'url' => rtrim($frontendUrl, '/') . '/master/link/' . urlencode($token),
+                'expires_in' => 30,
+            ],
+        ]);
+    }
+
+    public function consumeLink(string $token, Request $request): RedirectResponse|JsonResponse
+    {
+        $linkService = app(OneTimeMasterLink::class);
+        $path = $linkService->verify($token);
+
+        if (!$path) {
+            if ($request->wantsJson()) {
+                return response()->json(['error' => 'Link inválido ou expirado.'], 410);
+            }
+            return redirect('/');
+        }
+
+        $baseUrl = config('app.url', 'http://localhost:8000');
+        return redirect()->away(rtrim($baseUrl, '/') . '/' . ltrim($path, '/'));
     }
 }

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
+use App\Models\RefreshToken;
 use App\Models\User;
 use App\Services\Audit\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -35,13 +35,17 @@ class AuthController extends Controller
 
         $user->update(['failed_login_attempts' => 0, 'locked_until' => null]);
 
-        $token = $user->createToken('next-dashboard')->plainTextToken;
+        $tokenInstance = $user->createToken('next-dashboard', ['*'], now()->addMinutes(15));
+        $token = $tokenInstance->plainTextToken;
 
-        // Audit log
+        $refreshTokenData = $this->issueRefreshToken($user, $tokenInstance->accessToken->id);
+
         (new AuditService())->log('user.login', $user);
 
-        $response = response()->json([
+        $responseData = [
             'token' => $token,
+            'refresh_token' => $refreshTokenData['plain'],
+            'expires_in' => 900,
             'user'  => [
                 'id'              => $user->id,
                 'name'            => $user->name,
@@ -50,7 +54,9 @@ class AuthController extends Controller
                 'two_factor_enabled' => $user->two_factor_enabled,
                 'company_id'      => $user->company_id,
             ],
-        ]);
+        ];
+
+        $response = response()->json($responseData);
 
         $response->headers->set('Set-Cookie', implode('; ', [
             "basileia_session={$token}",
@@ -58,7 +64,55 @@ class AuthController extends Controller
             'Secure',
             'SameSite=Lax',
             'Path=/',
-            'Max-Age=86400',
+            'Max-Age=900',
+        ]));
+
+        return $response;
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'refresh_token' => 'required|string',
+        ]);
+
+        $refreshHash = hash('sha256', $data['refresh_token']);
+        $storedToken = RefreshToken::where('refresh_token_hash', $refreshHash)->first();
+
+        if (!$storedToken || !$storedToken->isValid()) {
+            return response()->json(['message' => 'Refresh token inválido ou expirado.'], 401);
+        }
+
+        $user = User::find($storedToken->user_id);
+        if (!$user || $user->status !== 'active') {
+            return response()->json(['message' => 'Conta inativa.'], 403);
+        }
+
+        // Revoke old tokens
+        $storedToken->update(['revoked_at' => now()]);
+        $user->tokens()->where('id', $storedToken->token_id)->delete();
+
+        // Issue new pair
+        $newTokenInstance = $user->createToken('next-dashboard', ['*'], now()->addMinutes(15));
+        $newToken = $newTokenInstance->plainTextToken;
+
+        $refreshTokenData = $this->issueRefreshToken($user, $newTokenInstance->accessToken->id);
+
+        (new AuditService())->log('user.token.refresh', $user);
+
+        $response = response()->json([
+            'token' => $newToken,
+            'refresh_token' => $refreshTokenData['plain'],
+            'expires_in' => 900,
+        ]);
+
+        $response->headers->set('Set-Cookie', implode('; ', [
+            "basileia_session={$newToken}",
+            'HttpOnly',
+            'Secure',
+            'SameSite=Lax',
+            'Path=/',
+            'Max-Age=900',
         ]));
 
         return $response;
@@ -66,7 +120,14 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        $token = $user->currentAccessToken();
+
+        if ($token) {
+            RefreshToken::where('token_id', $token->id)->update(['revoked_at' => now()]);
+            $token->delete();
+        }
+
         return response()->json(['message' => 'Deslogado com sucesso.']);
     }
 
@@ -108,5 +169,20 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Código inválido ou expirado.',
         ], 422);
+    }
+
+    private function issueRefreshToken(User $user, int $tokenId): array
+    {
+        $plain = bin2hex(random_bytes(32));
+        $hash = hash('sha256', $plain);
+
+        RefreshToken::create([
+            'user_id' => $user->id,
+            'token_id' => $tokenId,
+            'refresh_token_hash' => $hash,
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        return ['plain' => $plain, 'hash' => $hash];
     }
 }

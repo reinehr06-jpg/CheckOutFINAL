@@ -22,6 +22,7 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login'])->middleware('throttle:auth');
     Route::post('auth/password/forgot', [\App\Http\Controllers\Api\V1\AuthController::class, 'forgotPassword'])->middleware('throttle:auth');
     Route::post('auth/password/reset', [\App\Http\Controllers\Api\V1\AuthController::class, 'resetPassword'])->middleware('throttle:auth');
+    Route::post('auth/refresh', [\App\Http\Controllers\Api\V1\AuthController::class, 'refresh'])->middleware('throttle:auth');
 
     // ── Checkout Sessions (Sistemas Conectados via API Key) ───────────────
     Route::middleware(['resolve.api.key', 'throttle:api_external', 'rate.company'])->group(function () {
@@ -46,7 +47,7 @@ Route::prefix('v1')->group(function () {
     Route::post('webhooks/gateways/{provider}/{accountUuid?}', [\App\Http\Controllers\Api\V1\GatewayWebhookController::class, 'handle'])->middleware('throttle:webhooks');
 
     // ── Rotas Protegidas (Dashboard & Integrações) ────────────────────────
-    Route::middleware(['auth:sanctum', 'tracing', 'resolve.api.key', 'throttle:dashboard'])->group(function () {
+    Route::middleware(['auth:sanctum', 'zero.trust', 'scope.company', 'anomaly.detect', 'tracing', 'resolve.api.key', 'throttle:dashboard'])->group(function () {
         
         // Auth Me
         Route::get('auth/me', [\App\Http\Controllers\Api\V1\AuthController::class, 'me']);
@@ -184,7 +185,8 @@ Route::prefix('v1')->group(function () {
 // ═══════════════════════════════════════════════════════════════════════════════
 Route::prefix('v2')->name('api.v2.')->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])->middleware('throttle:auth');
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::post('auth/refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])->middleware('throttle:auth');
+    Route::middleware(['auth:sanctum', 'zero.trust'])->group(function () {
         Route::get('auth/me', [\App\Http\Controllers\Api\V2\AuthController::class, 'me']);
         Route::post('auth/2fa/verify', [\App\Http\Controllers\Api\V2\AuthController::class, 'verify2fa']);
         Route::post('auth/logout', [\App\Http\Controllers\Api\V2\AuthController::class, 'logout']);
