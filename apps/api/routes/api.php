@@ -24,6 +24,15 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/password/reset', [\App\Http\Controllers\Api\V1\AuthController::class, 'resetPassword'])->middleware('throttle:auth');
     Route::post('auth/refresh', [\App\Http\Controllers\Api\V1\AuthController::class, 'refresh'])->middleware('throttle:auth');
 
+    // ── JIT Access (Just-In-Time Privilege Elevation) ─────────────────────
+    Route::prefix('jit')->middleware(['auth:sanctum', 'zero.trust', 'scope.company', 'anomaly.detect'])->group(function () {
+        Route::post('request', [\App\Http\Controllers\Api\V1\JitAccessController::class, 'request']);
+        Route::get('my-active', [\App\Http\Controllers\Api\V1\JitAccessController::class, 'myActive']);
+        Route::get('list', [\App\Http\Controllers\Api\V1\JitAccessController::class, 'list']);
+        Route::post('{uuid}/approve', [\App\Http\Controllers\Api\V1\JitAccessController::class, 'approve']);
+        Route::post('{uuid}/deny', [\App\Http\Controllers\Api\V1\JitAccessController::class, 'deny']);
+    });
+
     // ── Checkout Sessions (Sistemas Conectados via API Key) ───────────────
     Route::middleware(['resolve.api.key', 'throttle:api_external', 'rate.company'])->group(function () {
         Route::post('checkout-sessions', [\App\Http\Controllers\Api\V1\CheckoutSessionController::class, 'store']);

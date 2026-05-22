@@ -56,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'zero.trust' => \App\Http\Middleware\ZeroTrustMiddleware::class,
             'scope.company' => \App\Http\Middleware\EnforceCompanyScope::class,
             'anomaly.detect' => \App\Http\Middleware\AnomalyDetection::class,
+            'jit' => \App\Http\Middleware\JitAccessMiddleware::class,
         ]);
 
         $middleware->web(append: [
