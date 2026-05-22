@@ -109,6 +109,7 @@ Route::prefix('v1')->group(function () {
             Route::get('dashboard/api-keys', [\App\Http\Controllers\Api\V1\Dashboard\ApiKeyController::class, 'index']);
             Route::post('dashboard/api-keys', [\App\Http\Controllers\Api\V1\Dashboard\ApiKeyController::class, 'store']);
             Route::get('dashboard/audit', [\App\Http\Controllers\Api\V1\Dashboard\AuditController::class, 'index']);
+            Route::get('dashboard/audit/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\AuditController::class, 'show']);
 
             // Super Admin (role check via closure)
             Route::prefix('super-admin')->middleware(function ($request, $next) {

@@ -24,6 +24,76 @@ import {
 import { AuditEvent } from '@/types/audit';
 import { MOCK_AUDIT_EVENTS } from './__mocks__/audit';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
+
+const EVENT_MAP: Record<string, { category: string; level: string; type: string }> = {
+  'login':               { category: 'ACESSO',     level: 'Informativo', type: 'login' },
+  'logout':              { category: 'ACESSO',     level: 'Informativo', type: 'login' },
+  'payment.captured':    { category: 'PAGAMENTO',  level: 'Informativo', type: 'payment' },
+  'payment.created':     { category: 'PAGAMENTO',  level: 'Informativo', type: 'payment' },
+  'payment.refunded':    { category: 'REEMBOLSO',  level: 'Crítico',     type: 'refund' },
+  'payment.failed':      { category: 'PAGAMENTO',  level: 'Crítico',     type: 'payment' },
+  'payment.risk_flagged':{ category: 'SEGURANÇA',  level: 'Crítico',     type: 'security' },
+  'checkout.created':    { category: 'CHECKOUT',   level: 'Informativo', type: 'checkout' },
+  'checkout.updated':    { category: 'CHECKOUT',   level: 'Alteração',   type: 'checkout' },
+  'checkout.deleted':    { category: 'EXCLUSÃO',   level: 'Crítico',     type: 'checkout' },
+  'webhook.sent':        { category: 'WEBHOOK',    level: 'Informativo', type: 'webhook' },
+  'webhook.delivered':   { category: 'WEBHOOK',    level: 'Informativo', type: 'webhook' },
+  'webhook.failed':      { category: 'WEBHOOK',    level: 'Crítico',     type: 'webhook' },
+  'subscription.created':{ category: 'ASSINATURA', level: 'Informativo', type: 'subscription' },
+  'subscription.canceled':{category: 'ASSINATURA', level: 'Alteração',   type: 'subscription' },
+  'api_key.created':     { category: 'INTEGRAÇÃO', level: 'Alteração',   type: 'integration' },
+  'api_key.deleted':     { category: 'INTEGRAÇÃO', level: 'Crítico',     type: 'integration' },
+  'user.created':        { category: 'USUÁRIO',    level: 'Alteração',   type: 'user' },
+  'user.updated':        { category: 'USUÁRIO',    level: 'Alteração',   type: 'user' },
+  'user.deleted':        { category: 'USUÁRIO',    level: 'Crítico',     type: 'user' },
+  'permissions.updated': { category: 'USUÁRIO',    level: 'Alteração',   type: 'user' },
+  'settings.updated':    { category: 'CONFIGURAÇÃO', level: 'Alteração', type: 'config' },
+  'security.access_denied':{ category: 'SEGURANÇA',level: 'Crítico',     type: 'security' },
+  'security.flag_raised':{ category: 'SEGURANÇA',  level: 'Crítico',     type: 'security' },
+};
+
+function auditEventFromApi(log: any): AuditEvent {
+  const created = new Date(log.created_at);
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  let relative: string;
+  if (diffMin < 1) relative = 'agora';
+  else if (diffMin < 60) relative = `${diffMin}m atrás`;
+  else if (diffMin < 1440) relative = `${Math.floor(diffMin / 60)}h atrás`;
+  else relative = `${Math.floor(diffMin / 1440)}d atrás`;
+
+  const eventKey = log.event || '';
+  const mapping = EVENT_MAP[eventKey] || { category: 'CONFIGURAÇÃO', level: 'Informativo', type: 'config' };
+  const title = eventKey
+    .replace(/_/g, ' ')
+    .replace(/\./g, ' — ')
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+  return {
+    id: log.uuid || log.id,
+    time: created.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    relative,
+    date: created.toLocaleDateString('pt-BR'),
+    title,
+    category: mapping.category,
+    details: log.metadata?.description || `${title} por ${log.user?.name || 'Sistema'}`,
+    meta: log.ip_address_hash ? `IP: ${log.ip_address_hash}` : '',
+    user: log.user?.name || 'Sistema',
+    role: log.user?.role || (log.user ? 'Usuário' : 'Sistema'),
+    system: log.metadata?.system || log.metadata?.gateway || log.metadata?.endpoint || 'Basileia Pay',
+    environment: log.metadata?.environment || 'Produção',
+    ip: log.ip_address_hash || '',
+    location: log.metadata?.location || '',
+    level: mapping.level,
+    type: mapping.type,
+    entityType: log.entity_type || '',
+    entityId: log.entity_id || null,
+    metadata: log.metadata || {},
+    relatedIds: log.metadata?.order_id ? { orderId: log.metadata.order_id } : undefined,
+  };
+}
 
 export default function AuditPage() {
   const [mounted, setMounted] = useState(false);
@@ -69,6 +139,20 @@ export default function AuditPage() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await apiFetch('/api/v1/dashboard/audit');
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setEvents(res.data.map(auditEventFromApi));
+        }
+      } catch {} finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const triggerToast = (msg: string) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -26,6 +26,7 @@ import {
 
 import { SecurityUser, SecuritySession, SecurityIpRule, SecurityActivityEvent, SecurityPolicy, SecurityRole } from '@/types/security';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 import { 
   ShieldAlert, 
   Check, 
@@ -82,6 +83,36 @@ export default function SecuritySettingsPage() {
   // Simulated access roles
   const [userRole, setUserRole] = useState<'Owner' | 'Auditor'>('Owner');
   const isAdmin = userRole === 'Owner';
+  const [twoFactorActive, setTwoFactorActive] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [sessRes, statusRes] = await Promise.all([
+          apiFetch('/api/v1/dashboard/security/sessions'),
+          apiFetch('/api/v1/dashboard/security/status'),
+        ]);
+        if (sessRes.success && Array.isArray(sessRes.data) && sessRes.data.length > 0) {
+          setSessions(sessRes.data.map((s: any) => ({
+            id: s.token_id || s.id,
+            userId: s.user_id,
+            userName: s.user_name || 'Usuário',
+            role: s.role || 'Desenvolvedor' as SecurityRole,
+            device: s.device || s.user_agent?.split('/')[0] || 'Navegador',
+            userAgent: s.user_agent || '',
+            ip: s.ip || '',
+            location: s.location || '',
+            startedAt: s.created_at || s.started_at,
+            lastActivityAt: s.last_active_at || s.last_activity_at || s.created_at,
+            status: s.status || 'active',
+          } as SecuritySession)));
+        }
+        if (statusRes.success && statusRes.data) {
+          setTwoFactorActive((statusRes.data as any).two_factor_enabled);
+        }
+      } catch {}
+    })();
+  }, []);
 
   const triggerFeedback = (msg: string) => {
     setFeedbackMsg(msg);
@@ -169,6 +200,11 @@ export default function SecuritySettingsPage() {
     setSessions(sessions.map((s) => s.id === id ? { ...s, status: 'revoked' as const } : s));
     
     const targetSession = sessions.find(s => s.id === id);
+    (async () => {
+      try {
+        await apiFetch('/api/v1/dashboard/security/sessions/' + id, { method: 'DELETE' });
+      } catch {}
+    })();
     const newEvt: SecurityActivityEvent = {
       id: `evt_sec_${Math.floor(Math.random() * 10000)}`,
       timestamp: new Date().toISOString(),
@@ -741,7 +777,7 @@ class LGPDSanitizer
           onActionFeedback={triggerFeedback}
           onForceLogoutAll={handleRevokeAllSessions}
           onNavigateToAudit={() => triggerFeedback("Redirecionando para as trilhas completas de Auditoria...")}
-          is2faActive={true}
+          is2faActive={twoFactorActive}
           isIpAllowlistActive={ipRules.length > 0}
         />
 

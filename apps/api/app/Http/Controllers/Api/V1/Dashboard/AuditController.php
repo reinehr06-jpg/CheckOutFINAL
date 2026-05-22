@@ -29,4 +29,20 @@ class AuditController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Exibir um log de auditoria específico.
+     */
+    public function show(string $uuid, Request $request): JsonResponse
+    {
+        $log = AuditLog::where('company_id', $request->user()->company_id)
+            ->where('uuid', $uuid)
+            ->with('user')
+            ->firstOrFail();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $log,
+        ]);
+    }
 }
