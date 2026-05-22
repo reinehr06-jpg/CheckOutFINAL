@@ -112,13 +112,7 @@ Route::prefix('v1')->group(function () {
             Route::get('dashboard/audit/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\AuditController::class, 'show']);
 
             // Super Admin (role check via closure)
-            Route::prefix('super-admin')->middleware(function ($request, $next) {
-                $user = $request->user();
-                if (!$user || !$user->isSuperAdmin()) {
-                    return response()->json(['success' => false, 'error' => ['code' => 'forbidden', 'message' => 'Acesso restrito a super administradores.']], 403);
-                }
-                return $next($request);
-            })->group(function () {
+            Route::prefix('super-admin')->middleware('super.admin')->group(function () {
                 Route::get('companies', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'companies']);
                 Route::get('companies/{companyId}/users', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'companyUsers']);
                 Route::post('impersonate/start', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'startImpersonation']);

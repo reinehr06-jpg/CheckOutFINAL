@@ -57,6 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'scope.company' => \App\Http\Middleware\EnforceCompanyScope::class,
             'anomaly.detect' => \App\Http\Middleware\AnomalyDetection::class,
             'jit' => \App\Http\Middleware\JitAccessMiddleware::class,
+            'super.admin' => \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
         ]);
 
         $middleware->web(append: [
