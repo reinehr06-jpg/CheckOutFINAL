@@ -33,5 +33,5 @@ return [
     ],
 
     // Capture failed jobs
-    'capture_silenced_fails' => env('SENTRY_CAPTURE_SILENCED_FAILS', true),
+    'capture_silenced_errors' => env('SENTRY_CAPTURE_SILENCED_ERRORS', true),
 ];
