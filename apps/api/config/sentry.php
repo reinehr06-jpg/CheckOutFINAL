@@ -13,7 +13,7 @@ return [
     |
     */
     'dsn' => env('SENTRY_LARAVEL_DSN'),
-    'release' => env('SENTRY_RELEASE', trim(`git log --oneline -1 --format=%h 2>/dev/null || echo unknown`)),
+    'release' => env('SENTRY_RELEASE', 'unknown'),
 
     // Sample rate for performance tracing (0.0 to 1.0)
     'traces_sample_rate' => (float) env('SENTRY_TRACES_SAMPLE_RATE', 0.1),
