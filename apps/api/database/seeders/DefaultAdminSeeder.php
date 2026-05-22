@@ -6,13 +6,25 @@ use App\Models\User;
 use App\Models\Company;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DefaultAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminEmail = env('ADMIN_EMAIL', 'admin@basileia.global');
-        $adminPassword = env('ADMIN_PASSWORD', 'Basileia@2026!');
+        $adminEmail = env('ADMIN_EMAIL');
+
+        if (empty($adminEmail)) {
+            $this->command->warn('ADMIN_EMAIL não definido no .env — pulando DefaultAdminSeeder.');
+            return;
+        }
+
+        $adminPassword = env('ADMIN_PASSWORD');
+
+        if (empty($adminPassword)) {
+            $adminPassword = Str::password(24);
+            $this->command->info("ADMIN_PASSWORD não definido. Senha gerada: {$adminPassword}");
+        }
 
         $company = Company::first();
 
