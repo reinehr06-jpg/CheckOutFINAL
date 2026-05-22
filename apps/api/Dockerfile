@@ -33,8 +33,11 @@ COPY --chown=www-data:www-data . .
 
 # Install composer dependencies (before php.ini hardening to avoid open_basedir restriction)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-RUN composer install --optimize-autoloader --no-interaction --no-dev \
+RUN composer install --optimize-autoloader --no-interaction --no-dev --no-scripts \
     && rm -rf /usr/bin/composer ~/.composer
+
+# Generate package discovery cache (may warn without .env, but harmless)
+RUN php artisan package:discover --ansi 2>/dev/null || true
 
 # Copy PHP hardening config (after composer to avoid blocking phar execution)
 COPY docker/php.ini /usr/local/etc/php/conf.d/basileia.ini
