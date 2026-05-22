@@ -1,0 +1,83 @@
+name: "Security Scan"
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # every Monday 06:00 UTC
+
+jobs:
+  # ── Static Analysis (PHPStan) ──
+  phpstan:
+    name: "PHPStan SAST"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: vendor/bin/phpstan analyse --level=max app/ || true
+        continue-on-error: true
+
+  # ── Vulnerability Scan (Trivy) ──
+  trivy:
+    name: "Trivy SCA"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [apps/api, apps/dashboard]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "${{ matrix.target }}"
+          format: "sarif"
+          output: "trivy-results-${{ matrix.target }}.sarif"
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+        continue-on-error: true
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results-${{ matrix.target }}.sarif"
+        continue-on-error: true
+
+  # ── Secrets Leak Detection (Gitleaks) ──
+  gitleaks:
+    name: "Gitleaks Secrets"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Docker Image Scan (if Dockerfiles changed) ──
+  docker-scan:
+    name: "Docker Image Scan"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t basileia-api:scan apps/api/
+        continue-on-error: true
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "image"
+          scan-ref: "basileia-api:scan"
+          format: "sarif"
+          output: "trivy-docker.sarif"
+          severity: "HIGH,CRITICAL"
+        continue-on-error: true

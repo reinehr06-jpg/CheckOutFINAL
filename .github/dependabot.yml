@@ -1,0 +1,68 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/apps/dashboard"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "npm"
+    assignees:
+      - "reinehr06-jpg"
+    reviewers:
+      - "reinehr06-jpg"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    allow:
+      - dependency-type: "direct"
+    ignore:
+      - dependency-name: "next"
+        versions: [">=16.0.0"]
+
+  - package-ecosystem: "composer"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "composer"
+    assignees:
+      - "reinehr06-jpg"
+    reviewers:
+      - "reinehr06-jpg"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/dashboard"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"
