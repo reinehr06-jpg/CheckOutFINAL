@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Casts\AsTenantEncrypted;
 use Illuminate\Database\Eloquent\Model;
 
 class CompanyKey extends Model
 {
     protected $table = 'company_keys';
-    
-    // As it uses company_id as primary key
+
     protected $primaryKey = 'company_id';
     public $incrementing = false;
 
@@ -16,4 +16,11 @@ class CompanyKey extends Model
         'company_id',
         'key',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'key' => AsTenantEncrypted::class . ':company_id',
+        ];
+    }
 }

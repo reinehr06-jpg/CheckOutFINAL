@@ -4,19 +4,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Encryption Key (AES-256-GCM for gateway credentials)
+    | Encryption Key (KEK — Key Encryption Key)
     |--------------------------------------------------------------------------
-    | Must be base64-encoded 256-bit key. Generate via:
-    |   php -r "echo base64_encode(random_bytes(32));"
+    | Must be base64-encoded 32 bytes (SODIUM_CRYPTO_SECRETBOX_KEYBYTES).
+    | Generate: php -r "echo base64_encode(random_bytes(32));"
     | Store in env SECURITY_ENCRYPTION_KEY, never commit.
     */
     'encryption_key' => env('SECURITY_ENCRYPTION_KEY'),
 
     /*
     |--------------------------------------------------------------------------
+    | Key Encryption Key Version
+    |--------------------------------------------------------------------------
+    | Increment when rotating KEK. Re-wrap all DEKs after change.
+    */
+    'kek_version' => env('SECURITY_KEK_VERSION', 1),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Vault Configuration
+    |--------------------------------------------------------------------------
+    | driver: 'env' | 'hashicorp'
+    */
+    'vault' => [
+        'driver' => env('SECURITY_VAULT_DRIVER', 'env'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | IP Hashing Salt (LGPD compliance — never store raw IPs)
     |--------------------------------------------------------------------------
-    | Used to hash IPs in audit logs. Must be unique per deployment.
     */
     'ip_salt' => env('SECURITY_IP_SALT', 'change-this-salt-in-production'),
 
@@ -46,29 +63,26 @@ return [
     |--------------------------------------------------------------------------
     | Reauth Window
     |--------------------------------------------------------------------------
-    | How long a reauth confirmation is valid for critical actions.
     */
     'reauth_window_minutes' => 10,
 
     /*
     |--------------------------------------------------------------------------
-    | Master Access
-    |--------------------------------------------------------------------------
-    */
-    /*
-    |--------------------------------------------------------------------------
     | IP Allowlist (defesa em profundidade)
     |--------------------------------------------------------------------------
     | mode: 'off' | 'strict' | 'log_only'
-    | ips: string[] of CIDR or exact IPs allowed
-    | Para produção, defina SECURITY_IP_ALLOWLIST_MODE=strict
-    | e SECURITY_IP_ALLOWLIST_IPS=203.0.113.0/24,198.51.100.1
+    | ips: CIDR ou IPs exatos separados por vírgula
     */
     'ip_allowlist' => [
         'mode' => env('SECURITY_IP_ALLOWLIST_MODE', 'off'),
         'ips' => explode(',', env('SECURITY_IP_ALLOWLIST_IPS', '')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Master Access
+    |--------------------------------------------------------------------------
+    */
     'master_access' => [
         'challenge_ttl_seconds' => 30,
         'session_ttl_hours' => 1,

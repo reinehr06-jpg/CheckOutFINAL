@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Casts\AsTenantEncrypted;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Crypt;
 
 class GatewayCredential extends Model
 {
@@ -13,24 +13,16 @@ class GatewayCredential extends Model
 
     protected $fillable = [
         'gateway_account_id',
+        'company_id',
         'key',
         'encrypted_value',
     ];
 
-    /**
-     * Get the value as decrypted.
-     */
-    public function getValueAttribute()
+    protected function casts(): array
     {
-        return Crypt::decryptString($this->encrypted_value);
-    }
-
-    /**
-     * Set the value as encrypted.
-     */
-    public function setValueAttribute($value)
-    {
-        $this->attributes['encrypted_value'] = Crypt::encryptString($value);
+        return [
+            'encrypted_value' => AsTenantEncrypted::class . ':company_id',
+        ];
     }
 
     public function gatewayAccount(): BelongsTo
