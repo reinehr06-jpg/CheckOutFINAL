@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { 
   AlertTriangle, 
   ChevronRight, 
@@ -10,14 +11,67 @@ import {
   ArrowUpRight,
   Zap,
   Activity,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
+
+type AlertItem = { severity: string; text: string; time: string; color: string };
+type EventItem = { time: string; status: string; event: string; method: string; ref: string; color: string };
+
+const MOCK_ALERTS: AlertItem[] = [
+  { severity: 'Crítico', text: 'Taxa de falha acima do esperado: Santander', time: '2m', color: 'danger' },
+  { severity: 'Atenção', text: 'Atraso médio antifraude acima de 60s', time: '12m', color: 'warning' },
+  { severity: 'Atenção', text: 'Instabilidade stripe-card-wallet - BRL', time: '18m', color: 'warning' },
+];
+
+const MOCK_EVENTS: EventItem[] = [
+  { time: '11:04:53', status: 'Aprovado', event: 'Pagamento aprovado', method: 'Cartão', ref: 'R$ 1.568,88', color: 'success' },
+  { time: '11:03:18', status: 'Info', event: 'Webhook enviado', method: 'API', ref: 'Assinatura', color: 'brand' },
+  { time: '11:02:12', status: 'Falha', event: 'Retry falhou', method: 'Pix', ref: 'Timeout', color: 'danger' },
+  { time: '11:01:45', status: 'Info', event: 'Antifraude revisou', method: 'Cartão', ref: 'tx_0c58b79', color: 'brand' },
+  { time: '11:00:25', status: 'Risco', event: 'Chargeback recebido', method: 'Cartão', ref: 'R$ 1.984,00', color: 'danger' },
+];
 
 export function OperationalSidePanel() {
+  const [alerts, setAlerts] = useState<AlertItem[]>(MOCK_ALERTS);
+  const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [alertRes, payRes] = await Promise.all([
+          apiFetch('/api/v1/dashboard/alerts'),
+          apiFetch('/api/v1/dashboard/payments?per_page=5'),
+        ]);
+        if (alertRes.success && Array.isArray(alertRes.data) && alertRes.data.length > 0) {
+          const alertColor: Record<string, string> = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' };
+          setAlerts(alertRes.data.map((a: any) => ({
+            severity: a.severity === 'critical' ? 'Crítico' : a.severity === 'high' ? 'Alto' : a.severity === 'medium' ? 'Médio' : a.severity === 'low' ? 'Baixo' : a.severity || 'Info',
+            text: a.title || a.message || '',
+            time: a.created_at ? Math.floor((Date.now() - new Date(a.created_at).getTime()) / 60000) + 'm' : '—',
+            color: alertColor[a.severity] || 'warning',
+          })));
+        }
+        if (payRes.success && Array.isArray(payRes.data) && payRes.data.length > 0) {
+          const eventColors: Record<string, string> = { approved: 'success', paid: 'success', pending: 'warning', failed: 'danger', refunded: 'brand' };
+          setEvents(payRes.data.slice(0, 5).map((p: any) => ({
+            time: p.created_at ? new Date(p.created_at).toLocaleTimeString('pt-BR') : '—',
+            status: p.status,
+            event: p.status === 'paid' ? 'Pagamento aprovado' : p.status === 'failed' ? 'Pagamento recusado' : p.status === 'pending' ? 'Pagamento pendente' : 'Transação',
+            method: p.method || '—',
+            ref: p.value || '—',
+            color: eventColors[p.status] || 'info',
+          })));
+        }
+      } catch {}
+    })();
+  }, []);
+
   return (
     <div className="flex flex-col gap-5">
-      {/* 1. Alertas Operacionais - Compact (300px) */}
+      {/* 1. Alertas Operacionais */}
       <div className="bg-white p-5 rounded-[20px] border border-border shadow-sm h-[260px] flex flex-col">
         <div className="flex items-center justify-between mb-4 shrink-0">
           <h3 className="text-[11px] font-black uppercase tracking-widest text-ink">Alertas Operacionais</h3>
@@ -25,11 +79,7 @@ export function OperationalSidePanel() {
         </div>
         
         <div className="space-y-3 flex-1 overflow-hidden">
-          {[
-            { severity: 'Crítico', text: 'Taxa de falha acima do esperado: Santander', time: '2m', color: 'danger' },
-            { severity: 'Atenção', text: 'Atraso médio antifraude acima de 60s', time: '12m', color: 'warning' },
-            { severity: 'Atenção', text: 'Instabilidade stripe-card-wallet - BRL', time: '18m', color: 'warning' },
-          ].map((alert, i) => (
+          {alerts.slice(0, 3).map((alert, i) => (
             <div key={i} className="flex gap-2.5 group cursor-pointer">
               <div className={cn("w-1 h-1 rounded-full mt-1.5 shrink-0", `bg-${alert.color}`)} />
               <div className="flex-1 min-w-0">
@@ -48,7 +98,7 @@ export function OperationalSidePanel() {
         </button>
       </div>
 
-      {/* 2. Eventos Recentes - Compact (340px) */}
+      {/* 2. Eventos Recentes */}
       <div className="bg-white p-5 rounded-[20px] border border-border shadow-sm h-[320px] flex flex-col">
         <div className="flex items-center justify-between mb-4 shrink-0">
           <h3 className="text-[11px] font-black uppercase tracking-widest text-ink">Eventos Recentes</h3>
@@ -56,13 +106,7 @@ export function OperationalSidePanel() {
         </div>
 
         <div className="space-y-3 flex-1 overflow-hidden">
-          {[
-            { time: '11:04:53', status: 'Aprovado', event: 'Pagamento aprovado', method: 'Cartão', ref: 'R$ 1.568,88', color: 'success' },
-            { time: '11:03:18', status: 'Info', event: 'Webhook enviado', method: 'API', ref: 'Assinatura', color: 'brand' },
-            { time: '11:02:12', status: 'Falha', event: 'Retry falhou', method: 'Pix', ref: 'Timeout', color: 'danger' },
-            { time: '11:01:45', status: 'Info', event: 'Antifraude revisou', method: 'Cartão', ref: 'tx_0c58b79', color: 'brand' },
-            { time: '11:00:25', status: 'Risco', event: 'Chargeback recebido', method: 'Cartão', ref: 'R$ 1.984,00', color: 'danger' },
-          ].map((item, i) => (
+          {events.slice(0, 5).map((item, i) => (
             <div key={i} className="flex items-start gap-2.5">
               <span className="text-[8px] font-bold text-slate/30 tabular-nums mt-0.5 shrink-0">{item.time}</span>
               <div className="flex-1 min-w-0">

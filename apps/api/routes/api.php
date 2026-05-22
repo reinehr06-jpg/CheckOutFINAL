@@ -66,6 +66,7 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'index']);
         Route::get('dashboard/orders', [\App\Http\Controllers\Api\V1\Dashboard\OrderController::class, 'index']);
         Route::get('dashboard/systems', [\App\Http\Controllers\Api\V1\Dashboard\SystemController::class, 'index']);
+        Route::get('dashboard/systems/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\SystemController::class, 'show']);
         
         // Webhook Operational
         Route::get('dashboard/webhooks/deliveries', [\App\Http\Controllers\Api\V1\Dashboard\WebhookDeliveryController::class, 'index']);

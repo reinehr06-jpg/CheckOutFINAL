@@ -1,22 +1,60 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, useEffect, use } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card } from '@/components/ui/card';
-import { Copy, Plus, Trash2, Key, ShieldCheck, Globe, Settings as SettingsIcon } from 'lucide-react';
+import { Copy, Plus, Trash2, Key, ShieldCheck, Globe, Settings as SettingsIcon, Loader2 } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
+
+type SystemData = {
+  id: number;
+  uuid: string;
+  name: string;
+  slug: string;
+  description: string;
+  logo_url: string | null;
+  status: string;
+  environment: string;
+  created_at: string;
+};
 
 export default function SystemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const [tab, setTab] = useState<'overview' | 'api-keys' | 'webhooks' | 'settings'>('overview');
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [system, setSystem] = useState<SystemData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch(`/api/v1/dashboard/systems/${resolvedParams.id}`);
+        if (res.success && res.data) setSystem(res.data as SystemData);
+      } catch {} finally {
+        setLoading(false);
+      }
+    })();
+  }, [resolvedParams.id]);
 
   const handleCreateKey = () => {
-    // Mock key generation
     setNewKey('ck_live_' + Math.random().toString(36).substring(2, 32));
   };
 
+  if (loading) {
+    return (
+      <PageLayout title="Carregando..." backHref="/systems">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-6 h-6 text-slate/30 animate-spin" />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  const envLabel = system?.environment === 'production' ? 'Produção' : system?.environment === 'sandbox' ? 'Sandbox' : system?.environment || '—';
+  const statusLabel: Record<string, string> = { active: 'Operacional', inactive: 'Desconectado', attention: 'Atenção' };
+
   return (
-    <PageLayout title="Site Principal" backHref="/systems">
+    <PageLayout title={system?.name || 'Sistema'} backHref="/systems">
       {/* Tabs Navigation */}
       <div className="flex border-b border-border mb-6">
         {[
@@ -41,20 +79,24 @@ export default function SystemDetailPage({ params }: { params: Promise<{ id: str
       {tab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card title="Status do Sistema">
-             <div className="space-y-4">
-               <div className="flex justify-between text-sm">
-                 <span className="text-ink-muted">Token ID:</span>
-                 <span className="font-mono text-ink">sys_8a9b2c</span>
-               </div>
-               <div className="flex justify-between text-sm">
-                 <span className="text-ink-muted">Ambiente:</span>
-                 <span className="font-medium text-ink">Produção</span>
-               </div>
-               <div className="flex justify-between text-sm">
-                 <span className="text-ink-muted">Chaves Ativas:</span>
-                 <span className="font-medium text-ink">2</span>
-               </div>
-             </div>
+              <div className="space-y-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-ink-muted">UUID:</span>
+                  <span className="font-mono text-ink text-xs">{system?.uuid || '—'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-ink-muted">Ambiente:</span>
+                  <span className="font-medium text-ink">{envLabel}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-ink-muted">Status:</span>
+                  <span className="font-medium text-ink">{statusLabel[system?.status || ''] || system?.status || '—'}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-ink-muted">Criado em:</span>
+                  <span className="font-medium text-ink">{system?.created_at ? new Date(system.created_at).toLocaleString('pt-BR') : '—'}</span>
+                </div>
+              </div>
           </Card>
           
           <Card title="Uso (24h)">

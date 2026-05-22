@@ -71,10 +71,11 @@ class SystemController extends Controller
         ], 201);
     }
 
-    public function show($id)
+    public function show($uuid)
     {
         $system = ConnectedSystem::where('company_id', TenantContext::companyId())
-            ->findOrFail($id);
+            ->where('uuid', $uuid)
+            ->firstOrFail();
 
         return response()->json([
             'success' => true,
