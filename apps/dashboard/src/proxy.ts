@@ -25,7 +25,7 @@ function isStaticAsset(pathname: string): boolean {
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/fonts') ||
-    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff2?)$/)
+    !!pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js|woff2?)$/)
   );
 }
 
