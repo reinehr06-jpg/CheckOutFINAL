@@ -1,54 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Shield, Copy, Check, ArrowRight, Clock, Terminal } from 'lucide-react';
+import { Shield, Key, Smartphone } from 'lucide-react';
 
 export default function MasterAccessPage() {
-  const [code, setCode] = useState<string>('------');
-  const [expiresIn, setExpiresIn] = useState(20);
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState(false);
-
-  const fetchCode = useCallback(async () => {
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_URL}/api/v1/auth/master/code`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setCode(data.data.code);
-        setExpiresIn(data.data.expires_in);
-        setError(false);
-      } else {
-        setError(true);
-      }
-    } catch {
-      setError(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCode();
-    const interval = setInterval(fetchCode, 5000);
-    return () => clearInterval(interval);
-  }, [fetchCode]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setExpiresIn((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-tr from-[#0A0A0F] via-[#0D0D1A] to-[#1A0A2E] flex items-center justify-center p-4 select-none overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -63,68 +17,61 @@ export default function MasterAccessPage() {
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">Acesso Master</h1>
           <p className="text-sm text-slate-400 font-semibold">
-            Portal de acesso administrativo da plataforma
+            Autenticação em múltiplas camadas
           </p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 space-y-6">
-          <div className="text-center space-y-3">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Código de acesso temporário
-            </p>
-
-            {error ? (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-                <p className="text-red-400 text-sm font-bold">
-                  Erro ao conectar com o servidor. Verifique se a API está rodando.
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center shrink-0 mt-0.5">
+                <Key className="w-4 h-4 text-brand" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">1. URL Efêmera Diária</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  A URL de acesso muda todos os dias automaticamente. Ela é derivada de um seed
+                  criptográfico que existe apenas no servidor. Sem a URL do dia, ninguém sabe
+                  que a página existe.
                 </p>
               </div>
-            ) : (
-              <>
-                <div className="relative inline-block">
-                  <span className="text-5xl font-mono font-black tracking-[0.25em] text-brand bg-brand/5 px-6 py-4 rounded-xl border border-brand/10">
-                    {code}
-                  </span>
-                </div>
+            </div>
 
-                <div className="flex items-center justify-center gap-4 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span className="font-bold">Expira em <span className="text-slate-200">{expiresIn}s</span></span>
-                  </div>
-                  <button
-                    onClick={handleCopy}
-                    className="flex items-center gap-1.5 text-brand hover:text-brand-light font-bold transition-colors"
-                  >
-                    {copied ? (
-                      <><Check className="w-3.5 h-3.5" /> Copiado</>
-                    ) : (
-                      <><Copy className="w-3.5 h-3.5" /> Copiar código</>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center shrink-0 mt-0.5">
+                <Smartphone className="w-4 h-4 text-brand" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">2. 2FA Físico (YubiKey)</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Ao acessar a URL, o sistema pede autenticação via YubiKey (FIDO2/WebAuthn).
+                  Sem a chave física, não é possível prosseguir. Fallback TOTP disponível
+                  para emergências.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center shrink-0 mt-0.5">
+                <Shield className="w-4 h-4 text-brand" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">3. Código TOTP + Login</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Após o 2FA, o sistema exibe um código TOTP que reseta a cada 20 segundos.
+                  Use o código + email master para fazer login. A sessão expira em 20 minutos
+                  e é vinculada ao seu IP e dispositivo.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-white/5 rounded-xl p-4 space-y-2">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-              <Terminal className="w-3 h-3" /> Instruções
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+            <p className="text-xs text-red-400 font-bold text-center">
+              A URL de acesso é fornecida por um canal seguro fora deste sistema.
+              Consulte seu gerenciador de senhas ou Bitwarden para obter a URL do dia.
             </p>
-            <ol className="text-xs text-slate-400 font-semibold space-y-1.5 list-decimal list-inside">
-              <li>Copie o código de acesso acima</li>
-              <li>Vá para a página de login da plataforma</li>
-              <li>Use o email: <code className="text-brand font-mono text-[10px] bg-brand/5 px-1.5 py-0.5 rounded">CheckBasiPay@adm.basileia.global</code></li>
-              <li>Cole o código como senha (válido por 20 segundos)</li>
-            </ol>
           </div>
-
-          <a
-            href="/login"
-            className="w-full h-12 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/20 transition-all flex items-center justify-center gap-2"
-          >
-            Ir para o login <ArrowRight className="w-4 h-4" />
-          </a>
         </div>
 
         <p className="text-center text-[10px] font-bold text-slate-600">

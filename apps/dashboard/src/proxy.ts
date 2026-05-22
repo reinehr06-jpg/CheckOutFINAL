@@ -11,7 +11,6 @@ const PUBLIC_ROUTES = [
   '/restricted',
   '/_next',
   '/api',
-  '/master-access',
 ];
 
 function isPublicRoute(pathname: string): boolean {

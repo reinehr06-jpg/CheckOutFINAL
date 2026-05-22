@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Auth;
 
 class MasterAccessService
@@ -7,9 +9,9 @@ class MasterAccessService
     private string $seed;
     private int $window = 20;
 
-    public function __construct()
+    public function __construct(?string $seed = null)
     {
-        $this->seed = config('master.totp_seed');
+        $this->seed = $seed ?? config('master.totp_seed');
     }
 
     public function generateCode(): string
@@ -35,13 +37,8 @@ class MasterAccessService
         return false;
     }
 
-    public function generateSecretPath(): string
-    {
-        return hash_hmac('sha256', $this->seed, 'master-route');
-    }
-
     public function getMasterEmail(): string
     {
-        return 'CheckBasiPay@adm.basileia.global';
+        return config('master.master_email', 'CheckBasiPay@adm.basileia.global');
     }
 }

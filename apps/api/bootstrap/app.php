@@ -1,5 +1,6 @@
 <?php
 
+use App\Providers\MasterRouteServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -49,6 +50,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'rate.checkout' => \App\Http\Middleware\RateLimitCheckout::class,
             'tracing' => \App\Http\Middleware\RequestTracingMiddleware::class,
             'master.guard' => \App\Http\Middleware\MasterAccessGuard::class,
+            'master.2fa' => \App\Http\Middleware\Master2FAMiddleware::class,
+            'master.ratelimit' => \App\Http\Middleware\MasterRateLimiter::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
     })
