@@ -26,18 +26,18 @@ RUN apk add --no-cache \
         intl \
     && rm -rf /var/cache/apk/* /tmp/*
 
-# Copy PHP hardening config
-COPY docker/php.ini /usr/local/etc/php/conf.d/basileia.ini
-
 WORKDIR /var/www/html
 
 # Copy application
 COPY --chown=www-data:www-data . .
 
-# Install composer dependencies
+# Install composer dependencies (before php.ini hardening to avoid open_basedir restriction)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --optimize-autoloader --no-interaction --no-dev \
     && rm -rf /usr/bin/composer ~/.composer
+
+# Copy PHP hardening config (after composer to avoid blocking phar execution)
+COPY docker/php.ini /usr/local/etc/php/conf.d/basileia.ini
 
 # Create storage structure
 RUN mkdir -p \
