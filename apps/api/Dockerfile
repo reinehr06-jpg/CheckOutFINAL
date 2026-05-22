@@ -37,7 +37,8 @@ RUN composer install --optimize-autoloader --no-interaction --no-dev --no-script
     && rm -rf /usr/bin/composer ~/.composer
 
 # Generate package discovery cache (may warn without .env, but harmless)
-RUN php artisan package:discover --ansi 2>/dev/null || true
+RUN rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
+    && php artisan package:discover --ansi 2>/dev/null || true
 
 # Copy PHP hardening config (after composer to avoid blocking phar execution)
 COPY docker/php.ini /usr/local/etc/php/conf.d/basileia.ini
