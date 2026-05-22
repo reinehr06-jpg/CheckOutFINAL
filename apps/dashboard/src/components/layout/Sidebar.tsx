@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -21,9 +21,11 @@ import {
   Bell,
   Users,
   BarChart3,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 
 const menuGroups = [
   {
@@ -58,23 +60,10 @@ const menuGroups = [
   }
 ];
 
-type UserData = {
-  name: string;
-  email: string;
-  role: string;
-};
-
 export function Sidebar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<UserData | null>(null);
+  const { user, isMaster, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('basileia_user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
-    }
-  }, []);
 
   const roleLabel = (role: string) => {
     switch (role) {
@@ -85,16 +74,10 @@ export function Sidebar() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('basileia_token');
-    localStorage.removeItem('basileia_user');
-    window.location.href = '/login';
-  };
-
   const initials = user?.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'VA';
 
   return (
-    <aside className="w-[228px] 2xl:w-[260px] h-[calc(100vh-12px)] 2xl:h-[calc(100vh-20px)] sticky top-1.5 2xl:top-2.5 flex flex-col z-20 shrink-0 transition-all duration-300 self-start">
+    <aside className="w-[228px] 2xl:w-[260px] h-screen fixed left-1.5 2xl:left-2.5 top-1.5 2xl:top-2.5 bottom-1.5 2xl:bottom-2.5 flex flex-col z-20 transition-all duration-300">
       <div className="flex-1 bg-white/70 backdrop-blur-xl border border-border rounded-[24px] flex flex-col overflow-hidden shadow-2xl shadow-brand/5">
         {/* Brand */}
         <div className="p-5 pb-2 flex items-center gap-3">
@@ -155,6 +138,28 @@ export function Sidebar() {
               </div>
             </div>
           ))}
+
+          {/* Super Admin link (only for super_admin) */}
+          {isMaster && (
+            <div className="space-y-1 pt-2 border-t border-border/30">
+              <p className="px-3 text-[9px] font-black text-amber-500 uppercase tracking-widest mb-2 opacity-60">
+                ADMINISTRACAO
+              </p>
+              <Link
+                href="/dashboard/super-admin"
+                className={cn(
+                  "group flex items-center gap-3 px-3 py-2 2xl:py-2.5 rounded-xl transition-all duration-300 relative h-[40px] 2xl:h-[44px]",
+                  pathname === '/dashboard/super-admin'
+                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20"
+                    : "text-slate hover:bg-amber-50 hover:text-amber-600"
+                )}
+              >
+                <Shield className={cn("w-4 h-4 shrink-0", pathname === '/dashboard/super-admin' ? "text-white" : "text-slate/40 group-hover:text-amber-500")} />
+                <span className="font-bold text-[12.5px]">Super Admin</span>
+                {pathname === '/dashboard/super-admin' && <ChevronRight className="w-3.5 h-3.5 ml-auto text-white/70 shrink-0" />}
+              </Link>
+            </div>
+          )}
         </nav>
 
         {/* RESUMO widget */}
@@ -213,7 +218,12 @@ export function Sidebar() {
                 <Link href="/dashboard/settings" className="w-full px-3 py-2 text-left text-[12px] font-bold text-ink hover:bg-brand-soft flex items-center gap-2">
                   <Settings2 className="w-3.5 h-3.5" /> Configuracoes
                 </Link>
-                <button onClick={handleLogout} className="w-full px-3 py-2 text-left text-[12px] font-bold text-danger hover:bg-danger/5 flex items-center gap-2">
+                {isMaster && (
+                  <Link href="/dashboard/super-admin" className="w-full px-3 py-2 text-left text-[12px] font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2">
+                    <Shield className="w-3.5 h-3.5" /> Super Admin
+                  </Link>
+                )}
+                <button onClick={logout} className="w-full px-3 py-2 text-left text-[12px] font-bold text-danger hover:bg-danger/5 flex items-center gap-2">
                   <LogOut className="w-3.5 h-3.5" /> Sair
                 </button>
               </div>

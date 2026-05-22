@@ -99,8 +99,14 @@ Route::prefix('v1')->group(function () {
             Route::post('dashboard/api-keys', [\App\Http\Controllers\Api\V1\Dashboard\ApiKeyController::class, 'store']);
             Route::get('dashboard/audit', [\App\Http\Controllers\Api\V1\Dashboard\AuditController::class, 'index']);
 
-            // Super Admin
-            Route::prefix('super-admin')->group(function () {
+            // Super Admin (role check via closure)
+            Route::prefix('super-admin')->middleware(function ($request, $next) {
+                $user = $request->user();
+                if (!$user || !$user->isSuperAdmin()) {
+                    return response()->json(['success' => false, 'error' => ['code' => 'forbidden', 'message' => 'Acesso restrito a super administradores.']], 403);
+                }
+                return $next($request);
+            })->group(function () {
                 Route::get('companies', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'companies']);
                 Route::get('companies/{companyId}/users', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'companyUsers']);
                 Route::post('impersonate/start', [\App\Http\Controllers\Api\V1\SuperAdminController::class, 'startImpersonation']);
@@ -177,7 +183,7 @@ Route::prefix('v1')->group(function () {
 // API v2 — Next.js Frontend Integration
 // ═══════════════════════════════════════════════════════════════════════════════
 Route::prefix('v2')->name('api.v2.')->group(function () {
-    Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login']);
+    Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])->middleware('throttle:auth');
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('auth/me', [\App\Http\Controllers\Api\V2\AuthController::class, 'me']);
         Route::post('auth/2fa/verify', [\App\Http\Controllers\Api\V2\AuthController::class, 'verify2fa']);

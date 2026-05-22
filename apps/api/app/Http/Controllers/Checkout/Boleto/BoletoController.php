@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Checkout\Boleto;
 
+use App\Helpers\CheckoutResponse;
+use App\Helpers\PaymentStatusMapper;
 use App\Http\Controllers\Checkout\AbstractCheckoutController;
+use App\Http\Requests\ProcessBoletoPaymentRequest;
 use App\Models\Subscription;
 use App\Models\Transaction;
 use App\Services\CheckoutService;
@@ -12,6 +15,14 @@ use App\Services\Payment\BoletoPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controller de pagamento via boleto bancário.
+ *
+ * [Fase 3.2] View: checkout.boleto / checkout.boleto.success
+ * [Fase 3.3] Request: ProcessBoletoPaymentRequest
+ * [Fase 3.4] Respostas: CheckoutResponse
+ * [Fase 4.5] Payment method: PaymentStatusMapper::mapPaymentMethod()
+ */
 class BoletoController extends AbstractCheckoutController
 {
     public function __construct(
@@ -22,13 +33,19 @@ class BoletoController extends AbstractCheckoutController
         parent::__construct($asaasService, $webhookNotifier);
     }
 
-    public function process(string $uuid, Request $request): mixed
+    /**
+     * Processa pagamento via boleto bancário.
+     *
+     * @param ProcessBoletoPaymentRequest $request Requisição validada.
+     * @param string                      $uuid    UUID da transação.
+     */
+    public function process(ProcessBoletoPaymentRequest $request, string $uuid): mixed
     {
         $resource = CheckoutService::findResource($uuid);
         $transaction = $resource instanceof Transaction ? $resource : null;
 
         if (!$transaction) {
-            return response()->json(['error' => 'Transação não encontrada'], 404);
+            return CheckoutResponse::notFound('Transação não encontrada');
         }
 
         // [BUG-15] bloqueia empresa A acessando transação de empresa B
@@ -52,20 +69,18 @@ class BoletoController extends AbstractCheckoutController
 
             $transaction->update([
                 'asaas_payment_id' => $result['gatewayId'],
-                'payment_method' => 'boleto',
+                'payment_method' => PaymentStatusMapper::mapPaymentMethod('BOLETO'),
                 'status' => 'pending',
             ]);
 
-            return response()->json([
-                'ok' => true,
-                'status' => 'success',
+            return CheckoutResponse::success([
                 'bankSlipUrl' => $result['bankSlipUrl'],
                 'barcode' => $result['barcode'] ?? '',
                 'gatewayId' => $result['gatewayId'],
             ]);
         } catch (\Throwable $e) {
             Log::error('BoletoController: erro', ['uuid' => $uuid, 'error' => $e->getMessage()]);
-            return response()->json(['ok' => false, 'error' => $e->getMessage()], 400);
+            return CheckoutResponse::error($e->getMessage());
         }
     }
 
@@ -79,11 +94,11 @@ class BoletoController extends AbstractCheckoutController
     }
     protected function getViewName(): string
     {
-        return 'checkout.boleto.front.pagamento';
+        return 'checkout.boleto';
     }
     protected function getSuccessViewName(): string
     {
-        return 'checkout.boleto.front.sucesso';
+        return 'checkout.boleto.success';
     }
     protected function getSource(): string
     {

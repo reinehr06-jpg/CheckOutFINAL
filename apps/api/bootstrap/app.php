@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function () {
             \Illuminate\Support\Facades\Route::middleware('web')
                 ->group(base_path('routes/webhook.php'));
+
+            \Illuminate\Support\Facades\Route::middleware('api')
+                ->group(base_path('routes/master.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
@@ -44,6 +47,8 @@ return Application::configure(basePath: dirname(__DIR__))
             '2fa' => \App\Http\Middleware\EnsureTwoFactorVerified::class,
             'rate.company' => \App\Http\Middleware\RateLimitByCompany::class,
             'rate.checkout' => \App\Http\Middleware\RateLimitCheckout::class,
+            'tracing' => \App\Http\Middleware\RequestTracingMiddleware::class,
+            'master.guard' => \App\Http\Middleware\MasterAccessGuard::class,
         ]);
 
     })

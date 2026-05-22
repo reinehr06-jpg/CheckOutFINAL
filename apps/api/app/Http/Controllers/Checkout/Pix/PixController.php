@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Checkout\Pix;
 
+use App\Helpers\CheckoutResponse;
+use App\Helpers\PaymentStatusMapper;
 use App\Http\Controllers\Checkout\AbstractCheckoutController;
+use App\Http\Requests\ProcessPixPaymentRequest;
 use App\Models\Subscription;
 use App\Models\Transaction;
 use App\Services\CheckoutService;
@@ -12,6 +15,14 @@ use App\Services\Payment\PixPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controller de pagamento via PIX.
+ *
+ * [Fase 3.2] View: checkout.pix / checkout.pix.success
+ * [Fase 3.3] Request: ProcessPixPaymentRequest
+ * [Fase 3.4] Respostas: CheckoutResponse
+ * [Fase 4.5] Payment method: PaymentStatusMapper::mapPaymentMethod()
+ */
 class PixController extends AbstractCheckoutController
 {
     public function __construct(
@@ -22,25 +33,25 @@ class PixController extends AbstractCheckoutController
         parent::__construct($asaasService, $webhookNotifier);
     }
 
-    public function process(string $uuid, Request $request): mixed
+    /**
+     * Processa pagamento via PIX.
+     *
+     * @param ProcessPixPaymentRequest $request Requisição validada.
+     * @param string                   $uuid    UUID da transação.
+     */
+    public function process(ProcessPixPaymentRequest $request, string $uuid): mixed
     {
         $resource = CheckoutService::findResource($uuid);
         $transaction = $resource instanceof Transaction ? $resource : null;
 
         if (!$transaction) {
-            return response()->json(['error' => 'Transação não encontrada'], 404);
+            return CheckoutResponse::notFound('Transação não encontrada');
         }
 
         // [BUG-15] bloqueia empresa A acessando transação de empresa B
         if ($guard = $this->assertOwnership($transaction, $request)) {
             return $guard;
         }
-
-        $request->validate([
-            'customerData.name' => 'required|string|min:3',
-            'customerData.email' => 'required|email',
-            'customerData.document' => 'required|string',
-        ]);
 
         try {
             $result = $this->pixService->charge(
@@ -58,13 +69,11 @@ class PixController extends AbstractCheckoutController
 
             $transaction->update([
                 'asaas_payment_id' => $result['gatewayId'],
-                'payment_method' => 'pix',
+                'payment_method' => PaymentStatusMapper::mapPaymentMethod('PIX'),
                 'status' => 'pending',
             ]);
 
-            return response()->json([
-                'ok' => true,
-                'status' => 'success',
+            return CheckoutResponse::success([
                 'paymentMethod' => 'pix',
                 'qrCodeBase64' => $result['qrCodeBase64'],
                 'qrCodePayload' => $result['qrCodePayload'],
@@ -73,7 +82,7 @@ class PixController extends AbstractCheckoutController
             ]);
         } catch (\Throwable $e) {
             Log::error('PixController: erro', ['uuid' => $uuid, 'error' => $e->getMessage()]);
-            return response()->json(['ok' => false, 'error' => $e->getMessage()], 400);
+            return CheckoutResponse::error($e->getMessage());
         }
     }
 
@@ -87,11 +96,11 @@ class PixController extends AbstractCheckoutController
     }
     protected function getViewName(): string
     {
-        return 'checkout.pix.front.pagamento';
+        return 'checkout.pix';
     }
     protected function getSuccessViewName(): string
     {
-        return 'checkout.pix.front.sucesso';
+        return 'checkout.pix.success';
     }
     protected function getSource(): string
     {

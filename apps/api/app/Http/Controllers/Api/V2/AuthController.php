@@ -40,7 +40,7 @@ class AuthController extends Controller
         // Audit log
         (new AuditService())->log('user.login', $user);
 
-        return response()->json([
+        $response = response()->json([
             'token' => $token,
             'user'  => [
                 'id'              => $user->id,
@@ -51,6 +51,17 @@ class AuthController extends Controller
                 'company_id'      => $user->company_id,
             ],
         ]);
+
+        $response->headers->set('Set-Cookie', implode('; ', [
+            "basileia_session={$token}",
+            'HttpOnly',
+            'Secure',
+            'SameSite=Lax',
+            'Path=/',
+            'Max-Age=86400',
+        ]));
+
+        return $response;
     }
 
     public function logout(Request $request): JsonResponse

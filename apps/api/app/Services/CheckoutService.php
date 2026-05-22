@@ -133,6 +133,14 @@ class CheckoutService
             abort(500, 'Empresa não identificada. Verifique a configuração do checkout.');
         }
 
+        $callbackUrl = config('basileia.callback_url', '');
+        if (empty($callbackUrl)) {
+            Log::warning('CheckoutService: callback_url não configurado', [
+                'asaas_payment_id' => $asaasPaymentId,
+                'company_id' => $companyId,
+            ]);
+        }
+
         $customerData = static::buildCustomerData($asaasPayment, $resource);
         $billingType = $asaasPayment['billingType'] ?? 'CREDITCARD';
 
@@ -142,7 +150,7 @@ class CheckoutService
             'asaas_payment_id' => $asaasPaymentId,
             'source' => $source,
             'external_id' => '',
-            'callback_url' => config('basileia.callback_url', ''),
+            'callback_url' => $callbackUrl,
             'amount' => $asaasPayment['value'] ?? 0,
             'description' => $asaasPayment['description'] ?? 'Pagamento',
             'payment_method' => PaymentStatusMapper::mapPaymentMethod($billingType),
@@ -178,6 +186,13 @@ class CheckoutService
             if (!$companyId)
                 return null;
 
+            $callbackUrl = config('basileia.callback_url', '');
+            if (empty($callbackUrl)) {
+                Log::warning('CheckoutService: callback_url não configurado (redirect)', [
+                    'asaas_payment_id' => $asaasPaymentId,
+                ]);
+            }
+
             $params = $data['url_params'] ?? [];
 
             return Transaction::create([
@@ -186,7 +201,7 @@ class CheckoutService
                 'asaas_payment_id' => $asaasPaymentId,
                 'source' => 'secure-redirect',
                 'external_id' => '',
-                'callback_url' => config('basileia.callback_url', ''),
+                'callback_url' => $callbackUrl,
                 'amount' => (float) ($params['valor'] ?? 0),
                 'description' => $params['plano'] ?? 'Pagamento via Redirecionamento Seguro',
                 'payment_method' => 'credit_card',

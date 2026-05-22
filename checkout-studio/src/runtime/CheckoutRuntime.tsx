@@ -18,6 +18,7 @@ export function CheckoutRuntime(props: CheckoutRuntimeProps) {
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#020617', fontFamily: "'Inter', sans-serif" }}>
+      {props.scene.customCSS && <style>{props.scene.customCSS}</style>}
       <RuntimeNode node={root} {...props} />
     </div>
   );

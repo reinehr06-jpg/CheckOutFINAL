@@ -1,21 +1,39 @@
 import { useState } from 'react';
 import type { Scene, Node, NodeProps, ElementNode, BreakpointId, ResponsiveValue } from '../core/types';
 import type { SceneAction } from '../core/sceneReducer';
+import type { TrustScore } from '../core/trustRadar';
 
 interface PropsPanelProps {
   scene: Scene;
   selectedId?: string;
   breakpoint: BreakpointId;
   dispatch(action: SceneAction): void;
+  trustScore?: TrustScore | null;
 }
 
-export function PropsPanel({ scene, selectedId, breakpoint, dispatch }: PropsPanelProps) {
+export function PropsPanel({ scene, selectedId, breakpoint, dispatch, trustScore }: PropsPanelProps) {
   if (!selectedId) {
     return (
       <aside className="props-panel">
         <div className="props-empty">
           <span className="props-empty-icon">◇</span>
           <p>Selecione um elemento no canvas</p>
+        </div>
+        <div className="props-section">
+          <h4 className="props-section-title">Avançado</h4>
+          <label className="prop-field">
+            <span className="prop-label">CSS Personalizado</span>
+            <textarea
+              className="props-textarea"
+              value={scene.customCSS ?? ''}
+              onChange={(e) => {
+                const updated: Scene = { ...scene, customCSS: e.target.value };
+                dispatch({ type: 'LOAD_SCENE', scene: updated });
+              }}
+              placeholder=".meu-checkout { background: red; }"
+              rows={6}
+            />
+          </label>
         </div>
       </aside>
     );
@@ -38,6 +56,32 @@ export function PropsPanel({ scene, selectedId, breakpoint, dispatch }: PropsPan
       <LayoutSection node={node} breakpoint={breakpoint} dispatch={dispatch} />
       <StyleSection node={node} breakpoint={breakpoint} dispatch={dispatch} />
 
+      {trustScore && (
+        <div className="props-section">
+          <h4 className="props-section-title">Trust Radar</h4>
+          <div className="props-trust-row">
+            <div
+              className="props-trust-circle"
+              style={{
+                background: `conic-gradient(${trustScore.score > 70 ? '#10b981' : trustScore.score > 40 ? '#f59e0b' : '#ef4444'} ${trustScore.score * 3.6}deg, #1e293b 0deg)`,
+              }}
+            >
+              <span className="props-trust-value">{trustScore.score}</span>
+            </div>
+            <div className="props-trust-details">
+              {trustScore.issues.slice(0, 3).map((issue) => (
+                <div key={issue.id} className={`props-trust-issue ${issue.severity}`}>
+                  <span className="props-issue-severity">{issue.severity === 'critical' ? '!' : issue.severity === 'warning' ? '?' : 'i'}</span>
+                  <span className="props-issue-msg">{issue.message}</span>
+                </div>
+              ))}
+              {trustScore.issues.length > 3 && (
+                <span className="props-trust-more">+{trustScore.issues.length - 3} issues</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="props-actions">
         <button
           className="props-action-btn props-duplicate"

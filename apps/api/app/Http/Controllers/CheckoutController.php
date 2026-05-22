@@ -176,7 +176,7 @@ class CheckoutController extends Controller
         $resource = Transaction::where('uuid', $uuid)->first()
             ?? Subscription::where('uuid', $uuid)->firstOrFail();
 
-        return view('checkout.card.front.sucesso', \App\Services\CheckoutService::buildSuccessData($resource));
+        return view('checkout.card.success', \App\Services\CheckoutService::buildSuccessData($resource));
     }
 
     public function receipt(string $uuid)

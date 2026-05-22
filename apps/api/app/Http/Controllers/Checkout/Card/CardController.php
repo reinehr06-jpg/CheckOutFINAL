@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Checkout\Card;
 
-use App\Http\Controllers\Checkout\AbstractCheckoutController;
+use App\Helpers\CheckoutResponse;
 use App\Helpers\PaymentStatusMapper;
+use App\Http\Controllers\Checkout\AbstractCheckoutController;
+use App\Http\Requests\ProcessCardPaymentRequest;
 use App\Models\Subscription;
 use App\Models\Transaction;
 use App\Services\CheckoutService;
@@ -13,6 +15,14 @@ use App\Services\Payment\CardPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Controller de pagamento via cartão de crédito.
+ *
+ * [Fase 3.2] View: checkout.card / checkout.card.success
+ * [Fase 3.3] Request: ProcessCardPaymentRequest
+ * [Fase 3.4] Respostas: CheckoutResponse
+ * [Fase 4.5] Payment method: PaymentStatusMapper::mapPaymentMethod()
+ */
 class CardController extends AbstractCheckoutController
 {
     public function __construct(
@@ -23,29 +33,25 @@ class CardController extends AbstractCheckoutController
         parent::__construct($asaasService, $webhookNotifier);
     }
 
-    public function process(string $uuid, Request $request): mixed
+    /**
+     * Processa pagamento com cartão de crédito.
+     *
+     * @param ProcessCardPaymentRequest $request Requisição validada.
+     * @param string                    $uuid    UUID da transação.
+     */
+    public function process(ProcessCardPaymentRequest $request, string $uuid): mixed
     {
         $resource = CheckoutService::findResource($uuid);
         $transaction = $resource instanceof Transaction ? $resource : null;
 
         if (!$transaction) {
-            return response()->json(['error' => 'Transação não encontrada'], 404);
+            return CheckoutResponse::notFound('Transação não encontrada');
         }
 
         // [BUG-15] bloqueia empresa A acessando transação de empresa B
         if ($guard = $this->assertOwnership($transaction, $request)) {
             return $guard;
         }
-
-        $request->validate([
-            'card_name' => 'required|string|min:3',
-            'card_number' => 'required|string',
-            'card_expiry' => 'required|string',
-            'card_cvv' => 'required|string|min:3|max:4',
-            'customer_name' => 'required|string|min:3',
-            'email' => 'required|email',
-            'customer_document' => 'required|string',
-        ]);
 
         try {
             // Adapta os campos da view para o formato esperado pelo service/gateway
@@ -77,7 +83,7 @@ class CardController extends AbstractCheckoutController
 
             $transaction->update([
                 'asaas_payment_id' => $result['gatewayId'],
-                'payment_method' => 'credit_card',
+                'payment_method' => PaymentStatusMapper::mapPaymentMethod($result['billingType'] ?? 'CREDITCARD'),
                 'status' => $status,
                 'paid_at' => $paidAt,
                 'gateway_response' => $result['raw'] ?? [],
@@ -85,15 +91,13 @@ class CardController extends AbstractCheckoutController
 
             $this->webhookNotifier->notify($transaction);
 
-            return response()->json([
-                'ok' => true,
-                'status' => 'success',
+            return CheckoutResponse::success([
                 'gatewayId' => $result['gatewayId'],
                 'redirectUrl' => route('checkout.card.success', ['uuid' => $uuid]),
             ]);
         } catch (\Throwable $e) {
             Log::error('CardController: erro', ['uuid' => $uuid, 'error' => $e->getMessage()]);
-            return response()->json(['ok' => false, 'error' => $e->getMessage()], 400);
+            return CheckoutResponse::error($e->getMessage());
         }
     }
 
@@ -107,11 +111,11 @@ class CardController extends AbstractCheckoutController
     }
     protected function getViewName(): string
     {
-        return 'checkout.card.front.pagamento';
+        return 'checkout.card';
     }
     protected function getSuccessViewName(): string
     {
-        return 'checkout.card.front.sucesso';
+        return 'checkout.card.success';
     }
     protected function getSource(): string
     {

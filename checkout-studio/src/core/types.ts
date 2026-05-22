@@ -87,4 +87,5 @@ export type Node = PageNode | SectionNode | StackNode | ElementNode;
 export interface Scene {
   rootId: string;
   nodes: Record<string, Node>;
+  customCSS?: string;
 }

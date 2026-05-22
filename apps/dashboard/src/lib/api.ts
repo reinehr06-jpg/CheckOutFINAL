@@ -1,3 +1,7 @@
+function removeClientCookie(name: string) {
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`;
+}
+
 export function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
@@ -18,14 +22,16 @@ export function apiFetch<T = unknown>(
   return fetch(`${API_URL}${path}`, {
     ...options,
     headers,
+    credentials: 'include',
   }).then(async (res) => {
     const json = await res.json().catch(() => null);
-    
+
     if (!res.ok) {
       if (res.status === 401) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('basileia_token');
           localStorage.removeItem('basileia_user');
+          removeClientCookie('basileia_session');
           window.location.href = '/login';
         }
       }

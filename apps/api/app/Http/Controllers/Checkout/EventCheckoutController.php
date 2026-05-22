@@ -100,6 +100,6 @@ class EventCheckoutController extends Controller
     public function success(string $slug)
     {
         $event = Event::where('slug', $slug)->firstOrFail();
-        return view('checkout.card.front.sucesso', ['event' => $event]);
+        return view('checkout.card.success', ['event' => $event]);
     }
 }

@@ -333,6 +333,6 @@ class BasileiaCheckoutController extends Controller
             ?? \App\Models\Subscription::where('uuid', $uuid)->firstOrFail();
 
         // NUNCA passa o objeto Transaction inteiro — apenas dados seguros
-        return view('checkout.card.front.sucesso', CheckoutService::buildSuccessData($resource));
+        return view('checkout.card.success', CheckoutService::buildSuccessData($resource));
     }
 }

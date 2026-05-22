@@ -218,7 +218,7 @@ class CheckoutPageController extends Controller
             return $this->errorResponse('Transação não encontrada.');
         }
 
-        return view('checkout.card.front.sucesso', \App\Services\CheckoutService::buildSuccessData($transaction));
+        return view('checkout.card.success', \App\Services\CheckoutService::buildSuccessData($transaction));
     }
 
     private function errorResponse(string $message)

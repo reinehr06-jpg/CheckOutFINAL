@@ -10,9 +10,14 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             CompanySeeder::class,
-            ConnectedSystemSeeder::class,
-            GatewaySeeder::class,
-            CheckoutSessionSeeder::class,
         ]);
+
+        if (env('APP_SEED_DEMO', false)) {
+            $this->call([
+                ConnectedSystemSeeder::class,
+                GatewaySeeder::class,
+                CheckoutSessionSeeder::class,
+            ]);
+        }
     }
 }

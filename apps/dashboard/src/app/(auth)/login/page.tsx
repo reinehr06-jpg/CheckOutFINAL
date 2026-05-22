@@ -98,6 +98,7 @@ export default function LoginPage() {
       // Salva token e dados do usuário
       localStorage.setItem('basileia_token', data.data.token);
       localStorage.setItem('basileia_user', JSON.stringify(data.data.user));
+      document.cookie = `basileia_session=${encodeURIComponent(data.data.token)}; path=/; SameSite=Lax; Secure; Max-Age=86400`;
 
       // Se é super_admin, vai direto pro dashboard
       if (data.data.user.role === 'super_admin') {

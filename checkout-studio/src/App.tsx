@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { BreakpointId, Scene } from './core/types';
 import { sceneReducer, genId } from './core/sceneReducer';
 import type { SceneAction } from './core/sceneReducer';
@@ -6,7 +6,7 @@ import { createDefaultScene } from './core/initialScene';
 import { TEMPLATES, type Template } from './core/templates';
 import { analyzeTrust, type TrustScore } from './core/trustRadar';
 import { useUndoRedo } from './core/useUndoRedo';
-import { fetchCheckouts, saveCheckout, publishCheckout, type CheckoutScene } from './core/api';
+import { fetchCheckouts, fetchCheckout, saveCheckout, publishCheckout, type CheckoutScene } from './core/api';
 import { Toolbar } from './editor/Toolbar';
 import { Canvas } from './editor/Canvas';
 import { PropsPanel } from './editor/PropsPanel';
@@ -28,6 +28,7 @@ export default function App() {
   const [templates, setTemplates] = useState<Template[]>(TEMPLATES);
   const [savedCheckouts, setSavedCheckouts] = useState<CheckoutScene[]>([]);
   const [checkoutName, setCheckoutName] = useState('Meu Checkout');
+  const [currentCheckoutId, setCurrentCheckoutId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -43,7 +44,34 @@ export default function App() {
     fetchCheckouts().then(data => {
       setSavedCheckouts(data);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err) => {
+      setLoading(false);
+      showToast('Erro ao carregar checkouts salvos.');
+      console.error('fetchCheckouts error:', err);
+    });
+  }, []);
+
+  // Refs for postMessage communication (stable across renders)
+  const loadCheckoutRef = useRef<typeof handleLoadCheckout>(async () => {});
+  const undoRef = useRef<() => void>(() => {});
+
+  // PostMessage communication with parent (dashboard iframe)
+  useEffect(() => {
+    const handler = async (event: MessageEvent) => {
+      const { type, payload } = event.data || {};
+      if (type === 'STUDIO_INIT' && payload?.token) {
+        localStorage.setItem('basileia_token', payload.token);
+        if (payload.checkoutId) {
+          await loadCheckoutRef.current(payload.checkoutId);
+        }
+      }
+      if (type === 'STUDIO_UNDO') {
+        undoRef.current();
+      }
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: 'STUDIO_READY' }, '*');
+    return () => window.removeEventListener('message', handler);
   }, []);
 
   const showToast = useCallback((msg: string) => {
@@ -51,25 +79,44 @@ export default function App() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (): Promise<string | null> => {
     setSaving(true);
-    const result = await saveCheckout({ name: checkoutName, config: scene as unknown as Record<string, unknown>, status: 'draft' });
+    const payload: CheckoutScene = { name: checkoutName, config: scene as unknown as Record<string, unknown>, status: 'draft' };
+    if (currentCheckoutId) payload.id = currentCheckoutId;
+    const result = await saveCheckout(payload);
     setSaving(false);
     if (result) {
+      setCurrentCheckoutId(result.id ?? null);
       showToast('Checkout salvo com sucesso!');
       fetchCheckouts().then(setSavedCheckouts);
+      window.parent.postMessage({ type: 'STUDIO_SAVED', payload: { id: result.id } }, '*');
+      return result.id ?? null;
     } else {
       showToast('Erro ao salvar. Verifique a conexao com a API.');
+      window.parent.postMessage({ type: 'STUDIO_ERROR', payload: { message: 'Erro ao salvar' } }, '*');
+      return null;
     }
-  }, [checkoutName, scene, showToast]);
+  }, [checkoutName, scene, currentCheckoutId, showToast]);
 
   const handlePublish = useCallback(async () => {
     setPublishing(true);
-    const result = await publishCheckout(checkoutName);
+    const id = currentCheckoutId ?? await handleSave();
+    if (!id) {
+      showToast('Salve o checkout antes de publicar.');
+      setPublishing(false);
+      window.parent.postMessage({ type: 'STUDIO_ERROR', payload: { message: 'Salve antes de publicar' } }, '*');
+      return;
+    }
+    const result = await publishCheckout(id);
     setPublishing(false);
-    if (result) showToast('Checkout publicado!');
-    else showToast('Erro ao publicar.');
-  }, [checkoutName, showToast]);
+    if (result) {
+      showToast('Checkout publicado!');
+      window.parent.postMessage({ type: 'STUDIO_PUBLISHED', payload: { id } }, '*');
+    } else {
+      showToast('Erro ao publicar.');
+      window.parent.postMessage({ type: 'STUDIO_ERROR', payload: { message: 'Erro ao publicar' } }, '*');
+    }
+  }, [currentCheckoutId, handleSave, showToast]);
 
   const handleLoadTemplate = useCallback((tpl: Template) => {
     setScene(tpl.scene);
@@ -79,9 +126,21 @@ export default function App() {
 
   const handleLoadCheckout = useCallback(async (id: string) => {
     showToast('Carregando checkout...');
-    // In production, fetch full checkout by ID
-    showToast('Checkout carregado');
-  }, [showToast]);
+    const data = await fetchCheckout(id);
+    if (data?.config) {
+      const loadedScene = data.config as unknown as Scene;
+      setScene(loadedScene);
+      setCheckoutName(data.name);
+      setCurrentCheckoutId(data.id ?? id);
+      showToast(`Checkout "${data.name}" carregado`);
+    } else {
+      showToast('Erro ao carregar checkout.');
+    }
+  }, [setScene, showToast]);
+
+  // Wire refs for postMessage
+  useEffect(() => { loadCheckoutRef.current = handleLoadCheckout; }, [handleLoadCheckout]);
+  useEffect(() => { undoRef.current = undo; }, [undo]);
 
   const handleExportJSON = useCallback(() => {
     const blob = new Blob([JSON.stringify(scene, null, 2)], { type: 'application/json' });
@@ -217,7 +276,7 @@ export default function App() {
         </main>
 
         {/* Right sidebar: Props */}
-        {showCanvas && <PropsPanel scene={scene} selectedId={selectedId} breakpoint={breakpoint} dispatch={dispatch} />}
+        {showCanvas && <PropsPanel scene={scene} selectedId={selectedId} breakpoint={breakpoint} dispatch={dispatch} trustScore={trustScore} />}
       </div>
     </div>
   );

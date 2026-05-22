@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Search, 
   Bell, 
@@ -14,49 +14,33 @@ import {
   Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CompanySwitcher } from './CompanySwitcher';
+import { useAuth } from '@/lib/auth-context';
 
 interface TopbarProps {
   title?: string;
   description?: string;
 }
 
-type UserData = {
-  name: string;
-  email: string;
-  role: string;
-  company_id?: number | null;
-};
-
 export function Topbar({ title, description }: TopbarProps) {
-  const [user, setUser] = useState<UserData | null>(null);
+  const { user, isMaster, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('basileia_user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch { /* ignore */ }
+  const [dark, setDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
     }
-    const isDark = document.documentElement.classList.contains('dark');
-    setDark(isDark);
-  }, []);
+    return false;
+  });
 
   const toggleTheme = () => {
     const next = !dark;
     setDark(next);
     if (next) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('basileia_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('basileia_theme', 'light');
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('basileia_token');
-    localStorage.removeItem('basileia_user');
-    window.location.href = '/login';
+    localStorage.setItem('basileia_theme', next ? 'dark' : 'light');
   };
 
   const roleLabel = (role: string) => {
@@ -89,6 +73,9 @@ export function Topbar({ title, description }: TopbarProps) {
           K
         </div>
       </div>
+
+      {/* Company Switcher (Super Admin) */}
+      <CompanySwitcher />
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5 2xl:gap-3">
@@ -136,13 +123,13 @@ export function Topbar({ title, description }: TopbarProps) {
                 <button className="w-full px-3 py-2 text-left text-[12px] font-bold text-ink hover:bg-brand-soft flex items-center gap-2">
                   <Settings className="w-3.5 h-3.5" /> Configuracoes
                 </button>
-                {user?.role === 'super_admin' && (
-                  <button className="w-full px-3 py-2 text-left text-[12px] font-bold text-brand hover:bg-brand-soft flex items-center gap-2">
+                {isMaster && (
+                  <a href="/dashboard/super-admin" className="w-full px-3 py-2 text-left text-[12px] font-bold text-brand hover:bg-brand-soft flex items-center gap-2">
                     <Shield className="w-3.5 h-3.5" /> Super Admin
-                  </button>
+                  </a>
                 )}
                 <div className="border-t border-border/50 mt-1 pt-1">
-                  <button onClick={handleLogout} className="w-full px-3 py-2 text-left text-[12px] font-bold text-danger hover:bg-danger/5 flex items-center gap-2">
+                  <button onClick={logout} className="w-full px-3 py-2 text-left text-[12px] font-bold text-danger hover:bg-danger/5 flex items-center gap-2">
                     <LogOut className="w-3.5 h-3.5" /> Sair
                   </button>
                 </div>
