@@ -56,7 +56,7 @@ Route::prefix('v1')->group(function () {
     Route::post('webhooks/gateways/{provider}/{accountUuid?}', [\App\Http\Controllers\Api\V1\GatewayWebhookController::class, 'handle'])->middleware('throttle:webhooks');
 
     // ── Rotas Protegidas (Dashboard & Integrações) ────────────────────────
-    Route::middleware(['auth:sanctum', 'zero.trust', 'scope.company', 'anomaly.detect', 'tracing', 'resolve.api.key', 'throttle:dashboard'])->group(function () {
+    Route::middleware(['auth:sanctum', 'zero.trust', 'scope.company', 'anomaly.detect', 'tracing', 'throttle:dashboard'])->group(function () {
         
         // Auth Me
         Route::get('auth/me', [\App\Http\Controllers\Api\V1\AuthController::class, 'me']);
