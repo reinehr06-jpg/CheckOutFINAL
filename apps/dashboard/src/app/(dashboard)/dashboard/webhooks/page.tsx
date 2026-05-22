@@ -65,6 +65,53 @@ import {
 } from './__mocks__/webhooks';
 
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
+
+function mapApiEndpoint(ep: any): WebhookEndpoint {
+  const sys = ep.system || {};
+  return {
+    id: ep.uuid || ep.id?.toString(),
+    name: ep.description || ep.url || 'Webhook',
+    url: ep.url || '',
+    systemId: sys.uuid || ep.system_id?.toString() || '',
+    systemName: sys.name || '—',
+    environment: 'production',
+    status: (ep.status === 'active' ? 'active' : 'disabled') as WebhookEndpointStatus,
+    deliveryRate24h: ep.last_delivery_status === 'delivered' ? 100 : 0,
+    lastDeliveryAt: ep.last_delivery_at || null,
+    events24h: 0,
+    recentErrors: [],
+    subscribedEvents: ep.events || [],
+    avgLatencyMs: null,
+    p95LatencyMs: null,
+    hmacEnabled: !!ep.secret_hash,
+    sslVerified: true,
+    timeoutSeconds: 30,
+    maxRetries: 5,
+    retryStrategy: 'exponential',
+    createdAt: ep.created_at || '',
+    updatedAt: ep.updated_at || '',
+  };
+}
+
+function mapApiDelivery(d: any): WebhookDelivery {
+  return {
+    id: d.uuid || d.id?.toString(),
+    endpointId: d.endpoint?.uuid || d.endpoint_id?.toString() || '',
+    endpointName: d.endpoint?.url || d.endpoint?.description || '—',
+    event: d.event_type || '',
+    systemId: '',
+    status: (d.status === 'delivered' ? 'delivered' : d.status === 'failed' ? 'failed' : 'pending') as WebhookDeliveryStatus,
+    httpStatus: d.http_status,
+    latencyMs: undefined,
+    attempts: d.attempts || 1,
+    maxAttempts: 5,
+    payload: d.payload_masked || {},
+    responseBody: d.response_body || '',
+    createdAt: d.created_at || '',
+    deliveredAt: d.delivered_at || null,
+  };
+}
 
 export default function WebhooksPage() {
   const [mounted, setMounted] = useState(false);
@@ -74,6 +121,23 @@ export default function WebhooksPage() {
   // Core lists state
   const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>(MOCK_ENDPOINTS);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>(MOCK_DELIVERIES);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [epRes, delRes] = await Promise.all([
+          apiFetch('/api/v1/dashboard/webhooks/endpoints'),
+          apiFetch('/api/v1/dashboard/webhooks/deliveries'),
+        ]);
+        if (epRes.success && Array.isArray(epRes.data) && epRes.data.length > 0) {
+          setEndpoints(epRes.data.map(mapApiEndpoint));
+        }
+        if (delRes.success && Array.isArray(delRes.data) && delRes.data.length > 0) {
+          setDeliveries(delRes.data.map(mapApiDelivery));
+        }
+      } catch {}
+    })();
+  }, []);
   
   // UI Tabs & Filters
   const [activeTab, setActiveTab] = useState<'endpoints' | 'events' | 'deliveries' | 'failures' | 'retries' | 'logs'>('endpoints');

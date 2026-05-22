@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
 import { 
   Plus, 
   Download, 
@@ -159,6 +160,31 @@ const initialOrders = [
   }
 ];
 
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  approved: 'Aprovado', pending: 'Pendente', failed: 'Falhou',
+  refunded: 'Reembolsado', chargeback: 'Chargeback', cancelled: 'Cancelado',
+};
+
+function apiOrderToPage(o: any) {
+  return {
+    id: o.uuid || `ORD-${o.id}`,
+    trxId: o.external_order_id || `trx_${(o.uuid || o.id).toString().substring(0, 8)}`,
+    valor: (o.amount ?? 0) / 100,
+    reembolsadoValor: 0,
+    cliente: o.customer_name || '—',
+    email: o.customer_email || '',
+    sistema: o.system_name || '—',
+    checkout: '—',
+    gateway: '—',
+    status: ORDER_STATUS_LABEL[o.status] || o.status || '—',
+    metodo: o.payment_method || o.method || '—',
+    brand: '',
+    last4: '',
+    tempo: '—',
+    dataAbs: o.created_at ? new Date(o.created_at).toLocaleString('pt-BR') : '—',
+  };
+}
+
 export default function SalesPage() {
   const [orders, setOrders] = useState(initialOrders);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -167,6 +193,17 @@ export default function SalesPage() {
   const [filterSystem, setFilterSystem] = useState('Todos');
   const [filterStatus, setFilterStatus] = useState('Todos');
   const [filterMethod, setFilterMethod] = useState('Todos');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch('/api/v1/dashboard/orders');
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setOrders(res.data.map(apiOrderToPage));
+        }
+      } catch {}
+    })();
+  }, []);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);

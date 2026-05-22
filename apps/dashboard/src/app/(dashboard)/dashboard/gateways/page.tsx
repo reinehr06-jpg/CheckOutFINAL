@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
 import { 
   Plus, 
   Download, 
@@ -206,6 +207,39 @@ const initialGateways = [
   }
 ];
 
+const GATEWAY_STATUS_MAP: Record<string, string> = {
+  active: 'Operacional', inactive: 'Desativado', attention: 'Atenção',
+  unstable: 'Instável', testing: 'Teste',
+};
+
+const GATEWAY_ENV_LABEL: Record<string, string> = {
+  production: 'Produção', sandbox: 'Sandbox',
+};
+
+function apiGatewayToPage(g: any) {
+  const env = GATEWAY_ENV_LABEL[g.environment] || g.environment || 'Produção';
+  const status = GATEWAY_STATUS_MAP[g.status] || g.status || 'Operacional';
+  return {
+    id: g.uuid || g.id?.toString() || `gw_${Math.random().toString(36).substring(2, 8)}`,
+    name: g.name || 'Gateway',
+    provider: g.provider || g.name || 'Gateway',
+    desc: 'Gateway de Pagamento',
+    status,
+    ambiente: env,
+    aprovacao: '—',
+    pp: '—',
+    erro: '—',
+    rotas: 0,
+    metodos: [],
+    conta: g.name || 'Conta',
+    contaId: g.uuid?.substring(0, 8) || g.id?.toString() || '—',
+    sistemas: [],
+    uptime: '—',
+    p95: '—',
+    reqs: '—',
+  };
+}
+
 export default function GatewaysPage() {
   const [demoState, setDemoState] = useState<'com_dados' | 'loading' | 'vazio' | 'erro' | 'sem_permissao'>('com_dados');
   const [showDebug, setShowDebug] = useState(false);
@@ -213,6 +247,17 @@ export default function GatewaysPage() {
   
   // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch('/api/v1/dashboard/gateways');
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setGateways([...res.data.map(apiGatewayToPage), ...initialGateways]);
+        }
+      } catch {}
+    })();
+  }, []);
   
   // Search & Filters
   const [search, setSearch] = useState('');

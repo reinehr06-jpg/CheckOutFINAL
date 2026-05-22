@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
 import { 
   Download, 
   Search, 
@@ -178,10 +179,58 @@ const initialPayments = [
   }
 ];
 
+const STATUS_LABEL: Record<string, string> = {
+  paid: 'Aprovado', pending: 'Pendente', failed: 'Falha técnica',
+  refunded: 'Reembolsado', cancelled: 'Cancelado', chargeback: 'Chargeback',
+  processing: 'Processando', expired: 'Expirado',
+};
+
+const RISK_LABEL: Record<string, string> = {
+  low: 'Baixo', medium: 'Médio', high: 'Alto', critical: 'Crítico',
+};
+
+const METHOD_BRAND: Record<string, string> = {
+  credit_card: 'Cartão', pix: 'PIX', boleto: 'Boleto', debit_card: 'Débito',
+};
+
+function apiPaymentToPage(p: any) {
+  return {
+    id: p.uuid || `PAY-${p.id}`,
+    ref: `ref_${(p.uuid || p.id).toString().substring(0, 8)}`,
+    venda: p.order?.uuid ? p.order.uuid.substring(0, 14) : '—',
+    sistema: p.order?.connectedSystem?.name || '—',
+    cliente: p.customer_name || p.customer || '—',
+    email: p.customer_email || '',
+    metodo: METHOD_BRAND[p.method] || p.method || '—',
+    brand: '',
+    last4: '',
+    gateway: p.gateway_account?.name || p.gateway || '—',
+    status: STATUS_LABEL[p.status] || p.status || '—',
+    resultado: p.status || '—',
+    valor: (p.amount ?? 0) / 100,
+    taxa: 0,
+    risco: RISK_LABEL[p.risk] || 'Baixo',
+    tempo: '—',
+    criadoEm: p.created_at ? new Date(p.created_at).toLocaleString('pt-BR') : '—',
+    relativo: '—',
+  };
+}
+
 export default function PaymentsPage() {
   const [payments, setPayments] = useState(initialPayments);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiFetch('/api/v1/dashboard/payments');
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setPayments(res.data.map(apiPaymentToPage));
+        }
+      } catch {}
+    })();
+  }, []);
   
   // Advanced Filter state variables
   const [filterPeriod, setFilterPeriod] = useState('Hoje');
