@@ -52,6 +52,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'master.guard' => \App\Http\Middleware\MasterAccessGuard::class,
             'master.2fa' => \App\Http\Middleware\Master2FAMiddleware::class,
             'master.ratelimit' => \App\Http\Middleware\MasterRateLimiter::class,
+            'ip.allowlist' => \App\Http\Middleware\IpAllowlist::class,
         ]);
 
         $middleware->web(append: [

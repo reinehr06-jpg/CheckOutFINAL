@@ -6,7 +6,7 @@ use App\Http\Middleware\MasterRateLimiter;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')
-    ->middleware(['api', MasterRateLimiter::class])
+    ->middleware(['api', 'ip.allowlist', MasterRateLimiter::class])
     ->group(function () {
         // 2FA + code (acessado via URL dinâmica — MasterRouteServiceProvider)
         // Estes endpoints só existem aqui para compatibilidade com a página do dashboard

@@ -6,14 +6,13 @@ Route::get('/', function () {
     return redirect(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')));
 });
 
+// /health behind IP allowlist if enabled; no sensitive info leaked
 Route::get('/health', function () {
     return response()->json([
         'status'  => 'ok',
-        'mode'    => 'api-only',
-        'version' => config('app.version', '2.0'),
         'time'    => now()->toIso8601String(),
     ]);
-});
+})->middleware('ip.allowlist');
 
 Route::get('/login', function () {
     return response()->json([

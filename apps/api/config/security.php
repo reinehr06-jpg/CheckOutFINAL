@@ -55,6 +55,20 @@ return [
     | Master Access
     |--------------------------------------------------------------------------
     */
+    /*
+    |--------------------------------------------------------------------------
+    | IP Allowlist (defesa em profundidade)
+    |--------------------------------------------------------------------------
+    | mode: 'off' | 'strict' | 'log_only'
+    | ips: string[] of CIDR or exact IPs allowed
+    | Para produção, defina SECURITY_IP_ALLOWLIST_MODE=strict
+    | e SECURITY_IP_ALLOWLIST_IPS=203.0.113.0/24,198.51.100.1
+    */
+    'ip_allowlist' => [
+        'mode' => env('SECURITY_IP_ALLOWLIST_MODE', 'off'),
+        'ips' => explode(',', env('SECURITY_IP_ALLOWLIST_IPS', '')),
+    ],
+
     'master_access' => [
         'challenge_ttl_seconds' => 30,
         'session_ttl_hours' => 1,

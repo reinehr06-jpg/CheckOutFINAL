@@ -30,7 +30,7 @@ class MasterRouteServiceProvider extends ServiceProvider
 
         $cleanPath = trim($path, '/');
 
-        Route::middleware(['web', MasterRateLimiter::class])
+        Route::middleware(['web', 'ip.allowlist', MasterRateLimiter::class])
             ->prefix($cleanPath)
             ->group(function () {
                 Route::get('/', [MasterAccessController::class, 'showPage'])->name('master.page');

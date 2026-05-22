@@ -1,35 +1,79 @@
-FROM php:8.4-cli
+# Basileia Pay API — Production Dockerfile
+# Single stage: php:8.4-fpm-alpine + nginx + supervisor, non-root, read-only
 
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    libwebp-dev \
-    libzip-dev \
-    libicu-dev \
-    unzip \
-    git \
-    curl \
+FROM php:8.4-fpm-alpine AS base
+
+# Install system deps + PHP extensions + nginx + supervisor
+RUN apk add --no-cache \
+        nginx \
+        supervisor \
+        postgresql-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        freetype-dev \
+        libwebp-dev \
+        libzip-dev \
+        icu-dev \
+        curl \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install pdo pdo_pgsql pgsql opcache gd bcmath zip intl \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-install -j$(nproc) \
+        pdo_pgsql \
+        pgsql \
+        opcache \
+        gd \
+        bcmath \
+        zip \
+        intl \
+    && rm -rf /var/cache/apk/* /tmp/*
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Copy PHP hardening config
+COPY docker/php.ini /usr/local/etc/php/conf.d/basileia.ini
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
-RUN composer install --optimize-autoloader --no-interaction --no-scripts
+# Copy application
+COPY --chown=www-data:www-data . .
 
-COPY . .
+# Install composer dependencies
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --optimize-autoloader --no-interaction --no-dev \
+    && rm -rf /usr/bin/composer ~/.composer
 
-RUN mkdir -p storage/framework/sessions storage/framework/cache/data storage/framework/views storage/logs \
-    && chmod -R 755 storage bootstrap/cache
+# Create storage structure
+RUN mkdir -p \
+        storage/framework/sessions \
+        storage/framework/cache/data \
+        storage/framework/views \
+        storage/logs \
+        bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
 
-COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh
+# Copy nginx config
+COPY docker/nginx.conf /etc/nginx/http.d/default.conf
+
+# Copy supervisor config (Alpine path)
+COPY docker/supervisord.conf /etc/supervisord.conf
+
+# Remove build-only artifacts
+RUN rm -rf \
+        docker/start.sh \
+        docker/entrypoint.sh \
+        docker/nginx.conf \
+        docker/supervisord.conf \
+        docker/php.ini \
+        tests/ \
+        phpunit.xml \
+        .git/ \
+        .github/
+
+# Create runtime directories
+RUN mkdir -p /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx /run \
+    && chown -R www-data:www-data /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx /run \
+    && chmod 755 /run
+
+VOLUME ["/var/www/html/storage", "/var/log", "/var/run"]
 
 EXPOSE 8000
 
-CMD ["/start.sh"]
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
