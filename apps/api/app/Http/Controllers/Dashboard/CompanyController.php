@@ -63,7 +63,7 @@ class CompanyController extends Controller
             'document' => $request->input('document'),
             'email' => $request->input('email'),
             'phone' => $request->input('phone'),
-            'is_active' => true,
+            'status' => 'active',
         ]);
 
         User::create([
@@ -108,7 +108,7 @@ class CompanyController extends Controller
             'document' => ['sometimes', 'string', 'max:20', Rule::unique('companies', 'document')->ignore($id)],
             'email' => ['sometimes', 'email', Rule::unique('companies', 'email')->ignore($id)],
             'phone' => 'sometimes|string|max:20',
-            'is_active' => 'sometimes|boolean',
+            'status' => 'sometimes|in:active,inactive',
         ]);
 
         $company = Company::find($id);
@@ -117,7 +117,7 @@ class CompanyController extends Controller
             abort(404, 'Empresa não encontrada.');
         }
 
-        $company->update($request->only(['name', 'document', 'email', 'phone', 'is_active']));
+        $company->update($request->only(['name', 'document', 'email', 'phone', 'status']));
 
         return redirect()->route('dashboard.companies.show', $company->id)
             ->with('success', 'Empresa atualizada com sucesso.');
@@ -137,7 +137,7 @@ class CompanyController extends Controller
             abort(404, 'Empresa não encontrada.');
         }
 
-        $company->update(['is_active' => false]);
+        $company->update(['status' => 'inactive']);
 
         return redirect()->route('dashboard.companies.index')
             ->with('success', 'Empresa desativada com sucesso.');

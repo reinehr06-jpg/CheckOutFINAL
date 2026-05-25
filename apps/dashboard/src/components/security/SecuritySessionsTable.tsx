@@ -190,9 +190,9 @@ export function SecuritySessionsTable({
                           </button>
                           {isAdmin && isActive && (
                             <button
-                              onClick={() => setShowConfirmRevoke(sess.id)}
-                              className="p-1 text-slate-400 hover:text-red-655 hover:bg-slate-50 rounded-lg cursor-pointer"
-                              title="Encerrar sessão"
+                              onClick={() => { setShowConfirmRevoke(sess.id); }}
+                              className="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                              aria-label="Encerrar sessão"
                             >
                               <X className="w-4.5 h-4.5" />
                             </button>
@@ -224,6 +224,7 @@ export function SecuritySessionsTable({
                 <button 
                   onClick={() => setSelectedSession(null)}
                   className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  aria-label="Fechar"
                 >
                   <X className="w-4.5 h-4.5" />
                 </button>
@@ -283,7 +284,7 @@ export function SecuritySessionsTable({
 
       {/* Revoke single session confirmation */}
       {showConfirmRevoke && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-55 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Revogar acesso">
           <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] w-full max-w-sm shadow-2xl p-5 space-y-4 text-center">
             <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">
               Revogar Acesso do Dispositivo?
@@ -311,7 +312,7 @@ export function SecuritySessionsTable({
 
       {/* Revoke all sessions confirmation */}
       {showConfirmRevokeAll && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-55 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="Revogar todas as sessões">
           <div className="bg-white border border-[#E8DDFD]/65 rounded-[22px] w-full max-w-sm shadow-2xl p-5 space-y-4 text-center">
             <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">
               Revogar Todas as Outras Sessões?

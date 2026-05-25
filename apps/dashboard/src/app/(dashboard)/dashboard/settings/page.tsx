@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import { SettingsHeader } from '@/components/settings/SettingsHeader';
 import { SettingsSandboxBanner } from '@/components/settings/SettingsSandboxBanner';
 import { SettingsTabs, SettingsTabValue } from '@/components/settings/SettingsTabs';
@@ -25,10 +26,18 @@ export default function SettingsHubPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
   useEffect(() => {
-    setMounted(true);
-    // Simulate initial premium page loading
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
+    (async () => {
+      try {
+        const res = await apiFetch('/api/v1/dashboard/company');
+        if (res.success && res.data) {
+          const data = res.data as { environment?: 'production' | 'sandbox' };
+          if (data.environment) setEnvironment(data.environment);
+        }
+      } catch (err) { /* company endpoint is optional */ } finally {
+        setMounted(true);
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const triggerToast = (msg: string) => {

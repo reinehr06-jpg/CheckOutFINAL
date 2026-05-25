@@ -44,7 +44,7 @@ export function RoutingRuleForm({ onClose, onSave, initialRule }: RoutingRuleFor
     setConditions(next);
   };
 
-  const updateCondition = (idx: number, key: keyof RoutingCondition, val: any) => {
+  const updateCondition = (idx: number, key: keyof RoutingCondition, val: unknown) => {
     const next = [...conditions];
     next[idx] = { ...next[idx], [key]: val };
     setConditions(next);
@@ -119,7 +119,7 @@ export function RoutingRuleForm({ onClose, onSave, initialRule }: RoutingRuleFor
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 select-none" role="dialog" aria-modal="true" aria-label={initialRule ? 'Editar regra de roteamento' : 'Nova regra de roteamento'}>
       <div className="bg-white w-full max-w-lg rounded-[24px] border border-[#E8DDFD] shadow-2xl overflow-hidden flex flex-col justify-between max-h-[90vh]">
         
         {/* Header */}
@@ -130,7 +130,7 @@ export function RoutingRuleForm({ onClose, onSave, initialRule }: RoutingRuleFor
             </h3>
             <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Etapa {step} de 3</span>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer">
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer" aria-label="Fechar">
             <X className="w-4.5 h-4.5" />
           </button>
         </div>

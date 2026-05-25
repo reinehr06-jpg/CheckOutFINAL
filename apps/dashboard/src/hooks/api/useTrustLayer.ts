@@ -7,8 +7,8 @@ export type TrustLayerData = {
   decision: string;
   signals: Array<{ type: string; severity: string; message: string; value: string }>;
   recommended_action: string;
-  alerts: any[];
-  recent_decisions: any[];
+  alerts: unknown[];
+  recent_decisions: unknown[];
   explanation: string;
 };
 

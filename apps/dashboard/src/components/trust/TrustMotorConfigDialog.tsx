@@ -31,7 +31,7 @@ export function TrustMotorConfigDialog({ config, isOpen, onClose, onSave }: Trus
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 text-left select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 text-left select-none" role="dialog" aria-modal="true" aria-label="Configurar thresholds do motor">
       <div className="bg-white w-full max-w-md rounded-[22px] border border-[#E8DDFD] shadow-2xl p-6 space-y-5 animate-in scale-in duration-300">
         
         {/* Header */}
@@ -47,7 +47,7 @@ export function TrustMotorConfigDialog({ config, isOpen, onClose, onSave }: Trus
               <p className="text-[10px] text-slate-400 font-bold mt-0.5 leading-none">Ajustes globais e regras de contingenciamento.</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer" aria-label="Fechar">
             <X className="w-4.5 h-4.5" />
           </button>
         </div>

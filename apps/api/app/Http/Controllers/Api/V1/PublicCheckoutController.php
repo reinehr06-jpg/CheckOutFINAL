@@ -124,6 +124,8 @@ class PublicCheckoutController extends Controller
             if ($cached) return $cached;
         }
 
+        $cardValidator = app(\App\Services\CardValidator::class);
+
         $validator = Validator::make($request->all(), [
             'method' => 'required|string|in:pix,card,boleto',
             'customer' => 'required|array',
@@ -131,7 +133,16 @@ class PublicCheckoutController extends Controller
             'customer.email' => 'required|email',
             'customer.document' => 'required|string',
             'card' => 'required_if:method,card|array',
-            'card.number' => 'required_if:method,card|string',
+            'card.number' => [
+                'required_if:method,card',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail) use ($cardValidator) {
+                    $sanitized = $cardValidator->sanitize($value);
+                    if (!$sanitized || !$cardValidator->validate($sanitized)['valid']) {
+                        $fail('O número do cartão é inválido.');
+                    }
+                },
+            ],
             'card.holder_name' => 'required_if:method,card|string',
             'card.expiration_month' => 'required_if:method,card|string',
             'card.expiration_year' => 'required_if:method,card|string',
@@ -144,6 +155,14 @@ class PublicCheckoutController extends Controller
         }
 
         $method = $request->input('method');
+
+        if ($method === 'card' && $request->has('card')) {
+            $month = $request->input('card.expiration_month');
+            $year = $request->input('card.expiration_year');
+            if (!$cardValidator->validateExpiry($month, $year)) {
+                return response()->json(['errors' => ['card' => 'Cartão expirado.']], 422);
+            }
+        }
         $gatewayAccount = $session->gatewayAccount ?? $session->connectedSystem->defaultGateway;
 
         if (!$gatewayAccount) {

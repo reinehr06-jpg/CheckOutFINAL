@@ -17,8 +17,8 @@ import {
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/api';
 
-type AlertItem = { severity: string; text: string; time: string; color: string };
-type EventItem = { time: string; status: string; event: string; method: string; ref: string; color: string };
+type AlertItem = { severity: string; text: string; time: string; color: 'danger' | 'warning' | 'info' };
+type EventItem = { time: string; status: string; event: string; method: string; ref: string; color: 'success' | 'brand' | 'danger' | 'warning' | 'info' };
 
 const MOCK_ALERTS: AlertItem[] = [
   { severity: 'Crítico', text: 'Taxa de falha acima do esperado: Santander', time: '2m', color: 'danger' },
@@ -34,6 +34,15 @@ const MOCK_EVENTS: EventItem[] = [
   { time: '11:00:25', status: 'Risco', event: 'Chargeback recebido', method: 'Cartão', ref: 'R$ 1.984,00', color: 'danger' },
 ];
 
+const COLOR_BG: Record<string, string> = {
+  danger: 'bg-danger', warning: 'bg-warning', info: 'bg-info',
+  success: 'bg-success', brand: 'bg-brand',
+};
+const COLOR_TEXT: Record<string, string> = {
+  danger: 'text-danger', warning: 'text-warning', info: 'text-info',
+  success: 'text-success', brand: 'text-brand',
+};
+
 export function OperationalSidePanel() {
   const [alerts, setAlerts] = useState<AlertItem[]>(MOCK_ALERTS);
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
@@ -46,7 +55,7 @@ export function OperationalSidePanel() {
           apiFetch('/api/v1/dashboard/payments?per_page=5'),
         ]);
         if (alertRes.success && Array.isArray(alertRes.data) && alertRes.data.length > 0) {
-          const alertColor: Record<string, string> = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' };
+          const alertColor: Record<string, AlertItem['color']> = { critical: 'danger', high: 'danger', medium: 'warning', low: 'info' };
           setAlerts(alertRes.data.map((a: any) => ({
             severity: a.severity === 'critical' ? 'Crítico' : a.severity === 'high' ? 'Alto' : a.severity === 'medium' ? 'Médio' : a.severity === 'low' ? 'Baixo' : a.severity || 'Info',
             text: a.title || a.message || '',
@@ -55,7 +64,7 @@ export function OperationalSidePanel() {
           })));
         }
         if (payRes.success && Array.isArray(payRes.data) && payRes.data.length > 0) {
-          const eventColors: Record<string, string> = { approved: 'success', paid: 'success', pending: 'warning', failed: 'danger', refunded: 'brand' };
+          const eventColors: Record<string, EventItem['color']> = { approved: 'success', paid: 'success', pending: 'warning', failed: 'danger', refunded: 'brand' };
           setEvents(payRes.data.slice(0, 5).map((p: any) => ({
             time: p.created_at ? new Date(p.created_at).toLocaleTimeString('pt-BR') : '—',
             status: p.status,
@@ -65,7 +74,7 @@ export function OperationalSidePanel() {
             color: eventColors[p.status] || 'info',
           })));
         }
-      } catch {}
+      } catch (err) { console.error('Failed to fetch alerts:', err); }
     })();
   }, []);
 
@@ -81,10 +90,10 @@ export function OperationalSidePanel() {
         <div className="space-y-3 flex-1 overflow-hidden">
           {alerts.slice(0, 3).map((alert, i) => (
             <div key={i} className="flex gap-2.5 group cursor-pointer">
-              <div className={cn("w-1 h-1 rounded-full mt-1.5 shrink-0", `bg-${alert.color}`)} />
+              <div className={cn("w-1 h-1 rounded-full mt-1.5 shrink-0", COLOR_BG[alert.color])} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-0.5">
-                  <span className={cn("text-[8px] font-black uppercase tracking-tighter", `text-${alert.color}`)}>{alert.severity}</span>
+                  <span className={cn("text-[8px] font-black uppercase tracking-tighter", COLOR_TEXT[alert.color])}>{alert.severity}</span>
                   <span className="text-[8px] font-bold text-slate/30">{alert.time} atrás</span>
                 </div>
                 <h4 className="text-[10.5px] font-bold text-ink leading-tight truncate group-hover:text-brand transition-colors">{alert.text}</h4>
@@ -112,7 +121,7 @@ export function OperationalSidePanel() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <h4 className="text-[10.5px] font-bold text-ink truncate leading-tight">{item.event}</h4>
-                  <span className={cn("text-[7px] font-black uppercase px-1 rounded-sm shrink-0", `bg-${item.color}/10 text-${item.color}`)}>{item.method}</span>
+                  <span className={cn("text-[7px] font-black uppercase px-1 rounded-sm shrink-0", `${COLOR_BG[item.color]}/10 ${COLOR_TEXT[item.color]}`)}>{item.method}</span>
                 </div>
                 <p className="text-[8.5px] font-bold text-slate/40 truncate leading-none">{item.ref}</p>
               </div>
@@ -143,7 +152,7 @@ export function OperationalSidePanel() {
           ].map((stat) => (
             <div key={stat.label} className="p-2.5 rounded-xl bg-background border border-border/50">
               <p className="text-[7.5px] font-black uppercase tracking-widest text-slate/40 mb-0.5">{stat.label}</p>
-              <p className={cn("text-[12px] font-black tracking-tight leading-none", `text-${stat.color}`)}>{stat.value}</p>
+              <p className={cn("text-[12px] font-black tracking-tight leading-none", COLOR_TEXT[stat.color])}>{stat.value}</p>
             </div>
           ))}
         </div>

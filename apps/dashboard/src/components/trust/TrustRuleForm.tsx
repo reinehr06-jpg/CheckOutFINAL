@@ -39,7 +39,7 @@ export function TrustRuleForm({ onSave, onCancel, initialRule }: TrustRuleFormPr
     setConditions(conditions.filter((_, i) => i !== index));
   };
 
-  const handleConditionChange = (index: number, key: keyof TrustCondition, val: any) => {
+  const handleConditionChange = (index: number, key: keyof TrustCondition, val: unknown) => {
     const updated = [...conditions];
     updated[index] = { ...updated[index], [key]: val };
     setConditions(updated);

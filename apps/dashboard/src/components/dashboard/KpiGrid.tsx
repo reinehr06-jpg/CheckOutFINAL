@@ -130,9 +130,9 @@ export function KpiGrid() {
           <div className="flex items-center justify-between relative z-10">
             <div className={cn(
               "w-7 h-7 2xl:w-8 2xl:h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110",
-              `bg-${kpi.color}/10`
+              kpi.color === 'brand' ? 'bg-brand/10' : kpi.color === 'success' ? 'bg-success/10' : 'bg-danger/10'
             )}>
-              <kpi.icon className={cn("w-3.5 h-3.5 2xl:w-4 2xl:h-4", `text-${kpi.color}`)} />
+              <kpi.icon className={cn("w-3.5 h-3.5 2xl:w-4 2xl:h-4", kpi.color === 'brand' ? 'text-brand' : kpi.color === 'success' ? 'text-success' : 'text-danger')} />
             </div>
             <p className="text-[8px] 2xl:text-[9px] font-black text-slate/40 uppercase tracking-[0.10em] text-right leading-tight ml-2">
               {kpi.title}

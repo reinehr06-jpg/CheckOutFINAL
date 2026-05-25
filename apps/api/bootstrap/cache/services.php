@@ -29,9 +29,13 @@
     25 => 'Carbon\\Laravel\\ServiceProvider',
     26 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
     27 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    28 => 'SimpleSoftwareIO\\QrCode\\QrCodeServiceProvider',
-    29 => 'App\\Providers\\AppServiceProvider',
-    30 => 'App\\Providers\\AppServiceProvider',
+    28 => 'Sentry\\Laravel\\ServiceProvider',
+    29 => 'Sentry\\Laravel\\Tracing\\ServiceProvider',
+    30 => 'SimpleSoftwareIO\\QrCode\\QrCodeServiceProvider',
+    31 => 'App\\Providers\\AppServiceProvider',
+    32 => 'App\\Providers\\GatewayEngineServiceProvider',
+    33 => 'App\\Providers\\AppServiceProvider',
+    34 => 'App\\Providers\\MasterRouteServiceProvider',
   ),
   'eager' => 
   array (
@@ -50,9 +54,13 @@
     12 => 'Carbon\\Laravel\\ServiceProvider',
     13 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
     14 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    15 => 'SimpleSoftwareIO\\QrCode\\QrCodeServiceProvider',
-    16 => 'App\\Providers\\AppServiceProvider',
-    17 => 'App\\Providers\\AppServiceProvider',
+    15 => 'Sentry\\Laravel\\ServiceProvider',
+    16 => 'Sentry\\Laravel\\Tracing\\ServiceProvider',
+    17 => 'SimpleSoftwareIO\\QrCode\\QrCodeServiceProvider',
+    18 => 'App\\Providers\\AppServiceProvider',
+    19 => 'App\\Providers\\GatewayEngineServiceProvider',
+    20 => 'App\\Providers\\AppServiceProvider',
+    21 => 'App\\Providers\\MasterRouteServiceProvider',
   ),
   'deferred' => 
   array (

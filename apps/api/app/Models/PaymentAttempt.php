@@ -15,6 +15,7 @@ class PaymentAttempt extends Model
         'payment_id',
         'company_id',
         'gateway_account_id',
+        'gateway_id',
         'method',
         'status',
         'gateway_payment_id',
@@ -34,5 +35,10 @@ class PaymentAttempt extends Model
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    public function gateway(): BelongsTo
+    {
+        return $this->belongsTo(Gateway::class);
     }
 }

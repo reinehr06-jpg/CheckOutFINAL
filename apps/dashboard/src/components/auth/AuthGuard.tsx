@@ -12,8 +12,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    const token = user || localStorage.getItem('basileia_token');
-
     const isAuthRoute =
       pathname.startsWith('/login') ||
       pathname.startsWith('/2fa') ||
@@ -25,12 +23,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       pathname.startsWith('/session-expired') ||
       pathname.startsWith('/restricted');
 
-    if (!token && !isAuthRoute && !isPublicRoute) {
+    if (user === null && !isAuthRoute && !isPublicRoute) {
       router.push('/login');
       return;
     }
 
-    if (token && isAuthRoute) {
+    if (user !== null && isAuthRoute) {
       router.push('/dashboard');
       return;
     }

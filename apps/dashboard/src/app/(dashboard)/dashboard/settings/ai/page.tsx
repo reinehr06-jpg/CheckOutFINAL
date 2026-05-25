@@ -746,7 +746,7 @@ export default function AiSettingsPage() {
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Tipo de Nó</label>
                     <select 
                       value={newNodeType}
-                      onChange={(e: any) => setNewNodeType(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setNewNodeType(e.target.value as typeof newNodeType)}
                       className="w-full bg-slate-50 border border-[#E8DDFD] rounded-xl px-3 py-1.5 text-xs font-black text-slate-700 h-8.5 cursor-pointer"
                     >
                       <option value="System Prompt">System Prompt (LLM)</option>

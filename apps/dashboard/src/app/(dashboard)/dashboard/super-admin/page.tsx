@@ -3,25 +3,27 @@
 import { useState, useEffect } from 'react';
 import { Shield, Building2, Users, Search, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { fetchWithTimeout } from '@/lib/api';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function SuperAdminPage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [companies, setCompanies] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    fetch(`${API_URL}/api/v1/auth/master/companies`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+    fetchWithTimeout(`${API_URL}/api/v1/auth/master/companies`, {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'include',
     })
       .then((r) => r.json())
       .then((d) => {
         if (d.success) setCompanies(d.data);
       })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [user]);
 
   const filtered = companies.filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.slug?.toLowerCase().includes(search.toLowerCase())

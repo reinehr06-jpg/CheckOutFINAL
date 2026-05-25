@@ -8,7 +8,7 @@ export type AuditLog = {
   user_name: string;
   entity_type: string;
   ip_address: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
   created_at: string;
 };
 

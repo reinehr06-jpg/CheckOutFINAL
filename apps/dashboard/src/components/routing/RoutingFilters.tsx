@@ -54,6 +54,7 @@ export function RoutingFilters({
             <button 
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-[14px] text-slate-400 hover:text-slate-700 cursor-pointer"
+              aria-label="Limpar busca"
             >
               <X className="w-3.5 h-3.5" />
             </button>

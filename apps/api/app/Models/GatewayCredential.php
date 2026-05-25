@@ -13,6 +13,7 @@ class GatewayCredential extends Model
 
     protected $fillable = [
         'gateway_account_id',
+        'gateway_id',
         'company_id',
         'key',
         'encrypted_value',
@@ -28,5 +29,10 @@ class GatewayCredential extends Model
     public function gatewayAccount(): BelongsTo
     {
         return $this->belongsTo(GatewayAccount::class);
+    }
+
+    public function gateway(): BelongsTo
+    {
+        return $this->belongsTo(Gateway::class);
     }
 }

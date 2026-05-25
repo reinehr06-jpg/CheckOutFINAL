@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterCompanyRequest;
 use App\Models\RefreshToken;
 use App\Models\User;
 use App\Services\Audit\AuditService;
+use App\Services\Auth\CompanyRegistrationService;
 use App\Services\Auth\MasterAccessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,6 +53,9 @@ class AuthController extends Controller
         $user = User::where('email', $data['email'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
+            if ($user) {
+                $user->incrementFailedAttempts();
+            }
             return response()->json([
                 'success' => false,
                 'error' => [
@@ -59,6 +64,17 @@ class AuthController extends Controller
                     'request_id' => $request->attributes->get('request_id'),
                 ]
             ], 401);
+        }
+
+        if ($user->isLocked()) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'account_locked',
+                    'message' => 'Conta temporariamente bloqueada por muitas tentativas.',
+                    'request_id' => $request->attributes->get('request_id'),
+                ]
+            ], 423);
         }
 
         if ($user->status !== 'active') {
@@ -72,7 +88,19 @@ class AuthController extends Controller
             ], 403);
         }
 
+        $user->resetFailedAttempts();
+
         return $this->createSession($user, $request, 'dashboard-v1');
+    }
+
+    public function register(RegisterCompanyRequest $request): JsonResponse
+    {
+        $service = app(CompanyRegistrationService::class);
+        $result = $service->register($request->validated());
+
+        $user = $result['user'];
+
+        return $this->createSession($user, $request, 'dashboard-v1-register');
     }
 
     private function createSession(User $user, Request $request, string $tokenName): JsonResponse
@@ -103,7 +131,9 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'role'  => $user->role,
                     'is_master' => $user->role === 'super_admin',
+                    'two_factor_enabled' => $user->two_factor_enabled,
                 ],
+                'needs_2fa_setup' => !$user->two_factor_enabled,
             ]
         ]);
 

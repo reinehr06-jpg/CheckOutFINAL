@@ -17,14 +17,21 @@ class Company extends Model
         'uuid',
         'display_name',
         'document',
+        'document_type',
         'email',
+        'phone',
         'logo_url',
         'plan',
+        'country',
+        'address_line1',
+        'address_line2',
+        'city',
+        'state',
+        'zip_code',
+        'timezone',
     ];
 
-    protected $hidden = [
-        'api_key', // Never expose legacy api_key if it exists
-    ];
+    protected $hidden = [];
 
     protected $casts = [
         'settings' => 'array',

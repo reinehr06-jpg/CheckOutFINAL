@@ -88,7 +88,7 @@ export function Sidebar() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-2 py-4 no-scrollbar space-y-5 text-left">
+        <nav aria-label="Navegação principal" className="flex-1 overflow-y-auto px-2 py-4 no-scrollbar space-y-5 text-left">
           {menuGroups.map((group) => (
             <div key={group.title} className="space-y-1">
               <p className="px-3 text-[9px] font-black text-slate uppercase tracking-widest mb-2 opacity-35">

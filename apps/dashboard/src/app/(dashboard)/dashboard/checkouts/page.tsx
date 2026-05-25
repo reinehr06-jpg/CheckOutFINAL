@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 import { 
   Plus, 
   Download, 
@@ -13,120 +14,74 @@ import {
   List, 
   MoreVertical,
   Activity,
-  Sparkles,
-  ExternalLink,
-  Lock,
   AlertCircle,
   Copy,
-  Edit3,
   Play,
-  Pause,
   Archive,
-  Trash2,
-  Share2,
   Layers,
   ArrowUpRight,
-  ShieldAlert,
   Loader2,
   CheckCircle2,
   X,
   Monitor,
-  Check,
-  TrendingUp,
-  Settings
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { CheckoutStatusBadge, CheckoutStatus } from '@/components/checkouts/CheckoutStatusBadge';
+import { CheckoutStatusBadge } from '@/components/checkouts/CheckoutStatusBadge';
 import { CheckoutPreviewThumbnail } from '@/components/checkouts/CheckoutPreviewThumbnail';
 import { CheckoutsSummary } from '@/components/checkouts/CheckoutsSummary';
 
-// Initial mocks for the experiences
-const initialCheckouts = [
-  {
-    id: 'chk_pagarme_padrao',
-    name: 'Checkout Pagar.Me Padrão',
-    system: 'Sistema Core',
-    status: 'Publicado',
-    version: 'v2.4.1',
-    conversion: '82,34%',
-    lastUpdate: 'há 2 dias',
-    slug: 'pagar-me-padrao',
-    canal: 'Web',
-    type: 'Cartão de Crédito',
-  },
-  {
-    id: 'chk_pix_bb',
-    name: 'Checkout PIX BB',
-    system: 'Sistema Core',
-    status: 'Publicado',
-    version: 'v1.9.3',
-    conversion: '91,26%',
-    lastUpdate: 'há 5 dias',
-    slug: 'pix-bb',
-    canal: 'Web',
-    type: 'PIX',
-  },
-  {
-    id: 'chk_assinatura_pro',
-    name: 'Checkout Assinatura Pro',
-    system: 'Assinaturas',
-    status: 'Publicado',
-    version: 'v3.1.0',
-    conversion: '78,12%',
-    lastUpdate: 'há 1 semana',
-    slug: 'assinatura-pro',
-    canal: 'Web e App',
-    type: 'Assinatura',
-  },
-  {
-    id: 'chk_marketplace',
-    name: 'Checkout Marketplace',
-    system: 'Marketplace',
-    status: 'Rascunho',
-    version: 'v2.0.0',
+const CHECKOUT_STATUS_MAP: Record<string, string> = {
+  published: 'Publicado',
+  draft: 'Rascunho',
+  paused: 'Pausado',
+  archived: 'Arquivado',
+};
+
+function apiCheckoutToPage(c: any) {
+  return {
+    id: c.uuid || `chk_${c.id}`,
+    name: c.name || 'Checkout',
+    system: c.system?.name || '—',
+    status: CHECKOUT_STATUS_MAP[c.status] || c.status || 'Rascunho',
+    version: c.published_version?.version || 'v1.0.0',
     conversion: '—',
-    lastUpdate: 'há 3 horas',
-    slug: 'marketplace',
-    canal: 'Web',
-    type: 'Split Payment',
-  },
-  {
-    id: 'chk_evento',
-    name: 'Checkout Evento',
-    system: 'Sistema Eventos',
-    status: 'Pausado',
-    version: 'v1.4.2',
-    conversion: '65,19%',
-    lastUpdate: 'há 2 semanas',
-    slug: 'evento',
-    canal: 'Web e App',
-    type: 'Ingressos',
-  },
-  {
-    id: 'chk_recuperacao',
-    name: 'Checkout Recuperação',
-    system: 'Sistema Core',
-    status: 'Arquivado',
-    version: 'v1.0.6',
-    conversion: '44,08%',
-    lastUpdate: 'há 1 mês',
-    slug: 'recuperacao',
-    canal: 'E-mail',
-    type: 'Recuperação',
-  }
-];
+    lastUpdate: c.created_at ? new Date(c.created_at).toLocaleString('pt-BR') : '—',
+    slug: c.slug || '',
+    canal: '—',
+    type: '—',
+  };
+}
 
 export default function CheckoutsPage() {
   const router = useRouter();
-  // Demo states to toggle between loading, empty, com dados, error, sem permissao
-  const [demoState, setDemoState] = useState<'com_dados' | 'loading' | 'vazio' | 'erro' | 'sem_permissao'>('com_dados');
-  const [showDebug, setShowDebug] = useState(false); // Collapsible debug gear button
+  const [checkouts, setCheckouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Table view vs Gallery view toggle
   const [viewMode, setViewMode] = useState<'galeria' | 'lista'>('galeria');
 
-  // Local state checkouts data to allow interactive simulation
-  const [checkouts, setCheckouts] = useState(initialCheckouts);
+  const fetchCheckouts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch('/api/v1/checkouts');
+      if (res.success && Array.isArray(res.data)) {
+        setCheckouts(res.data.map(apiCheckoutToPage));
+      } else {
+        setError(res.error?.message || 'Erro ao carregar checkouts');
+      }
+    } catch {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCheckouts();
+  }, [fetchCheckouts]);
 
   // Active filters
   const [search, setSearch] = useState('');
@@ -216,51 +171,7 @@ export default function CheckoutsPage() {
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-2.5 2xl:gap-3.5 relative min-h-0 select-none pb-4">
       
-      {/* Dynamic Collapsible Debug Controller - Bottom Right Floating Panel */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
-        {showDebug && (
-          <div className="bg-white rounded-2xl border border-[#E8DDFD] shadow-2xl p-3 flex flex-col gap-1.5 w-[210px] animate-in slide-in-from-bottom-5 duration-300">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-1 shrink-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Mudar Estado Visual:</span>
-              <button onClick={() => setShowDebug(false)} className="p-0.5 text-slate-400 hover:text-slate-600">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            {[
-              { id: 'com_dados', label: 'Com Dados' },
-              { id: 'loading', label: 'Carregando' },
-              { id: 'vazio', label: 'Vazio' },
-              { id: 'erro', label: 'Erro' },
-              { id: 'sem_permissao', label: 'Sem Permissão' },
-            ].map((st) => (
-              <button
-                key={st.id}
-                onClick={() => {
-                  setDemoState(st.id as any);
-                  setCurrentPage(1);
-                  setShowDebug(false);
-                }}
-                className={cn(
-                  "w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all border flex items-center justify-between",
-                  demoState === st.id 
-                    ? "bg-brand/10 border-brand/20 text-brand font-black" 
-                    : "bg-[#FAF8FF] border-[#E8DDFD]/60 text-slate-600 hover:bg-brand-soft"
-                )}
-              >
-                {st.label}
-                {demoState === st.id && <Check className="w-3.5 h-3.5" />}
-              </button>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="w-10 h-10 bg-brand text-white rounded-full shadow-lg shadow-brand/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-          title="Configurações de Simulação"
-        >
-          <Settings className="w-5 h-5 animate-spin-slow" />
-        </button>
-      </div>
+
 
       {/* Success Notification Alert */}
       {successAlert && (
@@ -304,25 +215,25 @@ export default function CheckoutsPage() {
         </div>
       </header>
 
-      {/* RENDER BASED ON DEMO STATE */}
-      {demoState === 'loading' && (
+      {/* RENDER BASED ON REAL STATE */}
+      {loading && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-20 flex flex-col items-center justify-center gap-4 shadow-sm h-[400px]">
           <Loader2 className="animate-spin text-brand w-8 h-8" />
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando experiências de checkout...</p>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando checkouts...</p>
         </div>
       )}
 
-      {demoState === 'erro' && (
+      {!loading && error && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-4 shadow-sm h-[400px]">
           <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-500">
             <AlertCircle className="w-6 h-6" />
           </div>
           <div>
             <h3 className="text-slate-950 font-black text-base">Não foi possível carregar os checkouts</h3>
-            <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto font-medium">Tente novamente ou verifique suas credenciais de segurança e conectividade de rede com o gateway.</p>
+            <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto font-medium">{error}</p>
           </div>
           <button 
-            onClick={() => setDemoState('com_dados')}
+            onClick={fetchCheckouts}
             className="px-4 py-2 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-all h-[34px]"
           >
             Tentar novamente
@@ -330,25 +241,7 @@ export default function CheckoutsPage() {
         </div>
       )}
 
-      {demoState === 'sem_permissao' && (
-        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-4 shadow-sm h-[400px]">
-          <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-slate-950 font-black text-base">Acesso Não Autorizado</h3>
-            <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto font-medium">Você não possui as permissões do Trust Layer necessárias para gerenciar ou publicar experiências de checkout.</p>
-          </div>
-          <button 
-            onClick={() => triggerSuccessAlert('Solicitação de autorização enviada ao administrador!')}
-            className="px-4 py-2 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-all h-[34px]"
-          >
-            Solicitar Acesso ao Administrador
-          </button>
-        </div>
-      )}
-
-      {demoState === 'vazio' && (
+      {!loading && !error && checkouts.length === 0 && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-5 shadow-sm h-[400px]">
           <div className="w-16 h-16 rounded-full bg-[#FAF8FF] border border-[#E8DDFD] flex items-center justify-center text-violet-400">
             <Layers className="w-7 h-7" />
@@ -356,15 +249,11 @@ export default function CheckoutsPage() {
           <div>
             <h3 className="text-slate-950 font-black text-base">Nenhum checkout criado ainda</h3>
             <p className="text-slate-500 text-xs mt-1.5 max-w-sm mx-auto font-medium leading-relaxed">
-              Crie sua primeira experiência de checkout personalizada para começar a vender com sistemas conectados de forma rápida e segura.
+              Crie sua primeira experiência de checkout personalizada para começar a vender.
             </p>
           </div>
           <button 
-            onClick={() => {
-              setCheckouts(initialCheckouts);
-              setDemoState('com_dados');
-              triggerSuccessAlert('Checkouts de demonstração restaurados!');
-            }}
+            onClick={() => router.push('/dashboard/checkouts/studio')}
             className="px-5 py-2.5 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all"
           >
             Criar primeiro checkout
@@ -372,7 +261,7 @@ export default function CheckoutsPage() {
         </div>
       )}
 
-      {demoState === 'com_dados' && (
+      {!loading && !error && checkouts.length > 0 && (
         <>
           {/* 2. Advanced Filters Bar */}
           <div className="bg-white p-2.5 rounded-[22px] border border-[#E8DDFD] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm w-full shrink-0 select-none">

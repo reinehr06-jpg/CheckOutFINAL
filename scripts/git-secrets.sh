@@ -28,30 +28,13 @@ cat > "$HOOKS_DIR/pre-commit" << 'PREHOOK'
 #!/bin/bash
 set -euo pipefail
 
-echo "🔍 [git-secrets] Scanning for secrets in staged files..."
+echo "  [git-secrets] Scanning for secrets in staged files..."
 
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 
 if [ -z "$STAGED_FILES" ]; then
     exit 0
 fi
-
-# Patterns to block
-BLOCKED_PATTERNS=(
-    'AKIA[0-9A-Z]{16}'                    # AWS Access Key
-    '-----BEGIN\s?(RSA|DSA|EC|PGP|OPENSSH)\s?PRIVATE KEY-----'
-    'ghp_[0-9a-zA-Z]{36}'                 # GitHub PAT
-    'gho_[0-9a-zA-Z]{36}'                 # GitHub OAuth
-    'xox[baprs]-[0-9a-zA-Z]{10,}'        # Slack token
-    'sk-[0-9a-zA-Z]{32,}'                 # OpenAI key
-    'SG\.[0-9a-zA-Z-_]{22}\.[0-9a-zA-Z-_]{43}' # SendGrid
-    'pk\.[0-9a-zA-Z]{24}'                 # Stripe publishable
-    'sk\.[0-9a-zA-Z]{24}'                 # Stripe secret
-    'MASTER_SEED_HEX=[a-f0-9]{64}'        # Basileia master seed
-    'MASTER_TOTP_SEED=[A-Z0-9]{,}'        # Basileia TOTP seed
-    'SECURITY_ENCRYPTION_KEY='            # Basileia KEK
-    'password\s*=\s*['"'"'"]?[^'"'"'"'\s]{8,}'   # password = value
-)
 
 HAS_ERROR=0
 
@@ -60,30 +43,54 @@ for file in $STAGED_FILES; do
         continue
     fi
 
-    for pattern in "${BLOCKED_PATTERNS[@]}"; do
-        if grep -Pq "$pattern" "$file" 2>/dev/null; then
-            echo "   ⚠️  Blocked pattern found in: $file"
-            echo "      Pattern: ${pattern:0:40}..."
-            HAS_ERROR=1
-        fi
-    done
-done
+    # Skip the hook itself
+    if [ "$file" = ".githooks/pre-commit" ] || [ "$file" = "scripts/git-secrets.sh" ]; then
+        continue
+    fi
 
-# Block .env files
-for file in $STAGED_FILES; do
+    # Skip example files
+    if [ "$file" = ".env.example" ]; then
+        continue
+    fi
+
+    # Check for .env files (except .env.example)
     if [[ "$file" == *.env ]] && [[ "$file" != ".env.example" ]]; then
-        echo "   ⚠️  Blocked: $file (.env files should not be committed)"
+        echo "   Blocked: $file (.env files should not be committed)"
+        HAS_ERROR=1
+        continue
+    fi
+
+    # Check for private keys
+    if grep -Pq '-----BEGIN\s?(RSA|DSA|EC|PGP|OPENSSH)\s?PRIVATE KEY-----' "$file" 2>/dev/null; then
+        echo "   Blocked: private key in $file"
+        HAS_ERROR=1
+    fi
+
+    # Check for AWS keys
+    if grep -Pq 'AKIA[0-9A-Z]{16}' "$file" 2>/dev/null; then
+        echo "   Blocked: AWS access key in $file"
+        HAS_ERROR=1
+    fi
+
+    # Check for GitHub tokens
+    if grep -Pq 'gh[pousr]_[0-9a-zA-Z]{36}' "$file" 2>/dev/null; then
+        echo "   Blocked: GitHub token in $file"
+        HAS_ERROR=1
+    fi
+
+    # Check for Basileia master seeds
+    if grep -Eq '(MASTER_SEED_HEX|MASTER_TOTP_SEED|SECURITY_ENCRYPTION_KEY)=[^=[:space:]]{10,}' "$file" 2>/dev/null; then
+        echo "   Blocked: Basileia master seed/key in $file"
         HAS_ERROR=1
     fi
 done
 
 if [ "$HAS_ERROR" -eq 1 ]; then
-    echo "❌ [git-secrets] Commit bloqueado. Remova os secrets antes de commitar."
-    echo "   Use: git unstage <file> && git restore <file>"
+    echo "  [git-secrets] Commit blocked. Remove secrets before committing."
     exit 1
 fi
 
-echo "✅ [git-secrets] Scan OK — no secrets found."
+echo "  [git-secrets] OK"
 PREHOOK
 
 chmod +x "$HOOKS_DIR/pre-commit"

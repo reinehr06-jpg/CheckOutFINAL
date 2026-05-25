@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { 
-  Zap, 
   ChevronRight, 
   Monitor, 
   Smartphone, 
@@ -14,23 +13,13 @@ import {
   Search, 
   Filter, 
   Layers, 
-  Sparkles, 
-  Undo2, 
-  Redo2, 
   Trash2, 
-  Copy, 
-  EyeOff, 
-  Settings2, 
-  Plus, 
   Share2, 
   Info,
   CheckCircle2,
   X,
-  CreditCard,
   ChevronDown,
-  ArrowLeft,
   ChevronLeft,
-  ChevronUp,
   Image as ImageIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';

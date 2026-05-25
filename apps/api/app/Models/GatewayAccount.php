@@ -21,11 +21,11 @@ class GatewayAccount extends Model
         'status',
         'priority',
         'settings',
+        'last_tested_at',
+        'last_test_status',
     ];
 
-    protected $hidden = [
-        'credentials_encrypted', // NEVER expose encrypted credentials in API responses
-    ];
+    protected $hidden = [];
 
     protected $casts = [
         'environment' => 'string',
@@ -48,6 +48,11 @@ class GatewayAccount extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(GatewayCredential::class, 'gateway_account_id');
     }
 
     /**

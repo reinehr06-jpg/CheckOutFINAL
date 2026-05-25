@@ -55,12 +55,22 @@ class AppServiceProvider extends ServiceProvider
 
         // ── Rate Limiters ──────────────────────────────────────────────────
         
-        // 1. Login & Auth (5 tentativas por IP/E-mail em 10 minutos)
-        \Illuminate\Support\Facades\RateLimiter::for('auth', function (\Illuminate\Http\Request $request) {
-            return \Illuminate\Cache\RateLimiting\Limit::perMinutes(10, 5)->by($request->input('email', $request->ip()));
+        // 1. Login (10 tentativas por email/IP em 10 minutos)
+        \Illuminate\Support\Facades\RateLimiter::for('auth_login', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinutes(10, 10)->by($request->input('email', $request->ip()));
         });
 
-        // 2. 2FA Verification (5 tentativas em 10 minutos)
+        // 2. Register (3 tentativas por IP/hora — anti-spam)
+        \Illuminate\Support\Facades\RateLimiter::for('auth_register', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perHour(3)->by($request->ip());
+        });
+
+        // 3. Password Recovery (5 tentativas por email em 30 minutos)
+        \Illuminate\Support\Facades\RateLimiter::for('auth_password', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinutes(30, 5)->by($request->input('email', $request->ip()));
+        });
+
+        // 4. 2FA Verify & Setup (5 tentativas em 10 minutos)
         \Illuminate\Support\Facades\RateLimiter::for('2fa', function (\Illuminate\Http\Request $request) {
             return \Illuminate\Cache\RateLimiting\Limit::perMinutes(10, 5)->by($request->user()?->id ?: $request->ip());
         });

@@ -5,17 +5,9 @@ import Link from 'next/link';
 import { 
   ChevronLeft, 
   ChevronRight,
-  Terminal, 
-  Copy, 
   Check, 
-  Globe, 
-  User, 
-  Shield, 
   Clock, 
-  Activity,
-  AlertTriangle,
-  FileCode,
-  Link as LinkIcon
+  FileCode
 } from 'lucide-react';
 import { AuditEvent } from '@/types/audit';
 import { MOCK_AUDIT_EVENTS } from '../__mocks__/audit';
@@ -114,7 +106,7 @@ export default function AuditEventDetailsPage({ params }: PageProps) {
           setEvent(auditEventFromApi(res.data));
           return;
         }
-      } catch {}
+      } catch (err) { console.error('Failed to fetch audit event:', err); }
       const found = MOCK_AUDIT_EVENTS.find(e => e.id === resolvedParams.id) || MOCK_AUDIT_EVENTS[0];
       setEvent(found);
     })();

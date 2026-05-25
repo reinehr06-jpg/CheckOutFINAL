@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { 
@@ -8,6 +8,7 @@ import {
   MOCK_ROUTING_RULES, 
   MOCK_SYSTEMS 
 } from './__mocks__/routing';
+import { apiFetch } from '@/lib/api';
 import { RoutingHeader } from '@/components/routing/RoutingHeader';
 import { RoutingKpiCards } from '@/components/routing/RoutingKpiCards';
 import { RoutingTabs, RoutingTabValue } from '@/components/routing/RoutingTabs';
@@ -18,7 +19,7 @@ import { RoutingSimulatorPanel } from '@/components/routing/RoutingSimulatorPane
 import { RoutingFallbacksTab } from '@/components/routing/RoutingFallbacksTab';
 import { RoutingHistoryTab } from '@/components/routing/RoutingHistoryTab';
 import { RoutingRuleForm } from '@/components/routing/RoutingRuleForm';
-import { RoutingRule, RoutingSimulatorInput, RoutingSimulatorResult, RoutingDecisionStep } from '@/types/routing';
+import { RoutingRule, RoutingRuleType, RoutingAction, RoutingKpi, RoutingSimulatorInput, RoutingSimulatorResult, RoutingDecisionStep } from '@/types/routing';
 import { 
   cn 
 } from '@/lib/utils';
@@ -57,15 +58,55 @@ import {
 
 export default function RoutingPage() {
   const [activeTab, setActiveTab] = useState<RoutingTabValue>('rules');
-  const [rules, setRules] = useState<RoutingRule[]>(MOCK_ROUTING_RULES);
-  const [kpis, setKpis] = useState(MOCK_ROUTING_KPIS);
+  const [rules, setRules] = useState<RoutingRule[]>([]);
+  const [kpis, setKpis] = useState<RoutingKpi>(MOCK_ROUTING_KPIS);
   const [showSimulator, setShowSimulator] = useState(true);
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [editingRule, setEditingRule] = useState<RoutingRule | undefined>(undefined);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('admin');
+  const [loading, setLoading] = useState(true);
   
   // Notification Toast state
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await apiFetch('/api/v1/dashboard/routing');
+        if (res.success && res.data) {
+          const data = res.data as { rules?: any[] };
+          setRules((data.rules || []).map((r: any) => ({
+            id: r.uuid || r.id?.toString(),
+            name: r.name || '',
+            description: r.description || '',
+            priority: r.priority || 0,
+            type: (r.type || 'by_system') as RoutingRuleType,
+            status: r.status === 'active' ? 'active' : 'inactive' as const,
+            conditions: typeof r.conditions === 'string' ? JSON.parse(r.conditions) : (r.conditions || []),
+            action: (r.action || 'route_to_gateway') as RoutingAction,
+            gatewayId: r.gateway_id,
+            gatewayName: r.gateway?.name || '',
+            systemId: r.system_id?.toString() || '',
+            systemName: r.system?.name || '',
+            systems: r.systems || [],
+            method: r.payment_method || 'pix',
+            environment: r.environment || 'production',
+            coverage7d: r.coverage7d || 0,
+            createdBy: r.created_by || '',
+            createdAt: r.created_at || '',
+            updatedAt: r.updated_at || '',
+            metrics: { approvalRate: 0, volume7d: 0, avgLatency: 0, successRate: 0 },
+          })));
+        } else {
+          setRules(MOCK_ROUTING_RULES);
+        }
+      } catch (err) { console.error('Failed to fetch routing data:', err); setRules(MOCK_ROUTING_RULES); } finally {
+        setLoading(false);
+      }
+    })();
+    setKpis(MOCK_ROUTING_KPIS);
+  }, []);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');

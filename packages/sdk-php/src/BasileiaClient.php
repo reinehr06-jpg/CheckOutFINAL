@@ -64,12 +64,15 @@ class BasileiaClient
 
     private function uuid(): string
     {
-        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+        $bytes = random_bytes(16);
+        $hex = bin2hex($bytes);
+
+        return sprintf('%s-%s-%s-%s-%s',
+            substr($hex, 0, 8),
+            substr($hex, 8, 4),
+            '4' . substr($hex, 13, 3),
+            dechex(hexdec(substr($hex, 16, 4)) & 0x3fff | 0x8000),
+            substr($hex, 20, 12)
         );
     }
 }

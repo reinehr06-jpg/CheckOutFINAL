@@ -304,6 +304,63 @@ class PagBankGateway implements GatewayInterface
         };
     }
 
+    // ─── Engine: Connection Test ──────────────────────────────────────────
+
+    public function testConnection(): ConnectionResult
+    {
+        $start = hrtime(true);
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => "Bearer {$this->apiToken}",
+                'Content-Type'  => 'application/json',
+            ])->timeout(15)->get($this->baseUrl . '/customers', ['limit' => 1]);
+
+            $latency = (int) ((hrtime(true) - $start) / 1e6);
+
+            if ($response->successful()) {
+                return new ConnectionResult(
+                    success: true,
+                    message: 'PagBank gateway connected successfully.',
+                    latencyMs: $latency,
+                    providerInfo: [
+                        'provider' => 'pagbank',
+                        'environment' => str_contains($this->baseUrl, 'sandbox') ? 'sandbox' : 'production',
+                    ],
+                );
+            }
+
+            $body = $response->json();
+            $error = $body['error_messages'][0]['description'] ?? $body['message'] ?? $response->body();
+
+            return new ConnectionResult(
+                success: false,
+                message: 'PagBank API error: ' . $error,
+                latencyMs: $latency,
+                errors: $body['error_messages'] ?? [],
+            );
+        } catch (\Throwable $e) {
+            $latency = (int) ((hrtime(true) - $start) / 1e6);
+
+            return new ConnectionResult(
+                success: false,
+                message: 'PagBank connection failed: ' . $e->getMessage(),
+                latencyMs: $latency,
+                errors: [['message' => $e->getMessage()]],
+            );
+        }
+    }
+
+    public static function supportedMethods(): array
+    {
+        return ['pix', 'boleto', 'credit_card'];
+    }
+
+    public static function getProviderKey(): string
+    {
+        return 'pagbank';
+    }
+
     // ─── HTTP ──────────────────────────────────────────────────────────────
 
     private function post(string $endpoint, array $data = []): array

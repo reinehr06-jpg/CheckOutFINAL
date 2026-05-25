@@ -70,6 +70,7 @@ export function RoutingSimulatorPanel({ onSimulate, isOpen, onClose, rules }: Ro
           <button 
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer lg:hidden"
+            aria-label="Fechar"
           >
             <X className="w-4 h-4" />
           </button>

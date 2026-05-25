@@ -15,8 +15,10 @@ import {
   X,
   Eye,
   EyeOff,
-  Sparkles
+  Sparkles,
+  Globe
 } from 'lucide-react';
+import { fetchWithTimeout, getCsrfToken } from '@/lib/api';
 
 type RegisterMode = 'invite' | 'signup' | 'first_access';
 
@@ -25,6 +27,9 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
+  const [document, setDocument] = useState('');
+  const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('BR');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +38,7 @@ export default function RegisterPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -65,9 +71,11 @@ export default function RegisterPage() {
   const hasSpecial = /[^A-Za-z0-9]/.test(password);
   
   const isPasswordSecure = hasMinLen && hasUpper && hasNumber && hasSpecial;
-  const isFormValid = name && email && (mode !== 'signup' || company) && isPasswordSecure && password === confirmPassword && termsAccepted;
+  const isDocumentValid = country === 'BR' ? document.length > 0 : true;
+  const isPhoneValid = country === 'BR' ? phone.length > 0 : true;
+  const isFormValid = name && email && (mode !== 'signup' || company) && isPasswordSecure && password === confirmPassword && termsAccepted && isDocumentValid && isPhoneValid;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) {
       triggerToast("Por favor, preencha todos os campos e cumpra os requisitos de senha.");
@@ -75,12 +83,59 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-    triggerToast("Registrando nova conta corporativa com trilha de auditoria...");
-    setTimeout(() => {
+    setApiError(null);
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+      // Initialize CSRF-protected session
+      await fetchWithTimeout(`${API_URL}/sanctum/csrf-cookie`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      const csrfToken = getCsrfToken();
+      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}) },
+        credentials: 'include',
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          password_confirmation: confirmPassword,
+          company_name: company,
+          country,
+          document: document || undefined,
+          phone: phone || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const message = data.message || data.error?.message || 'Erro ao criar conta. Verifique os dados.';
+        setApiError(message);
+        triggerToast(message);
+        setLoading(false);
+        return;
+      }
+
       setLoading(false);
+
+      if (data.needs_2fa_setup) {
+        triggerToast('Conta criada! Configure o 2FA para continuar.');
+        setTimeout(() => { window.location.href = '/2fa/setup'; }, 800);
+        return;
+      }
+
       setSuccess(true);
-      triggerToast("Conta configurada e ativa! Redirecionando...");
-    }, 1800);
+      triggerToast('Conta criada com sucesso!');
+    } catch (err) {
+      setApiError('Erro de conexão com o servidor. Verifique se a API está rodando.');
+      triggerToast('Erro de conexão com o servidor.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -372,7 +427,7 @@ export default function RegisterPage() {
                 </p>
                 <div className="pt-2">
                   <Link
-                    href="/login"
+                    href="/dashboard/onboarding"
                     className="w-full h-10.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
                   >
                     Acessar painel agora
@@ -432,6 +487,68 @@ export default function RegisterPage() {
                       />
                       <Building className="w-4 h-4 text-slate-350 absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0" />
                     </div>
+                  </div>
+                )}
+
+                {/* País */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">País</label>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="w-full h-10.5 px-4 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all bg-slate-50/50 focus:bg-white"
+                  >
+                    <option value="BR">Brasil</option>
+                    <option value="US">Estados Unidos</option>
+                    <option value="PT">Portugal</option>
+                    <option value="ES">Espanha</option>
+                    <option value="GB">Reino Unido</option>
+                    <option value="other">Outro</option>
+                  </select>
+                </div>
+
+                {/* Documento (CNPJ/CPF ou EIN/SSN) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    {country === 'BR' ? 'CPF / CNPJ' : 'Document (EIN / SSN)'}
+                    {country === 'BR' && <span className="text-red-400 ml-1">*</span>}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required={country === 'BR'}
+                      placeholder={country === 'BR' ? '00.000.000/0000-00' : 'XX-XXXXXXX'}
+                      value={document}
+                      onChange={(e) => setDocument(e.target.value)}
+                      className="w-full h-10.5 pl-4 pr-10 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all placeholder:text-slate-350 bg-slate-50/50 focus:bg-white"
+                    />
+                    <FileText className="w-4 h-4 text-slate-350 absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0" />
+                  </div>
+                </div>
+
+                {/* Telefone */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                    Telefone
+                    {country === 'BR' && <span className="text-red-400 ml-1">*</span>}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      required={country === 'BR'}
+                      placeholder={country === 'BR' ? '(11) 99999-9999' : '+1 (555) 123-4567'}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full h-10.5 pl-4 pr-10 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all placeholder:text-slate-350 bg-slate-50/50 focus:bg-white"
+                    />
+                    <FileText className="w-4 h-4 text-slate-350 absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0" />
+                  </div>
+                </div>
+
+                {/* Error message from API */}
+                {apiError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                    <p className="text-xs font-bold text-red-700">{apiError}</p>
                   </div>
                 )}
 

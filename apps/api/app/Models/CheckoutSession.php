@@ -20,6 +20,7 @@ class CheckoutSession extends Model
         'connected_system_id',
         'checkout_experience_id',
         'gateway_account_id',
+        'gateway_id',
         'session_token',
         'amount',
         'currency',
@@ -55,6 +56,11 @@ class CheckoutSession extends Model
     public function gatewayAccount(): BelongsTo
     {
         return $this->belongsTo(GatewayAccount::class);
+    }
+
+    public function gateway(): BelongsTo
+    {
+        return $this->belongsTo(Gateway::class);
     }
 
     public function payments(): HasMany

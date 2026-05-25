@@ -1,45 +1,24 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { 
-  Plus, 
   Download, 
   Search, 
   ChevronDown, 
   ChevronLeft, 
   ChevronRight, 
-  Activity, 
-  ShieldAlert, 
   ShieldCheck, 
   X, 
-  Check, 
-  ArrowUpRight, 
-  Settings, 
   Loader2, 
   AlertCircle, 
-  Lock, 
-  Play, 
-  Pause,
-  Key,
-  Layers,
-  Network,
-  HelpCircle,
-  FileText,
-  Trash2,
-  RefreshCw,
   MoreVertical,
   Scale,
   Calendar,
-  Filter,
-  User,
   ShoppingBag,
-  CreditCard,
-  Ban,
   Clock,
   ArrowRight,
-  TrendingUp,
   AlertTriangle,
   Zap
 } from 'lucide-react';
@@ -186,32 +165,41 @@ function apiOrderToPage(o: any) {
 }
 
 export default function SalesPage() {
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterPeriod, setFilterPeriod] = useState('Hoje');
   const [filterSystem, setFilterSystem] = useState('Todos');
   const [filterStatus, setFilterStatus] = useState('Todos');
   const [filterMethod, setFilterMethod] = useState('Todos');
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await apiFetch('/api/v1/dashboard/orders');
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-          setOrders(res.data.map(apiOrderToPage));
-        }
-      } catch {}
-    })();
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch('/api/v1/dashboard/orders');
+      if (res.success && Array.isArray(res.data)) {
+        setOrders(res.data.map(apiOrderToPage));
+      } else {
+        setError(res.error?.message || 'Erro ao carregar pedidos');
+      }
+    } catch {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Simulator Demo State
-  const [demoState, setDemoState] = useState<'com_dados' | 'loading' | 'vazio' | 'erro' | 'sem_permissao'>('com_dados');
-  const [showDebug, setShowDebug] = useState(false);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
 
   // Refund Modal State
@@ -272,13 +260,11 @@ export default function SalesPage() {
   };
 
   // Filter systems & list
-  const uniqueSystems = ['Todos', 'Sistema Core', 'Marketplace', 'Assinaturas', 'Sistema Eventos', 'Church'];
-  const uniqueStatuses = ['Todos', 'Aprovado', 'Pendente', 'Falhou', 'Reembolsado', 'Chargeback', 'Em análise'];
-  const uniqueMethods = ['Todos', 'Cartão', 'PIX', 'Boleto'];
+  const uniqueSystems = useMemo(() => ['Todos', ...new Set(orders.map(o => o.sistema).filter(Boolean))], [orders]);
+  const uniqueStatuses = useMemo(() => ['Todos', ...new Set(orders.map(o => o.status).filter(Boolean))], [orders]);
+  const uniqueMethods = useMemo(() => ['Todos', ...new Set(orders.map(o => o.metodo).filter(Boolean))], [orders]);
 
   const filteredOrders = useMemo(() => {
-    if (demoState !== 'com_dados') return [];
-    
     return orders.filter(o => {
       const matchQuery = 
         o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -292,10 +278,10 @@ export default function SalesPage() {
 
       return matchQuery && matchSystem && matchStatus && matchMethod;
     });
-  }, [orders, searchQuery, filterSystem, filterStatus, filterMethod, demoState]);
+  }, [orders, searchQuery, filterSystem, filterStatus, filterMethod]);
 
   // Pagination calculation
-  const totalItems = demoState === 'com_dados' ? 1740 : 0; // Simulated total count
+  const totalItems = filteredOrders.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
@@ -324,46 +310,7 @@ export default function SalesPage() {
   return (
     <div className="flex flex-col gap-4 w-full select-none">
       
-      {/* 1. Floating Simulator Control Panel */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
-        {showDebug && (
-          <div className="bg-white rounded-2xl border border-[#E8DDFD] shadow-2xl p-2.5 flex flex-col gap-1.5 min-w-[150px] animate-in slide-in-from-bottom-3 duration-200">
-            <span className="text-[9px] font-black text-brand uppercase tracking-widest px-2.5 pb-1 border-b border-slate-100 mb-1 leading-none">Simular Estados</span>
-            {[
-              { id: 'com_dados', label: 'Com Vendas' },
-              { id: 'loading', label: 'Carregando' },
-              { id: 'vazio', label: 'Lista Vazia' },
-              { id: 'erro', label: 'Erro Técnico' },
-              { id: 'sem_permissao', label: 'Sem Permissão' },
-            ].map((st) => (
-              <button
-                key={st.id}
-                onClick={() => {
-                  setDemoState(st.id as any);
-                  setCurrentPage(1);
-                  setShowDebug(false);
-                }}
-                className={cn(
-                  "w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all border flex items-center justify-between",
-                  demoState === st.id 
-                    ? "bg-brand/10 border-brand/20 text-brand font-black" 
-                    : "bg-[#FAF8FF] border-[#E8DDFD]/60 text-slate-600 hover:bg-brand-soft"
-                )}
-              >
-                {st.label}
-                {demoState === st.id && <Check className="w-3.5 h-3.5" />}
-              </button>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="w-10 h-10 bg-brand text-white rounded-full shadow-lg shadow-brand/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-          title="Configurações de Simulação"
-        >
-          <Settings className="w-5 h-5 animate-spin-slow" />
-        </button>
-      </div>
+
 
       {/* 2. Live Notifications */}
       {successAlert && (
@@ -587,7 +534,7 @@ export default function SalesPage() {
 
             {/* Result count */}
             <div className="ml-auto pl-4 text-right shrink-0">
-              <span className="text-[12.5px] font-black text-slate-700 block">{demoState === 'com_dados' ? '1.740' : '0'}</span>
+              <span className="text-[12.5px] font-black text-slate-700 block">{filteredOrders.length}</span>
               <span className="text-[9.5px] font-bold text-slate-400 block uppercase tracking-wider leading-none">resultados</span>
             </div>
 
@@ -625,15 +572,33 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* 7. Simulation State Rendering */}
-      {demoState === 'loading' && (
+      {/* 7. Real State Rendering */}
+      {loading && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-20 flex flex-col items-center justify-center gap-4 shadow-sm h-[320px]">
           <Loader2 className="animate-spin text-brand w-8 h-8" />
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando transações comerciais...</p>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando transações...</p>
         </div>
       )}
 
-      {demoState === 'vazio' && (
+      {!loading && error && (
+        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
+          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-slate-950 font-black text-[13.5px]">Erro de Conexão com API</h3>
+            <p className="text-slate-400 font-bold text-[11.5px] mt-0.5">{error}</p>
+          </div>
+          <button 
+            onClick={fetchOrders}
+            className="mt-2 px-4 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10.5px] font-black uppercase tracking-tight transition-all"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && orders.length === 0 && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
           <div className="w-12 h-12 bg-brand-soft/50 rounded-full flex items-center justify-center text-brand">
             <ShoppingBag className="w-6 h-6" />
@@ -645,39 +610,9 @@ export default function SalesPage() {
         </div>
       )}
 
-      {demoState === 'erro' && (
-        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
-          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-slate-950 font-black text-[13.5px]">Erro de Conexão com API</h3>
-            <p className="text-slate-400 font-bold text-[11.5px] mt-0.5">Não foi possível carregar as vendas. Tente novamente ou verifique sua conexão.</p>
-          </div>
-          <button 
-            onClick={() => setDemoState('com_dados')}
-            className="mt-2 px-4 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10.5px] font-black uppercase tracking-tight transition-all"
-          >
-            Tentar Novamente
-          </button>
-        </div>
-      )}
-
-      {demoState === 'sem_permissao' && (
-        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
-          <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-slate-955 font-black text-[13.5px]">Acesso Restrito</h3>
-            <p className="text-slate-400 font-bold text-[11.5px] mt-0.5">Você não tem permissão para visualizar vendas. Solicite acesso a um administrador.</p>
-          </div>
-        </div>
-      )}
-
-      {demoState === 'com_dados' && (
+      {!loading && !error && orders.length > 0 && (
         <>
-          {/* 8. Main Dynamic Orders Table - Fixed Layout and Optimized Columns */}
+          {/* 8. Main Dynamic Orders Table */}
           <div className="w-full bg-white rounded-3xl border border-[#E8DDFD] overflow-hidden shadow-sm shrink-0">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse table-fixed">

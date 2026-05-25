@@ -89,13 +89,24 @@ class GatewayResolver
     /**
      * Instancia o driver correto a partir do model Gateway.
      *
-     * Usa o pattern fromGatewayModel() que AsaasGateway já implementa.
-     * PagBankGateway seguirá o mesmo pattern.
+     * Tenta o GatewayRegistry primeiro (drivers registrados via ServiceProvider),
+     * depois fallback para o match hardcoded legado.
      */
     public static function makeFromModel(Gateway $gateway): GatewayInterface
     {
-        $type = strtolower($gateway->type ?? $gateway->slug ?? 'asaas');
+        $type = strtolower($gateway->type ?? $gateway->slug ?? '');
 
+        // Try registry first (drivers registered via GatewayEngineServiceProvider)
+        $registry = app(\App\Services\Gateway\GatewayRegistry::class);
+        if ($type && $registry->has($type)) {
+            try {
+                return $registry->makeDriver($gateway);
+            } catch (\Throwable $e) {
+                // Fall through to legacy match
+            }
+        }
+
+        // Legacy hardcoded match
         return match ($type) {
             'asaas'   => AsaasGateway::fromGatewayModel($gateway),
             'pagbank' => PagBankGateway::fromGatewayModel($gateway),

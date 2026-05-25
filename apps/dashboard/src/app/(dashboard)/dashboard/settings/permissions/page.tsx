@@ -40,7 +40,7 @@ export default function PermissionsSettingsPage() {
     }));
   };
 
-  const handleRoleChange = (id: string, nextRole: any) => {
+  const handleRoleChange = (id: string, nextRole: Member['role']) => {
     setMembers(prev => prev.map(m => m.id === id ? { ...m, role: nextRole } : m));
     triggerToast('Papel de acesso alterado.');
   };
@@ -118,7 +118,7 @@ export default function PermissionsSettingsPage() {
                   <td className="py-3.5 px-5">
                     <select
                       value={member.role}
-                      onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleRoleChange(member.id, e.target.value as Member['role'])}
                       disabled={member.role === 'owner'}
                       className="h-8 px-2.5 bg-slate-50 border border-[#E8DDFD] rounded-lg text-xs font-bold text-slate-900 focus:outline-none cursor-pointer disabled:opacity-50"
                     >

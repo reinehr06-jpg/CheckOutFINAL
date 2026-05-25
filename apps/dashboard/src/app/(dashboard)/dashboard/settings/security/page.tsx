@@ -110,7 +110,7 @@ export default function SecuritySettingsPage() {
         if (statusRes.success && statusRes.data) {
           setTwoFactorActive((statusRes.data as any).two_factor_enabled);
         }
-      } catch {}
+      } catch (err) { console.error('Failed to load security data:', err); }
     })();
   }, []);
 
@@ -203,7 +203,7 @@ export default function SecuritySettingsPage() {
     (async () => {
       try {
         await apiFetch('/api/v1/dashboard/security/sessions/' + id, { method: 'DELETE' });
-      } catch {}
+      } catch (err) { console.error('Failed to delete session:', err); };
     })();
     const newEvt: SecurityActivityEvent = {
       id: `evt_sec_${Math.floor(Math.random() * 10000)}`,

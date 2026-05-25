@@ -327,6 +327,62 @@ class AsaasGateway implements GatewayInterface
         return $this->post("payments/{$paymentId}/refund", $data);
     }
 
+    // ─── Engine: Connection Test ──────────────────────────────────────────
+
+    public function testConnection(): ConnectionResult
+    {
+        $start = hrtime(true);
+
+        try {
+            $response = Http::withHeaders([
+                'access_token' => $this->apiKey,
+            ])->timeout(15)->get($this->baseUrl . '/customers', ['limit' => 1]);
+
+            $latency = (int) ((hrtime(true) - $start) / 1e6);
+
+            if ($response->successful()) {
+                return new ConnectionResult(
+                    success: true,
+                    message: 'Asaas gateway connected successfully.',
+                    latencyMs: $latency,
+                    providerInfo: [
+                        'provider' => 'asaas',
+                        'environment' => str_contains($this->baseUrl, 'sandbox') ? 'sandbox' : 'production',
+                    ],
+                );
+            }
+
+            $body = $response->json();
+            $error = $body['errors'][0]['description'] ?? $response->body();
+
+            return new ConnectionResult(
+                success: false,
+                message: 'Asaas API error: ' . $error,
+                latencyMs: $latency,
+                errors: $body['errors'] ?? [],
+            );
+        } catch (\Throwable $e) {
+            $latency = (int) ((hrtime(true) - $start) / 1e6);
+
+            return new ConnectionResult(
+                success: false,
+                message: 'Asaas connection failed: ' . $e->getMessage(),
+                latencyMs: $latency,
+                errors: [['message' => $e->getMessage()]],
+            );
+        }
+    }
+
+    public static function supportedMethods(): array
+    {
+        return ['pix', 'boleto', 'credit_card', 'subscription'];
+    }
+
+    public static function getProviderKey(): string
+    {
+        return 'asaas';
+    }
+
     // ─── HTTP helpers ──────────────────────────────────────────────────────
 
     private function post(string $endpoint, array $data = []): array

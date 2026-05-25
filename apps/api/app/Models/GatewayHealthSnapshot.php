@@ -12,6 +12,7 @@ class GatewayHealthSnapshot extends Model
     protected $fillable = [
         'company_id',
         'gateway_account_id',
+        'gateway_id',
         'approval_rate',
         'failure_rate',
         'avg_latency_ms',
@@ -34,5 +35,10 @@ class GatewayHealthSnapshot extends Model
     public function gatewayAccount()
     {
         return $this->belongsTo(GatewayAccount::class);
+    }
+
+    public function gateway()
+    {
+        return $this->belongsTo(Gateway::class);
     }
 }

@@ -1,34 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
-  Sparkles, 
-  ShieldCheck, 
-  Building2, 
-  Globe, 
-  Users2, 
-  ChevronRight, 
-  ChevronLeft, 
-  Check, 
-  Plus, 
-  Trash2, 
-  Settings, 
+  Sparkles,
+  ChevronRight,
+  ChevronLeft,
+  Check,
   Lock,
-  Palette,
   Monitor,
-  CreditCard,
-  Send,
   Play,
-  HelpCircle,
-  Clock,
-  ArrowRight,
-  Flame,
   AlertTriangle
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { useOnboarding } from '@/hooks/api/useOnboarding';
+import { fetchWithTimeout } from '@/lib/api';
 
-// Steps list as defined by documentation
 type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface AuditLog {
@@ -38,34 +25,40 @@ interface AuditLog {
   type: 'info' | 'success' | 'warning' | 'security';
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function OnboardingPage() {
   const router = useRouter();
-  
-  // Simulation accounts states
-  const [accountState, setAccountState] = useState<'empty' | 'has_system' | 'has_gateway' | 'has_checkout' | 'completed'>('empty');
+  const { user } = useAuth();
+  const { status, loading: statusLoading, submitting, refetch, createSystem, createGateway, testGateway, createCheckout, publishCheckout } = useOnboarding();
+
   const [step, setStep] = useState<OnboardingStep>(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
+  const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
+
   // Step 1 State: Welcome context
-  const [userName, setUserName] = useState('Vinícius Reinehr');
-  const [companyName, setCompanyName] = useState('Basileia Premium Corp');
+  const [userName, setUserName] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [environment, setEnvironment] = useState<'sandbox' | 'production'>('sandbox');
 
   // Step 2 State: First system
-  const [systemName, setSystemName] = useState('Checkout Main Studio');
+  const [systemName, setSystemName] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
   // Step 3 State: First gateway
   const [gatewayProvider, setGatewayProvider] = useState('Basileia Pay Direct');
-  const [apiKey, setApiKey] = useState('pk_sandbox_5589a091cf76bde');
+  const [apiKey, setApiKey] = useState('');
   const [isGatewayTesting, setIsGatewayTesting] = useState(false);
   const [gatewayTested, setGatewayTested] = useState(false);
+  const [gatewayUuid, setGatewayUuid] = useState<string | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   // Step 4 State: First checkout
-  const [checkoutName, setCheckoutName] = useState('Checkout Premium Pix e Cartão');
-  const [checkoutThemeColor, setCheckoutThemeColor] = useState('#8B5CF6'); // Basileia Purple
+  const [checkoutName, setCheckoutName] = useState('');
+  const [checkoutThemeColor, setCheckoutThemeColor] = useState('#8B5CF6');
   const [allowPix, setAllowPix] = useState(true);
   const [allowCard, setAllowCard] = useState(true);
+  const [checkoutId, setCheckoutId] = useState<number | null>(null);
 
   // Step 5 State: Publish version
   const [releaseVersion, setReleaseVersion] = useState('v1.0.0-beta');
@@ -74,16 +67,59 @@ export default function OnboardingPage() {
 
   // Step 6 State: Simulated test transaction
   const [cardNumber, setCardNumber] = useState('');
-  const [cardHolder, setCardHolder] = useState('VINICIUS REINEHR');
-  const [cardExpiry, setCardExpiry] = useState('12/29');
-  const [cardCvv, setCardCvv] = useState('123');
+  const [cardHolder, setCardHolder] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
   const [isPaying, setIsPaying] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Audit Logs State
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([
-    { timestamp: '15:31:02', event: 'Sessão Iniciada', details: 'Primeiro login corporativo detectado.', type: 'security' }
+    { timestamp: new Date().toLocaleTimeString('pt-BR', { hour12: false }), event: 'Sessão Iniciada', details: 'Primeiro login corporativo detectado.', type: 'security' }
   ]);
+
+  // User info on mount
+  useEffect(() => {
+    if (user?.name) setUserName(user.name);
+  }, [user]);
+
+  // Fetch company name
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetchWithTimeout(`${API_URL}/api/v1/dashboard/company`, {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (data.success || data.data) {
+          const c = data.data || data;
+          setCompanyName(c.name || c.company_name || '');
+        }
+      } catch (err) { console.error('Failed to fetch company:', err); }
+    })();
+  }, []);
+
+  // Sync step from onboarding status
+  useEffect(() => {
+    if (status) {
+      if (status.current_step > step) {
+        setStep(Math.min(status.current_step as number, 6) as OnboardingStep);
+      }
+      if (status.has_gateway_tested) {
+        setGatewayTested(true);
+      }
+      if (status.has_published) {
+        setIsPublished(true);
+      }
+    }
+  }, [status]);
+
+  // Reset gateway state when step changes
+  useEffect(() => {
+    setApiErrorMsg(null);
+    setTestError(null);
+  }, [step]);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -98,55 +134,117 @@ export default function OnboardingPage() {
     ]);
   };
 
-  // Skip state actions based on state selector simulation (User guidelines)
-  useEffect(() => {
-    if (accountState === 'empty') {
-      setStep(1);
-      triggerToast("Estado da conta: Vazia. Todas as etapas visíveis.");
-    } else if (accountState === 'has_system') {
-      setStep(3); // skip welcome and system creation -> go to gateway
-      addAuditLog('Etapas Simplificadas', 'Sistema detectado na conta. Redirecionado para Gateway.', 'warning');
-      triggerToast("Conta possui Sistema. Pulando para etapa 3!");
-    } else if (accountState === 'has_gateway') {
-      setStep(4); // skip to checkout
-      setGatewayTested(true);
-      addAuditLog('Etapas Simplificadas', 'Sistema e Gateway ativos. Redirecionado para Checkout.', 'warning');
-      triggerToast("Conta possui Gateway conectado. Pulando para etapa 4!");
-    } else if (accountState === 'has_checkout') {
-      setStep(5); // skip to publish
-      setGatewayTested(true);
-      addAuditLog('Etapas Simplificadas', 'Checkout criado em rascunho. Redirecionado para Publicação.', 'warning');
-      triggerToast("Checkout pendente de publicação. Pulando para etapa 5!");
-    } else if (accountState === 'completed') {
-      setStep(6); // final step validation
-      setGatewayTested(true);
-      setIsPublished(true);
-      addAuditLog('Etapas Simplificadas', 'Onboarding quase completo. Resta venda de teste.', 'success');
-      triggerToast("Onboarding quase pronto. Resta simular venda de teste!");
-    }
-  }, [accountState]);
+  const handleNextStep = async () => {
+    setApiErrorMsg(null);
 
-  // Handle gateway connection test
-  const handleTestGateway = () => {
+    if (step === 1) {
+      addAuditLog('Boas-vindas Aceito', `Contexto corporativo verificado.`, 'info');
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      if (!systemName.trim()) {
+        triggerToast("Por favor, nomeie seu primeiro sistema.");
+        return;
+      }
+      try {
+        await createSystem(systemName.trim(), environment);
+        addAuditLog('Sistema Criado', `Sistema '${systemName}' registrado com sucesso.`, 'success');
+        triggerToast("✓ Sistema criado com sucesso!");
+        setStep(3);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Erro ao criar sistema';
+        setApiErrorMsg(msg);
+        triggerToast(msg);
+      }
+      return;
+    }
+
+    if (step === 3) {
+      if (!gatewayTested || !gatewayUuid) {
+        triggerToast("Por favor, realize o teste de conexão do gateway.");
+        return;
+      }
+      setStep(4);
+      return;
+    }
+
+    if (step === 4) {
+      if (!checkoutName.trim()) {
+        triggerToast("Dê um nome ao seu primeiro checkout.");
+        return;
+      }
+      try {
+        const checkout = await createCheckout({
+          name: checkoutName.trim(),
+          theme_color: checkoutThemeColor,
+          allow_pix: allowPix,
+          allow_card: allowCard,
+        });
+        setCheckoutId(checkout.id);
+        addAuditLog('Rascunho de Checkout', `Layout '${checkoutName}' salvo como rascunho.`, 'info');
+        triggerToast("✓ Checkout criado com sucesso!");
+        setStep(5);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Erro ao criar checkout';
+        setApiErrorMsg(msg);
+        triggerToast(msg);
+      }
+      return;
+    }
+  };
+
+  const handleTestGateway = async () => {
+    if (!apiKey.trim()) {
+      triggerToast("Informe a chave da API do gateway.");
+      return;
+    }
+
     setIsGatewayTesting(true);
-    triggerToast("Iniciando handshake seguro com adquirente...");
-    setTimeout(() => {
-      setIsGatewayTesting(false);
+    setTestError(null);
+    triggerToast("Conectando ao gateway...");
+
+    try {
+      const gateway = await createGateway({
+        name: gatewayProvider,
+        provider: gatewayProvider.toLowerCase().replace(/\s+/g, '_'),
+        environment: 'sandbox',
+        credentials: { api_key: apiKey.trim() },
+      });
+      setGatewayUuid(gateway.uuid);
+
+      const result = await testGateway(gateway.uuid);
       setGatewayTested(true);
       addAuditLog('Gateway Conectado', `${gatewayProvider} integrado com sucesso em sandbox.`, 'success');
-      triggerToast("✓ Conexão estabelecida com sucesso via TLS 1.3!");
-    }, 1500);
+      triggerToast("✓ Conexão estabelecida com sucesso!");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao conectar gateway';
+      setTestError(msg);
+      addAuditLog('Falha no Gateway', `Erro ao conectar ${gatewayProvider}: ${msg}`, 'warning');
+      triggerToast(msg);
+    } finally {
+      setIsGatewayTesting(false);
+    }
   };
 
-  // Handle checkout publishing
-  const handlePublishCheckout = () => {
-    setIsPublished(true);
-    addAuditLog('Checkout Publicado', `Versão ${releaseVersion} de '${checkoutName}' ativa em Produção.`, 'security');
-    triggerToast("✓ Versão de checkout publicada com sucesso em ambiente de vendas!");
-    setStep(6);
+  const handlePublishCheckout = async () => {
+    try {
+      await publishCheckout({
+        version: releaseVersion,
+        notes: releaseNotes,
+      });
+      setIsPublished(true);
+      addAuditLog('Checkout Publicado', `Versão ${releaseVersion} de checkout ativa.`, 'security');
+      triggerToast("✓ Checkout publicado com sucesso!");
+      setStep(6);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao publicar checkout';
+      setApiErrorMsg(msg);
+      triggerToast(msg);
+    }
   };
 
-  // Simulate payment processing in Step 6
   const handleSimulatePayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cardNumber || cardNumber.replace(/\s/g, '').length < 16) {
@@ -155,7 +253,7 @@ export default function OnboardingPage() {
     }
     setIsPaying(true);
     addAuditLog('Transação Iniciada', `Venda de teste iniciada para checkout '${checkoutName}'`, 'info');
-    
+
     setTimeout(() => {
       setIsPaying(false);
       setPaymentSuccess(true);
@@ -164,36 +262,20 @@ export default function OnboardingPage() {
     }, 2000);
   };
 
-  const handleNextStep = () => {
-    if (step === 1) {
-      addAuditLog('Boas-vindas Aceito', `Contexto corporativo verificado para ${companyName}.`, 'info');
-      setStep(2);
-    } else if (step === 2) {
-      if (!systemName) {
-        triggerToast("Por favor, nomeie seu primeiro sistema.");
-        return;
-      }
-      addAuditLog('Sistema Criado', `Sistema '${systemName}' registrado com sucesso.`, 'success');
-      setStep(3);
-    } else if (step === 3) {
-      if (!gatewayTested) {
-        triggerToast("Por favor, realize o teste de conexão do gateway.");
-        return;
-      }
-      setStep(4);
-    } else if (step === 4) {
-      if (!checkoutName) {
-        triggerToast("Dê um nome ao seu primeiro checkout.");
-        return;
-      }
-      addAuditLog('Rascunho de Checkout', `Layout '${checkoutName}' salvo como rascunho.`, 'info');
-      setStep(5);
-    }
-  };
+  if (statusLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-400">
+          <div className="w-5 h-5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
+          <span className="text-xs font-black uppercase tracking-wider">Carregando onboarding...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 2xl:gap-5 animate-in fade-in slide-in-from-bottom-2 duration-700 w-full text-left">
-      
+
       {/* Toast Alert */}
       {toastMessage && (
         <div className="fixed top-6 right-6 z-55 bg-slate-900 text-white rounded-2xl p-4 shadow-2xl flex items-center gap-2.5 max-w-sm animate-in slide-in-from-top-4 duration-300">
@@ -202,54 +284,47 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* Header with quick simulations toggles (UX State Demonstration) */}
+      {/* Header */}
       <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 pt-1 w-full border-b border-slate-100 pb-4">
         <div className="space-y-0.5">
           <div className="flex items-center gap-3">
-            <h1 className="text-[28px] 2xl:text-[34px] font-black tracking-tighter text-ink leading-none">Onboarding Ativo</h1>
+            <h1 className="text-[28px] 2xl:text-[34px] font-black tracking-tighter text-ink leading-none">Onboarding</h1>
             <div className="h-6 w-px bg-border/60 mx-1" />
             <Sparkles className="w-5.5 h-5.5 text-brand" />
           </div>
           <p className="text-slate/50 font-bold text-[13px] 2xl:text-[14.5px] tracking-tight">
-            Seu primeiro login guiado. Prepare seu sistema, gateway e valide seu primeiro checkout real.
+            Prepare seu sistema, gateway e publique seu primeiro checkout.
           </p>
         </div>
 
-        {/* State selector widget */}
-        <div className="bg-slate-50 border border-slate-200/70 p-1.5 rounded-2xl flex items-center gap-2">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-2">Simular Estado:</span>
-          <div className="flex gap-1">
-            {(['empty', 'has_system', 'has_gateway', 'has_checkout', 'completed'] as const).map((st) => (
-              <button
-                key={st}
-                onClick={() => setAccountState(st)}
-                className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${
-                  accountState === st 
-                    ? 'bg-brand text-white shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-                }`}
-              >
-                {st === 'empty' && 'Vazia'}
-                {st === 'has_system' && 'C/ Sistema'}
-                {st === 'has_gateway' && 'C/ Gateway'}
-                {st === 'has_checkout' && 'C/ Rascunho'}
-                {st === 'completed' && 'Completa'}
-              </button>
-            ))}
+        {status && (
+          <div className="bg-slate-50 border border-slate-200/70 p-1.5 rounded-2xl flex items-center gap-2">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-2">Progresso:</span>
+            <span className="px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider bg-brand text-white shadow-sm">
+              Passo {status.current_step}/6
+            </span>
           </div>
-        </div>
+        )}
       </header>
+
+      {/* API Error Banner */}
+      {apiErrorMsg && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-3 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+          <span className="text-[11px] font-bold text-red-700">{apiErrorMsg}</span>
+        </div>
+      )}
 
       {/* Left-right grid split layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] xl:grid-cols-[280px_1fr_400px] gap-6 items-start w-full">
-        
+
         {/* Left Column: Progress Stepper */}
         <div className="bg-white/60 backdrop-blur border border-border/80 rounded-[24px] p-5 shadow-sm space-y-4 text-left">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pb-1 border-b border-slate-100">
             Progresso Recomendado
           </span>
-          
-          <nav className="space-y-1">
+
+          <nav aria-label="Progresso do onboarding" className="space-y-1">
             {[
               { num: 1, label: 'Boas-vindas', desc: 'Identificar seu perfil' },
               { num: 2, label: 'Criar Sistema', desc: 'Sua base de vendas' },
@@ -259,26 +334,26 @@ export default function OnboardingPage() {
               { num: 6, label: 'Venda de Teste', desc: 'Validar toda a operação' }
             ].map((s) => {
               const isActive = step === s.num;
-              const isDone = step > s.num;
-              
+              const isDone = status ? s.num < status.current_step : step > s.num;
+
               return (
                 <button
                   key={s.num}
-                  disabled={!isDone && !isActive && step !== 6} // Let them navigate back easily or forward if done
+                  disabled={!isDone && !isActive}
                   onClick={() => setStep(s.num as OnboardingStep)}
                   className={`w-full flex items-start gap-3 p-2.5 rounded-xl transition-all text-left ${
-                    isActive 
-                      ? 'bg-brand/5 border border-brand/10 text-brand' 
-                      : isDone 
-                      ? 'text-emerald-700 bg-emerald-50/20' 
+                    isActive
+                      ? 'bg-brand/5 border border-brand/10 text-brand'
+                      : isDone
+                      ? 'text-emerald-700 bg-emerald-50/20'
                       : 'text-slate-400 opacity-60'
                   }`}
                 >
                   <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
-                    isActive 
-                      ? 'bg-brand text-white' 
-                      : isDone 
-                      ? 'bg-emerald-500 text-white' 
+                    isActive
+                      ? 'bg-brand text-white'
+                      : isDone
+                      ? 'bg-emerald-500 text-white'
                       : 'bg-slate-100 text-slate-400'
                   }`}>
                     {isDone ? <Check className="w-3.5 h-3.5" /> : s.num}
@@ -292,40 +367,40 @@ export default function OnboardingPage() {
             })}
           </nav>
 
-          {/* Quick Help widget */}
           <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 space-y-1.5">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Precisa de Ajuda?</span>
             <p className="text-[10px] font-semibold text-slate-500 leading-normal">
-              O onboarding é um construtor em tempo real. Cada configuração feita aqui gera recursos ativos utilizáveis no seu painel principal.
+              Cada configuração feita aqui gera recursos ativos utilizáveis no seu painel principal.
             </p>
           </div>
         </div>
 
         {/* Center Column: Card content wizard action */}
         <div className="bg-white border border-border rounded-[24px] p-6 xl:p-8 shadow-xl shadow-brand/5 flex flex-col justify-between min-h-[460px] w-full">
-          
+
           {/* STEP 1: WELCOME CONTEXT */}
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="space-y-1.5">
                 <h2 className="text-xl xl:text-2xl font-black text-[#1E1538]">
-                  Boas-vindas à Basileia Pay, {userName}!
+                  Boas-vindas à Basileia Pay, {userName || 'Admin'}!
                 </h2>
                 <p className="text-brand font-black text-xs">
-                  “Vamos preparar seu primeiro ambiente de venda.”
+                  &ldquo;Vamos preparar seu primeiro ambiente de venda.&rdquo;
                 </p>
                 <p className="text-slate/60 text-xs font-bold leading-relaxed">
-                  Você está logado na organização corporativa <strong className="text-slate-800">{companyName}</strong> sob o ambiente operacional de <strong className="text-brand">Sandbox (Simulação)</strong>. Vamos juntos configurar a base mínima de transações da sua empresa.
+                  Você está logado na organização <strong className="text-slate-800">{companyName || 'sua empresa'}</strong>
+                  . Vamos configurar a base mínima de transações da sua empresa.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4.5 rounded-2xl border border-slate-150 text-xs font-bold text-slate-650">
                 <div className="space-y-1">
-                  <span className="text-[9.5px] text-slate-400 block uppercase tracking-wider">Organização Administrativa</span>
-                  <span className="text-slate-800">{companyName}</span>
+                  <span className="text-[9.5px] text-slate-400 block uppercase tracking-wider">Organização</span>
+                  <span className="text-slate-800">{companyName || '---'}</span>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-[9.5px] text-slate-400 block uppercase tracking-wider">Ambiente Inicial Protegido</span>
+                  <span className="text-[9.5px] text-slate-400 block uppercase tracking-wider">Ambiente</span>
                   <span className="text-brand flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
                     Sandbox Regulatório
@@ -351,13 +426,13 @@ export default function OnboardingPage() {
                   Crie o sistema que vai operar suas transações
                 </h2>
                 <p className="text-slate/60 text-xs font-bold leading-relaxed">
-                  O sistema atua como o agregador das suas páginas de pagamento e integrações de gateway. Insira o nome do seu primeiro ponto operacional de checkout.
+                  O sistema atua como o agregador das suas páginas de pagamento. Insira o nome do seu primeiro ponto operacional de checkout.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Nome fantasia do sistema</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Nome do sistema</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -373,27 +448,32 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Modo do Sistema</label>
-                    <div className="h-11 bg-slate-100 border border-slate-200 text-slate-500 rounded-xl flex items-center px-4 text-xs font-bold select-none cursor-not-allowed">
-                      Multi-Checkout Ativo
-                    </div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Ambiente</label>
+                    <select
+                      value={environment}
+                      onChange={(e) => setEnvironment(e.target.value as 'sandbox' | 'production')}
+                      className="w-full h-11 px-3 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all bg-slate-50/50 focus:bg-white"
+                    >
+                      <option value="sandbox">Sandbox (Testes)</option>
+                      <option value="production">Produção</option>
+                    </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Branding Logo Corporativa</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Logo</label>
                     <button
                       type="button"
                       onClick={() => {
                         setCompanyLogo('active_logo');
-                        triggerToast("Logo corporativa simulada ativada!");
+                        triggerToast("Logo ativada!");
                       }}
                       className={`w-full h-11 rounded-xl text-xs font-black uppercase tracking-wider border transition-all flex items-center justify-center gap-1.5 ${
-                        companyLogo 
+                        companyLogo
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-250'
                           : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
-                      {companyLogo ? '✓ Logomarca Ativa' : 'Simular Logo'}
+                      {companyLogo ? '✓ Logo Ativa' : 'Simular Logo'}
                     </button>
                   </div>
                 </div>
@@ -410,32 +490,34 @@ export default function OnboardingPage() {
                   Conecte o gateway que receberá seus pagamentos
                 </h2>
                 <p className="text-slate/60 text-xs font-bold leading-relaxed">
-                  Vincule a conta de adquirente que processará e liquidará as transações financeiras. Para facilitar, ativamos por padrão as chaves de teste da Basileia Pay.
+                  Vincule a conta de adquirente que processará e liquidará as transações financeiras.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Provedor Financeiro</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Provedor</label>
                     <select
                       value={gatewayProvider}
                       onChange={(e) => setGatewayProvider(e.target.value)}
                       className="w-full h-11 px-3 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-bold text-slate-800 transition-all bg-slate-50/50 focus:bg-white"
                     >
                       <option>Basileia Pay Direct</option>
-                      <option>Cielo V3 API</option>
-                      <option>Stone Pagar.me</option>
-                      <option>Rede Adquirência</option>
+                      <option>Stripe</option>
+                      <option>Asaas</option>
+                      <option>Mercado Pago</option>
+                      <option>Pagarme</option>
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Credencial Sandbox (Chave Pública)</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Chave da API (Sandbox)</label>
                     <input
                       type="text"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="pk_sandbox_..."
                       className="w-full h-11 px-4 rounded-xl border border-slate-200 focus:border-brand focus:ring-1 focus:ring-brand outline-none text-xs font-mono font-bold text-slate-800 transition-all bg-slate-50/50 focus:bg-white"
                     />
                   </div>
@@ -445,15 +527,24 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={handleTestGateway}
-                    disabled={isGatewayTesting}
-                    className="h-11 px-6 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2"
+                    disabled={isGatewayTesting || submitting || !apiKey.trim()}
+                    className="h-11 px-6 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50"
                   >
-                    {isGatewayTesting ? 'Testando Handshake...' : gatewayTested ? '✓ Conexão Testada' : 'Testar Conexão'}
-                    <Play className="w-3.5 h-3.5 text-brand" />
+                    {isGatewayTesting || submitting ? (
+                      <>Testando... <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /></>
+                    ) : gatewayTested ? (
+                      <>✓ Conectado</>
+                    ) : (
+                      <>Testar Conexão <Play className="w-3.5 h-3.5 text-brand" /></>
+                    )}
                   </button>
 
                   <p className="text-[10.5px] font-bold text-slate-450 leading-tight">
-                    {gatewayTested ? 'Chave de criptografia e TLS verificados com sucesso!' : 'Clique no botão acima para validar a comunicação segura com o provedor.'}
+                    {testError
+                      ? <span className="text-red-500">{testError}</span>
+                      : gatewayTested
+                      ? 'Gateway conectado e testado com sucesso!'
+                      : 'Informe a chave e teste a conexão.'}
                   </p>
                 </div>
               </div>
@@ -469,7 +560,7 @@ export default function OnboardingPage() {
                   Crie a sua primeira experiência de checkout
                 </h2>
                 <p className="text-slate/60 text-xs font-bold leading-relaxed">
-                  Escolha o nome do seu checkout e configure as opções de pagamento básicas que os seus clientes visualizarão no momento da compra.
+                  Escolha o nome do seu checkout e configure as opções de pagamento básicas.
                 </p>
               </div>
 
@@ -488,7 +579,7 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Ajustar Cor da Marca no Preview</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Cor da Marca</label>
                     <div className="flex gap-2">
                       <input
                         type="color"
@@ -505,7 +596,6 @@ export default function OnboardingPage() {
                     </div>
                   </div>
 
-                  {/* Payment switches */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Métodos Disponíveis</label>
                     <div className="flex gap-4 pt-2">
@@ -543,14 +633,14 @@ export default function OnboardingPage() {
                   Publique sua primeira versão para começar a operar
                 </h2>
                 <p className="text-slate/60 text-xs font-bold leading-relaxed">
-                  Para iniciar vendas reais ou testes operacionais amplificados, crie uma versão (release) assinada da sua configuração. Isso congela o rascunho de forma segura.
+                  Crie uma versão (release) assinada da sua configuração para iniciar vendas reais ou testes operacionais.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-1.5 col-span-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Identificador da Versão</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Versão</label>
                     <input
                       type="text"
                       value={releaseVersion}
@@ -560,7 +650,7 @@ export default function OnboardingPage() {
                   </div>
 
                   <div className="space-y-1.5 col-span-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Descrição das Alterações (Notas de Release)</label>
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Notas da Release</label>
                     <input
                       type="text"
                       value={releaseNotes}
@@ -574,14 +664,15 @@ export default function OnboardingPage() {
                   <div className="text-left space-y-0.5">
                     <span className="text-xs font-black text-slate-850 block">✓ Auditoria de Produção Ativa</span>
                     <span className="text-[10px] font-bold text-slate-450 block leading-relaxed">
-                      Esta publicação congela as configurações atuais do gateway e do design do checkout para transações.
+                      Esta publicação congela as configurações atuais para transações.
                     </span>
                   </div>
                   <button
                     onClick={handlePublishCheckout}
-                    className="h-10 px-5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/10 transition-all shrink-0"
+                    disabled={submitting}
+                    className="h-10 px-5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/10 transition-all shrink-0 disabled:opacity-50"
                   >
-                    Publicar Agora
+                    {submitting ? 'Publicando...' : 'Publicar Agora'}
                   </button>
                 </div>
               </div>
@@ -594,10 +685,10 @@ export default function OnboardingPage() {
               <div className="space-y-1.5">
                 <span className="text-[9.5px] text-emerald-600 font-black uppercase tracking-wider">Etapa Final 6 de 6 • Auditoria Operacional</span>
                 <h2 className="text-xl xl:text-2xl font-black text-[#1E1538]">
-                  Finalize com uma venda de teste para validar tudo
+                  Finalize com uma venda de teste
                 </h2>
                 <p className="text-slate/60 text-xs font-bold leading-relaxed">
-                  Para garantir que o fluxo de ponta a ponta está operando com chaves corretas, execute uma transação de simulação no seu checkout abaixo.
+                  Para garantir que o fluxo de ponta a ponta está operando, execute uma transação de simulação.
                 </p>
               </div>
 
@@ -608,7 +699,7 @@ export default function OnboardingPage() {
                     Transação de Teste Aprovada!
                   </div>
                   <p className="text-xs font-bold">
-                    O checkout operou com sucesso! O adquirente processou a venda de R$ 10,00, registrou a transação e enviou os webhooks de conciliação.
+                    O checkout operou com sucesso! O adquirente processou a venda e registrou a transação.
                   </p>
                   <p className="text-[10.5px] text-slate-450 font-bold leading-normal">
                     Seu onboarding na Basileia Pay está concluído com integridade e conformidade de segurança máxima.
@@ -617,7 +708,7 @@ export default function OnboardingPage() {
               ) : (
                 <div className="border border-[#E8DDFD] bg-slate-50/30 p-4.5 rounded-2xl space-y-3.5">
                   <div className="flex items-center justify-between text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                    <span>💳 Terminal de Teste Integrado</span>
+                    <span>💳 Terminal de Teste</span>
                     <span className="text-brand">Valor: R$ 10,00</span>
                   </div>
 
@@ -640,6 +731,7 @@ export default function OnboardingPage() {
                         required
                         value={cardExpiry}
                         onChange={(e) => setCardExpiry(e.target.value)}
+                        placeholder="12/29"
                         className="w-full h-9.5 px-3 rounded-lg border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:border-brand bg-white"
                       />
                     </div>
@@ -650,6 +742,7 @@ export default function OnboardingPage() {
                         required
                         value={cardCvv}
                         onChange={(e) => setCardCvv(e.target.value)}
+                        placeholder="123"
                         className="w-full h-9.5 px-3 rounded-lg border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:border-brand bg-white"
                       />
                     </div>
@@ -694,16 +787,18 @@ export default function OnboardingPage() {
               {step < 5 ? (
                 <button
                   onClick={handleNextStep}
-                  className="px-5 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-brand/10 transition-all"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-brand/10 transition-all disabled:opacity-50"
                 >
-                  Continuar <ChevronRight className="w-4 h-4" />
+                  {submitting ? 'Salvando...' : 'Continuar'} <ChevronRight className="w-4 h-4" />
                 </button>
               ) : step === 5 ? (
                 <button
                   onClick={handlePublishCheckout}
-                  className="px-5 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-brand/10 transition-all"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-brand/10 transition-all disabled:opacity-50"
                 >
-                  Confirmar e Publicar <ChevronRight className="w-4 h-4" />
+                  {submitting ? 'Publicando...' : 'Confirmar e Publicar'} <ChevronRight className="w-4 h-4" />
                 </button>
               ) : (
                 <button
@@ -725,7 +820,7 @@ export default function OnboardingPage() {
 
         {/* Right Column: Live Dynamic Visual preview & audit logs */}
         <div className="space-y-5 select-none w-full">
-          
+
           {/* Dynamic Mockup Visual Preview Panel */}
           <div className="bg-slate-50/50 border border-border rounded-[24px] p-5 shadow-sm space-y-4">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pb-1 border-b border-slate-200/50">
@@ -733,10 +828,10 @@ export default function OnboardingPage() {
             </span>
 
             <div className="bg-white border border-[#E8DDFD]/90 rounded-[20px] p-4.5 shadow-md space-y-3.5">
-              
+
               {/* Simulator of a payment checkout */}
               <div className="border border-slate-100 rounded-xl overflow-hidden shadow-sm bg-white">
-                
+
                 {/* Browser top-bar */}
                 <div className="bg-slate-50 border-b border-slate-100 px-3 py-1.5 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
@@ -752,7 +847,7 @@ export default function OnboardingPage() {
                 <div className="p-3.5 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <div 
+                      <div
                         style={{ backgroundColor: checkoutThemeColor }}
                         className="w-5 h-5 rounded-lg flex items-center justify-center text-white font-extrabold text-[9px] shadow transition-colors"
                       >
@@ -763,10 +858,9 @@ export default function OnboardingPage() {
                     <span className="text-[10px] font-black text-slate-800">R$ 150,00</span>
                   </div>
 
-                  {/* Payment modes selectors */}
                   <div className="grid grid-cols-2 gap-2 text-[8px] font-black uppercase tracking-wider">
                     {allowCard ? (
-                      <div 
+                      <div
                         style={{ borderColor: checkoutThemeColor, color: checkoutThemeColor }}
                         className="p-1.5 border rounded-lg bg-slate-50/50 flex items-center justify-center gap-1 transition-colors"
                       >
@@ -789,8 +883,7 @@ export default function OnboardingPage() {
                     )}
                   </div>
 
-                  {/* Checkout CTA */}
-                  <button 
+                  <button
                     style={{ backgroundColor: checkoutThemeColor }}
                     className="w-full h-8 rounded-lg text-white font-black text-[9px] uppercase tracking-wider shadow transition-colors flex items-center justify-center pointer-events-none"
                   >
@@ -799,7 +892,6 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Quick stats parameters */}
               <div className="grid grid-cols-3 gap-2 text-[9px] font-bold text-slate-500 text-center">
                 <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
                   <span className="text-[8px] text-slate-400 block">Gateway</span>

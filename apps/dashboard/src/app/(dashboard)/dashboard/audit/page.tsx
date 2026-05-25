@@ -22,7 +22,6 @@ import {
   Repeat
 } from 'lucide-react';
 import { AuditEvent } from '@/types/audit';
-import { MOCK_AUDIT_EVENTS } from './__mocks__/audit';
 import { cn } from '@/lib/utils';
 import { apiFetch } from '@/lib/api';
 
@@ -98,7 +97,7 @@ function auditEventFromApi(log: any): AuditEvent {
 export default function AuditPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [events, setEvents] = useState<AuditEvent[]>(MOCK_AUDIT_EVENTS);
+  const [events, setEvents] = useState<AuditEvent[]>([]);
   
   // Selected event and Drawer visibility
   const [selectedEvent, setSelectedEvent] = useState<AuditEvent | null>(null);
@@ -146,10 +145,10 @@ export default function AuditPage() {
       try {
         setLoading(true);
         const res = await apiFetch('/api/v1/dashboard/audit');
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        if (res.success && Array.isArray(res.data)) {
           setEvents(res.data.map(auditEventFromApi));
         }
-      } catch {} finally {
+      } catch (err) { console.error('Failed to fetch audit events:', err); } finally {
         setLoading(false);
       }
     })();

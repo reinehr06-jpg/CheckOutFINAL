@@ -19,10 +19,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::prefix('v1')->group(function () {
 
     // ── Auth (Público) ─────────────────────────────────────────────────────
-    Route::post('auth/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login'])->middleware('throttle:auth');
-    Route::post('auth/password/forgot', [\App\Http\Controllers\Api\V1\AuthController::class, 'forgotPassword'])->middleware('throttle:auth');
-    Route::post('auth/password/reset', [\App\Http\Controllers\Api\V1\AuthController::class, 'resetPassword'])->middleware('throttle:auth');
-    Route::post('auth/refresh', [\App\Http\Controllers\Api\V1\AuthController::class, 'refresh'])->middleware('throttle:auth');
+    Route::post('auth/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login'])->middleware('throttle:auth_login');
+    Route::post('auth/register', [\App\Http\Controllers\Api\V1\AuthController::class, 'register'])->middleware('throttle:auth_register');
+    Route::post('auth/password/forgot', [\App\Http\Controllers\Api\V1\AuthController::class, 'forgotPassword'])->middleware('throttle:auth_password');
+    Route::post('auth/password/reset', [\App\Http\Controllers\Api\V1\AuthController::class, 'resetPassword'])->middleware('throttle:auth_password');
+    Route::post('auth/refresh', [\App\Http\Controllers\Api\V1\AuthController::class, 'refresh'])->middleware('throttle:auth_login');
 
     // ── JIT Access (Just-In-Time Privilege Elevation) ─────────────────────
     Route::prefix('jit')->middleware(['auth:sanctum', 'zero.trust', 'scope.company', 'anomaly.detect'])->group(function () {
@@ -66,12 +67,17 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/payments', [\App\Http\Controllers\Api\V1\PaymentController::class, 'index']);
         Route::get('dashboard/orders', [\App\Http\Controllers\Api\V1\Dashboard\OrderController::class, 'index']);
         Route::get('dashboard/systems', [\App\Http\Controllers\Api\V1\Dashboard\SystemController::class, 'index']);
+        Route::post('dashboard/systems', [\App\Http\Controllers\Api\V1\Dashboard\SystemController::class, 'store']);
         Route::get('dashboard/systems/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\SystemController::class, 'show']);
         
         // Webhook Operational
         Route::get('dashboard/webhooks/deliveries', [\App\Http\Controllers\Api\V1\Dashboard\WebhookDeliveryController::class, 'index']);
         Route::get('dashboard/webhooks/deliveries/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\WebhookDeliveryController::class, 'show']);
         Route::post('dashboard/webhooks/deliveries/{uuid}/retry', [\App\Http\Controllers\Api\V1\Dashboard\WebhookDeliveryController::class, 'retry']);
+
+        // Onboarding
+        Route::get('dashboard/onboarding/status', [\App\Http\Controllers\Api\V1\Dashboard\OnboardingController::class, 'status']);
+        Route::post('dashboard/onboarding/publish-checkout', [\App\Http\Controllers\Api\V1\Dashboard\OnboardingController::class, 'publishCheckout']);
 
         // ═══════════════════════════════════════════════════════════════════
         // Fase 5 — Alertas
@@ -94,6 +100,11 @@ Route::prefix('v1')->group(function () {
         // Sensitive actions (Require 2FA)
         Route::middleware('2fa')->group(function () {
             Route::get('dashboard/gateways', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'index']);
+            Route::get('dashboard/gateways/capabilities', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'capabilities']);
+            Route::get('dashboard/gateways/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'show']);
+            Route::put('dashboard/gateways/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'update']);
+            Route::delete('dashboard/gateways/{uuid}', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'destroy']);
+            Route::get('dashboard/gateways/{uuid}/health', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'health']);
             
             // Webhook CRUD
             Route::get('dashboard/webhooks/endpoints', [\App\Http\Controllers\Api\V1\Dashboard\WebhookEndpointController::class, 'index']);
@@ -144,6 +155,10 @@ Route::prefix('v1')->group(function () {
             Route::post('dashboard/trust-layer/evaluate', [\App\Http\Controllers\Api\V1\Dashboard\TrustLayerController::class, 'evaluate']);
         });
 
+        // Onboarding — Gateway (fora de 2fa para permitir fluxo inicial)
+        Route::post('dashboard/gateways', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'store']);
+        Route::post('dashboard/gateways/{uuid}/test', [\App\Http\Controllers\Api\V1\Dashboard\GatewayController::class, 'test']);
+
         // ═══════════════════════════════════════════════════════════════════
         // Studio / Checkouts
         // ═══════════════════════════════════════════════════════════════════
@@ -189,11 +204,14 @@ Route::prefix('v1')->group(function () {
 // API v2 — Next.js Frontend Integration
 // ═══════════════════════════════════════════════════════════════════════════════
 Route::prefix('v2')->name('api.v2.')->group(function () {
-    Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])->middleware('throttle:auth');
-    Route::post('auth/refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])->middleware('throttle:auth');
+    Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])->middleware('throttle:auth_login');
+    Route::post('auth/register', [\App\Http\Controllers\Api\V2\AuthController::class, 'register'])->middleware('throttle:auth_register');
+    Route::post('auth/refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])->middleware('throttle:auth_login');
     Route::middleware(['auth:sanctum', 'zero.trust'])->group(function () {
         Route::get('auth/me', [\App\Http\Controllers\Api\V2\AuthController::class, 'me']);
         Route::post('auth/2fa/verify', [\App\Http\Controllers\Api\V2\AuthController::class, 'verify2fa']);
+        Route::post('auth/2fa/setup', [\App\Http\Controllers\Api\V2\AuthController::class, 'setup2fa']);
+        Route::post('auth/2fa/enable', [\App\Http\Controllers\Api\V2\AuthController::class, 'enable2fa']);
         Route::post('auth/logout', [\App\Http\Controllers\Api\V2\AuthController::class, 'logout']);
         Route::get('dashboard/stats', [\App\Http\Controllers\Api\V2\DashboardController::class, 'stats']);
     });

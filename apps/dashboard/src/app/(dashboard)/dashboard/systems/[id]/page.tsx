@@ -30,7 +30,7 @@ export default function SystemDetailPage({ params }: { params: Promise<{ id: str
       try {
         const res = await apiFetch(`/api/v1/dashboard/systems/${resolvedParams.id}`);
         if (res.success && res.data) setSystem(res.data as SystemData);
-      } catch {} finally {
+      } catch (err) { console.error('Failed to fetch system:', err); } finally {
         setLoading(false);
       }
     })();

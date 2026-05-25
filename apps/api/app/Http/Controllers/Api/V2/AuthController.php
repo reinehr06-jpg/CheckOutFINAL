@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\RegisterCompanyRequest;
 use App\Models\RefreshToken;
 use App\Models\User;
 use App\Services\Audit\AuditService;
+use App\Services\Auth\CompanyRegistrationService;
+use App\Services\TwoFactorAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,18 +25,21 @@ class AuthController extends Controller
         $user = User::where('email', $data['email'])->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            if ($user) {
+                $user->incrementFailedAttempts();
+            }
             return response()->json(['message' => 'Credenciais inválidas.'], 401);
+        }
+
+        if ($user->isLocked()) {
+            return response()->json(['message' => 'Conta temporariamente bloqueada.'], 423);
         }
 
         if ($user->status !== 'active') {
             return response()->json(['message' => 'Conta inativa.'], 403);
         }
 
-        if ($user->locked_until && now()->lessThan($user->locked_until)) {
-            return response()->json(['message' => 'Conta temporariamente bloqueada.'], 423);
-        }
-
-        $user->update(['failed_login_attempts' => 0, 'locked_until' => null]);
+        $user->resetFailedAttempts();
 
         $tokenInstance = $user->createToken('next-dashboard', ['*'], now()->addMinutes(15));
         $token = $tokenInstance->plainTextToken;
@@ -47,13 +53,14 @@ class AuthController extends Controller
             'refresh_token' => $refreshTokenData['plain'],
             'expires_in' => 900,
             'user'  => [
-                'id'              => $user->id,
+                'id'              => $user->uuid,
                 'name'            => $user->name,
                 'email'           => $user->email,
                 'role'            => $user->role,
                 'two_factor_enabled' => $user->two_factor_enabled,
                 'company_id'      => $user->company_id,
             ],
+            'needs_2fa_setup' => !$user->two_factor_enabled,
         ];
 
         $response = response()->json($responseData);
@@ -135,7 +142,7 @@ class AuthController extends Controller
     {
         $user = $request->user()->load('company');
         return response()->json([
-            'id'         => $user->id,
+            'id'         => $user->uuid,
             'name'       => $user->name,
             'email'      => $user->email,
             'role'       => $user->role,
@@ -143,6 +150,51 @@ class AuthController extends Controller
             'company'    => $user->company?->only('id', 'name', 'logo_url'),
             'two_factor_enabled' => $user->two_factor_enabled,
         ]);
+    }
+
+    public function register(RegisterCompanyRequest $request): JsonResponse
+    {
+        $service = app(CompanyRegistrationService::class);
+        $result = $service->register($request->validated());
+
+        $user = $result['user'];
+
+        $tokenInstance = $user->createToken('next-dashboard', ['*'], now()->addMinutes(15));
+        $token = $tokenInstance->plainTextToken;
+        $refreshTokenData = $this->issueRefreshToken($user, $tokenInstance->accessToken->id);
+
+        (new AuditService())->log('user.registered', $user, [
+            'company_id' => $result['company']->id,
+            'country' => $result['company']->country,
+        ]);
+
+        $responseData = [
+            'token' => $token,
+            'refresh_token' => $refreshTokenData['plain'],
+            'expires_in' => 900,
+            'user' => [
+                'id' => $user->uuid,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'company_id' => $user->company_id,
+                'two_factor_enabled' => $user->two_factor_enabled,
+            ],
+            'needs_2fa_setup' => !$user->two_factor_enabled,
+        ];
+
+        $response = response()->json($responseData);
+
+        $response->headers->set('Set-Cookie', implode('; ', [
+            "basileia_session={$token}",
+            'HttpOnly',
+            'Secure',
+            'SameSite=Lax',
+            'Path=/',
+            'Max-Age=900',
+        ]));
+
+        return $response;
     }
 
     public function verify2fa(Request $request): JsonResponse
@@ -168,6 +220,63 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Código inválido ou expirado.',
+        ], 422);
+    }
+
+    public function setup2fa(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Não autenticado.'], 401);
+        }
+
+        if ($user->two_factor_enabled) {
+            return response()->json(['message' => '2FA já está habilitado.'], 409);
+        }
+
+        $service = app(TwoFactorAuthService::class);
+        $secret = $service->generateSecret();
+        $user->update(['two_factor_secret' => $secret]);
+        $qrCodeUrl = $service->generateQRCodeUrl($user);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'secret' => $secret,
+                'qr_code_url' => $qrCodeUrl,
+            ],
+        ]);
+    }
+
+    public function enable2fa(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Não autenticado.'], 401);
+        }
+
+        $data = $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $service = app(TwoFactorAuthService::class);
+
+        if ($service->enable($user, $data['code'])) {
+            $recoveryCodes = $user->two_factor_codes
+                ? json_decode(\Illuminate\Support\Facades\Crypt::decryptString($user->two_factor_codes))
+                : [];
+
+            return response()->json([
+                'success' => true,
+                'message' => '2FA habilitado com sucesso.',
+                'data' => [
+                    'recovery_codes' => $recoveryCodes,
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Código inválido. Tente novamente.',
         ], 422);
     }
 

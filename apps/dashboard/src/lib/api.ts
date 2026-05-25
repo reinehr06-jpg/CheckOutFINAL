@@ -1,25 +1,44 @@
-function removeClientCookie(name: string) {
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`;
+const DEFAULT_TIMEOUT = 15_000;
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+export function getCsrfToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+export function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs: number = DEFAULT_TIMEOUT
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 export function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<{ success: boolean; data?: T; error?: { code: string; message: string } }> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('basileia_token') : null;
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+  const method = (options.method || 'GET').toUpperCase();
+  const requestId = crypto.randomUUID();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'X-Request-ID': requestId,
     ...(options.headers as Record<string, string> || {}),
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (MUTATING_METHODS.has(method)) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) headers['X-XSRF-TOKEN'] = csrfToken;
   }
 
-  return fetch(`${API_URL}${path}`, {
+  return fetchWithTimeout(`${API_URL}${path}`, {
     ...options,
     headers,
     credentials: 'include',
@@ -27,23 +46,24 @@ export function apiFetch<T = unknown>(
     const json = await res.json().catch(() => null);
 
     if (!res.ok) {
-      if (res.status === 401) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('basileia_token');
-          localStorage.removeItem('basileia_user');
-          removeClientCookie('basileia_session');
-          window.location.href = '/login';
-        }
+      if (res.status === 401 && typeof window !== 'undefined') {
+        window.location.href = '/login';
       }
       return {
         success: false,
-        error: json?.error || { code: 'request_failed', message: 'Nao foi possivel concluir a solicitacao.' },
+        error: json?.error || { code: 'request_failed', message: 'Não foi possível concluir a solicitação.' },
       };
     }
 
     return json || { success: true, data: null };
-  }).catch(() => ({
-    success: false,
-    error: { code: 'network_error', message: 'Erro de conexao com o servidor.' },
-  }));
+  }).catch((err) => {
+    const isTimeout = err?.name === 'AbortError';
+    return {
+      success: false,
+      error: {
+        code: isTimeout ? 'timeout' : 'network_error',
+        message: isTimeout ? 'O servidor demorou muito para responder.' : 'Erro de conexão com o servidor.',
+      },
+    };
+  });
 }

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Shield, 
   Lock, 
@@ -12,9 +13,12 @@ import {
   Key,
   Monitor
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { fetchWithTimeout, getCsrfToken } from '@/lib/api';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function TwoFactorPage() {
+  const router = useRouter();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const codeInputs = useRef<any[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -53,7 +57,7 @@ export default function TwoFactorPage() {
     }
   };
 
-  const handle2faVerifySubmit = (e: React.FormEvent) => {
+  const handle2faVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fullCode = code.join('');
     if (fullCode.length < 6) {
@@ -64,17 +68,32 @@ export default function TwoFactorPage() {
     setLoading(true);
     triggerToast('Validando código OTP...');
 
-    setTimeout(() => {
-      setLoading(false);
-      if (fullCode === '999999' || fullCode.includes('0')) {
-        triggerToast('Código inválido ou expirado. Verifique o código e tente novamente.');
-      } else {
-        triggerToast('Sessão autenticada! Redirecionando para o painel principal...');
+    try {
+      const csrfToken = getCsrfToken();
+      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/2fa/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ code: fullCode }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        triggerToast('Sessão autenticada! Redirecionando...');
         setTimeout(() => {
-          window.location.href = '/dashboard/bci';
+          router.push('/dashboard');
         }, 800);
+      } else {
+        triggerToast(data.message || 'Código inválido ou expirado.');
       }
-    }, 1200);
+    } catch {
+      triggerToast('Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

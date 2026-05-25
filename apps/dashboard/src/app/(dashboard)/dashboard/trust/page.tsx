@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { TrustHeader } from '@/components/trust/TrustHeader';
 import { TrustKpiCards } from '@/components/trust/TrustKpiCards';
@@ -19,14 +19,33 @@ import { MOCK_TRUST_RULES, MOCK_TRUST_EVENTS, MOCK_TRUST_KPIS, MOCK_TRUST_MOTOR_
 import { TrustRule, TrustEvent, TrustKpi, TrustMotorConfig } from '@/types/trust';
 import { cn } from '@/lib/utils';
 import { ShieldCheck, ShieldAlert, CheckCircle2, RefreshCw, Activity } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 export default function TrustPage() {
   const [activeTab, setActiveTab] = useState<TrustTabValue>('overview');
-  const [selectedEvent, setSelectedEvent] = useState<TrustEvent | null>(MOCK_TRUST_EVENTS[0]);
-  const [rules, setRules] = useState<TrustRule[]>(MOCK_TRUST_RULES);
-  const [events, setEvents] = useState<TrustEvent[]>(MOCK_TRUST_EVENTS);
+  const [selectedEvent, setSelectedEvent] = useState<TrustEvent | null>(null);
+  const [rules, setRules] = useState<TrustRule[]>([]);
+  const [events, setEvents] = useState<TrustEvent[]>([]);
   const [kpis, setKpis] = useState<TrustKpi>(MOCK_TRUST_KPIS);
   const [motorConfig, setMotorConfig] = useState<TrustMotorConfig>(MOCK_TRUST_MOTOR_CONFIG);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await apiFetch('/api/v1/dashboard/trust-layer');
+        if (res.success && res.data) {
+          const data = res.data as { score?: number; alerts?: any[]; recent_decisions?: any[] };
+        }
+      } catch (err) { console.error('Failed to fetch trust data:', err); } finally {
+        setLoading(false);
+      }
+    })();
+    setRules(MOCK_TRUST_RULES);
+    setEvents(MOCK_TRUST_EVENTS);
+    setSelectedEvent(MOCK_TRUST_EVENTS[0]);
+  }, []);
   
   // Simulated UI states
   const [isMotorUnavailable, setIsMotorUnavailable] = useState(false);

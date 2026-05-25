@@ -23,4 +23,10 @@ interface GatewayInterface
     public function processWebhook(\Illuminate\Http\Request $request): array;
 
     public function createSplit(array $data): array;
+
+    public function testConnection(): ConnectionResult;
+
+    public static function supportedMethods(): array;
+
+    public static function getProviderKey(): string;
 }

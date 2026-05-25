@@ -24,6 +24,18 @@ class EventServiceProvider extends ServiceProvider
             \App\Listeners\DispatchWebhookOnPaymentRefunded::class,
             \App\Listeners\LogAuditOnPaymentStatusChange::class,
         ],
+        \App\Events\GatewayConnected::class => [
+            \App\Listeners\LogGatewayEvent::class,
+        ],
+        \App\Events\GatewayDisconnected::class => [
+            \App\Listeners\LogGatewayEvent::class,
+        ],
+        \App\Events\GatewayHealthChanged::class => [
+            \App\Listeners\LogGatewayEvent::class,
+        ],
+        \App\Events\GatewayTestFailed::class => [
+            \App\Listeners\LogGatewayEvent::class,
+        ],
     ];
 
     public function boot(): void

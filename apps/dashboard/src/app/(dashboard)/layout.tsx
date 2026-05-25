@@ -7,7 +7,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
-      <div className="min-h-screen w-full bg-[#F4F0FF] p-1.5 2xl:p-2.5 relative font-sans selection:bg-brand/20 selection:text-brand">
+      <div className="min-h-screen w-full bg-background p-1.5 2xl:p-2.5 relative font-sans selection:bg-brand/20 selection:text-brand">
         <div className="absolute top-[-15%] left-[-5%] w-[45%] h-[45%] bg-brand/5 rounded-full blur-[160px] pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[10%] w-[35%] h-[35%] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none" />
         

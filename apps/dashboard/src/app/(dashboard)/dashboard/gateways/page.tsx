@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
 import { 
   Plus, 
   Download, 
@@ -32,6 +31,12 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GatewayConnectionWizard } from '@/components/gateways/GatewayConnectionWizard'
+import {
+  fetchGateways as apiFetchGateways,
+  testGatewayConnection,
+  updateGateway,
+} from '@/lib/api/gateways'
 
 // Helper to render provider logo/icon simulation
 function ProviderLogo({ name }: { name: string }) {
@@ -52,175 +57,20 @@ function ProviderLogo({ name }: { name: string }) {
   );
 }
 
-const initialGateways = [
-  {
-    id: 'pagarme',
-    name: 'Pagar.me',
-    provider: 'Pagar.me',
-    desc: 'Gateway de Pagamento',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '98,72%',
-    pp: '+1,24 pp',
-    erro: '—',
-    rotas: 12,
-    metodos: ['Cartão', 'PIX', 'Boleto'],
-    conta: 'PagarMe Principal',
-    contaId: '987_01',
-    sistemas: ['Checkout Padrão', 'Sistema Core'],
-    uptime: '99,94%',
-    p95: '342ms',
-    reqs: '142 req/s'
-  },
-  {
-    id: 'mercadopago',
-    name: 'Mercado Pago',
-    provider: 'Mercado Pago',
-    desc: 'Gateway de Pagamento',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '96,31%',
-    pp: '+0,85 pp',
-    erro: '—',
-    rotas: 8,
-    metodos: ['Cartão', 'PIX'],
-    conta: 'MP Master',
-    contaId: '645_02',
-    sistemas: ['Marketplace', 'Checkout Padrão'],
-    uptime: '99,86%',
-    p95: '410ms',
-    reqs: '118 req/s'
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    provider: 'Stripe',
-    desc: 'Gateway de Pagamento',
-    status: 'Atenção',
-    ambiente: 'Produção',
-    aprovacao: '92,15%',
-    pp: '-1,32 pp',
-    erro: 'Timeout na autorização — h 14 min',
-    rotas: 6,
-    metodos: ['Cartão'],
-    conta: 'Stripe Global',
-    contaId: '331_01',
-    sistemas: ['Checkout Global', 'Sistema Core'],
-    uptime: '97,12%',
-    p95: '812ms',
-    reqs: '89 req/s'
-  },
-  {
-    id: 'asaas',
-    name: 'Asaas',
-    provider: 'Asaas',
-    desc: 'Gateway de Pagamento',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '97,08%',
-    pp: '+0,44 pp',
-    erro: '—',
-    rotas: 5,
-    metodos: ['PIX', 'Boleto'],
-    conta: 'Asaas Principal',
-    contaId: '225_01',
-    sistemas: ['Assinaturas', 'Sistema Core'],
-    uptime: '99,61%',
-    p95: '553ms',
-    reqs: '62 req/s'
-  },
-  {
-    id: 'cielo',
-    name: 'Cielo',
-    provider: 'Cielo',
-    desc: 'Adquirente',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '95,42%',
-    pp: '+0,61 pp',
-    erro: '—',
-    rotas: 7,
-    metodos: ['Cartão'],
-    conta: 'Cielo Principal',
-    contaId: '109_01',
-    sistemas: ['Checkout Cartão', 'PDV'],
-    uptime: '99,78%',
-    p95: '398ms',
-    reqs: '75 req/s'
-  },
-  {
-    id: 'adyen',
-    name: 'Adyen',
-    provider: 'Adyen',
-    desc: 'Gateway de Pagamento',
-    status: 'Desativado',
-    ambiente: 'Sandbox',
-    aprovacao: '—',
-    pp: '—',
-    erro: '—',
-    rotas: 0,
-    metodos: [],
-    conta: 'Adyen Sandbox',
-    contaId: '555_99',
-    sistemas: ['Teste e Homologação', 'Marketplace'],
-    uptime: '—',
-    p95: '—',
-    reqs: '—'
-  },
-  {
-    id: 'bb_pix',
-    name: 'Banco do Brasil PIX',
-    provider: 'Banco do Brasil PIX',
-    desc: 'PIX Direto',
-    status: 'Instável',
-    ambiente: 'Produção',
-    aprovacao: '89,27%',
-    pp: '-3,21 pp',
-    erro: 'Erros 500 intermitentes — h 28 min',
-    rotas: 3,
-    metodos: ['PIX'],
-    conta: 'BB PIX Principal',
-    contaId: '001_77',
-    sistemas: ['Sistema Core', 'Checkout Padrão'],
-    uptime: '94,21%',
-    p95: '1.2s',
-    reqs: '41 req/s'
-  },
-  {
-    id: 'internal',
-    name: 'Internal Router',
-    provider: 'Internal Router',
-    desc: 'Roteador Interno',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '99,91%',
-    pp: '+0,03 pp',
-    erro: '—',
-    rotas: 10,
-    metodos: ['PIX', 'Cartão', 'Boleto'],
-    conta: 'Roteador Padrão',
-    contaId: 'INT_01',
-    sistemas: ['Todos os Sistemas'],
-    uptime: '99,99%',
-    p95: '128ms',
-    reqs: '312 req/s'
-  }
-];
-
-const GATEWAY_STATUS_MAP: Record<string, string> = {
+const STATUS_MAP: Record<string, string> = {
   active: 'Operacional', inactive: 'Desativado', attention: 'Atenção',
   unstable: 'Instável', testing: 'Teste',
 };
 
-const GATEWAY_ENV_LABEL: Record<string, string> = {
+const ENV_MAP: Record<string, string> = {
   production: 'Produção', sandbox: 'Sandbox',
 };
 
 function apiGatewayToPage(g: any) {
-  const env = GATEWAY_ENV_LABEL[g.environment] || g.environment || 'Produção';
-  const status = GATEWAY_STATUS_MAP[g.status] || g.status || 'Operacional';
+  const env = ENV_MAP[g.environment] || g.environment || 'Produção'
+  const status = STATUS_MAP[g.status] || g.status || 'Operacional'
   return {
-    id: g.uuid || g.id?.toString() || `gw_${Math.random().toString(36).substring(2, 8)}`,
+    id: g.account_uuid || g.id?.toString() || `gw_${Math.random().toString(36).substring(2, 8)}`,
     name: g.name || 'Gateway',
     provider: g.provider || g.name || 'Gateway',
     desc: 'Gateway de Pagamento',
@@ -228,36 +78,43 @@ function apiGatewayToPage(g: any) {
     ambiente: env,
     aprovacao: '—',
     pp: '—',
-    erro: '—',
+    erro: g.last_test_status === 'failed' ? 'Teste de conexão falhou' : '—',
     rotas: 0,
     metodos: [],
     conta: g.name || 'Conta',
-    contaId: g.uuid?.substring(0, 8) || g.id?.toString() || '—',
+    contaId: g.account_uuid?.substring(0, 8) || g.id?.toString() || '—',
     sistemas: [],
     uptime: '—',
     p95: '—',
     reqs: '—',
+    uuid: g.account_uuid || '',
   };
 }
 
 export default function GatewaysPage() {
-  const [demoState, setDemoState] = useState<'com_dados' | 'loading' | 'vazio' | 'erro' | 'sem_permissao'>('com_dados');
-  const [showDebug, setShowDebug] = useState(false);
-  const [gateways, setGateways] = useState(initialGateways);
+  const [gateways, setGateways] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // Selection
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await apiFetch('/api/v1/dashboard/gateways');
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-          setGateways([...res.data.map(apiGatewayToPage), ...initialGateways]);
-        }
-      } catch {}
-    })();
+  const fetchGateways = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiFetchGateways();
+      setGateways(data.map(apiGatewayToPage));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao carregar gateways');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchGateways();
+  }, [fetchGateways]);
   
   // Search & Filters
   const [search, setSearch] = useState('');
@@ -273,9 +130,18 @@ export default function GatewaysPage() {
   // Test connection modal state
   const [testingGateway, setTestingGateway] = useState<any | null>(null);
   const [testResult, setTestResult] = useState<'testing' | 'success' | 'failed' | null>(null);
+  const [testErrorMsg, setTestErrorMsg] = useState<string | null>(null);
 
   // Disable Warning Modal state
   const [disablingGateway, setDisablingGateway] = useState<any | null>(null);
+
+  // Gateway Connection Wizard state
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardKey, setWizardKey] = useState(0);
+  const openWizard = () => {
+    setWizardKey(k => k + 1);
+    setWizardOpen(true);
+  };
 
   // Pagination current page
   const [currentPage, setCurrentPage] = useState(1);
@@ -303,7 +169,7 @@ export default function GatewaysPage() {
       const matchStatus = filterStatus === 'Todos' || g.status === filterStatus;
       const matchAmbiente = filterAmbiente === 'Todos' || g.ambiente === filterAmbiente;
       
-      const matchSistema = filterSistema === 'Todos' || g.sistemas.some(sys => sys.includes(filterSistema) || sys === 'Todos os sistemas');
+      const matchSistema = filterSistema === 'Todos' || (g.sistemas || []).some((sys: string) => sys.includes(filterSistema) || sys === 'Todos os sistemas');
       
       let matchConta = true;
       if (filterConta === 'Contas Configuradas') matchConta = g.conta !== 'Sem conta padrão';
@@ -323,53 +189,51 @@ export default function GatewaysPage() {
   }, [filteredGateways, startIndex, itemsPerPage]);
 
   // Handle individual toggle switches
-  const handleToggleActive = (gateway: any) => {
+  const handleToggleActive = async (gateway: any) => {
     const isActivating = gateway.status === 'Desativado';
     
     if (isActivating) {
-      // Activating is a direct action
-      setGateways(prev => prev.map(g => 
-        g.id === gateway.id ? { ...g, status: 'Operacional', reqs: '12 req/s', uptime: '99,99%' } : g
-      ));
-      triggerSuccessAlert(`Gateway "${gateway.name}" foi ativado com sucesso em Produção!`);
-    } else {
-      // Deactivating checks if there are active systems linked
-      const activeSystems = gateway.sistemas.filter((s: string) => s !== 'Nenhum sistema ativo');
-      
-      if (activeSystems.length > 0) {
-        setDisablingGateway(gateway);
-      } else {
+      try {
+        await updateGateway(gateway.uuid, { environment: gateway.ambiente === 'Sandbox' ? 'sandbox' : 'production' })
         setGateways(prev => prev.map(g => 
-          g.id === gateway.id ? { ...g, status: 'Desativado', reqs: '0 req/s', uptime: '0%' } : g
+          g.id === gateway.id ? { ...g, status: 'Operacional' } : g
         ));
-        triggerSuccessAlert(`Gateway "${gateway.name}" desativado.`);
+        triggerSuccessAlert(`Gateway "${gateway.name}" ativado com sucesso!`);
+      } catch {
+        triggerSuccessAlert('Erro ao ativar gateway');
       }
+    } else {
+      setDisablingGateway(gateway);
     }
   };
 
   // Confirm disable from impact modal
-  const confirmDisableGateway = () => {
+  const confirmDisableGateway = async () => {
     if (!disablingGateway) return;
-    
-    setGateways(prev => prev.map(g => 
-      g.id === disablingGateway.id ? { ...g, status: 'Desativado', reqs: '0 req/s', uptime: '0%' } : g
-    ));
-    triggerSuccessAlert(`Gateway "${disablingGateway.name}" desativado. Sistemas notificados.`);
+    try {
+      await updateGateway(disablingGateway.uuid, { environment: 'sandbox' })
+      setGateways(prev => prev.map(g => 
+        g.id === disablingGateway.id ? { ...g, status: 'Desativado' } : g
+      ));
+      triggerSuccessAlert(`Gateway "${disablingGateway.name}" desativado.`);
+    } catch {
+      triggerSuccessAlert('Erro ao desativar gateway');
+    }
     setDisablingGateway(null);
   };
 
-  // Trigger simulated connection test
-  const runConnectionTest = (gateway: any) => {
+  // Trigger real connection test
+  const runConnectionTest = async (gateway: any) => {
     setTestingGateway(gateway);
     setTestResult('testing');
-    
-    setTimeout(() => {
-      if (gateway.status === 'Instável') {
-        setTestResult('failed');
-      } else {
-        setTestResult('success');
-      }
-    }, 2200);
+    try {
+      const result = await testGatewayConnection(gateway.uuid)
+      setTestResult(result.success ? 'success' : 'failed')
+      setTestErrorMsg(result.message)
+    } catch (e) {
+      setTestResult('failed')
+      setTestErrorMsg(e instanceof Error ? e.message : 'Erro ao testar conexão')
+    }
   };
 
   // Bulk actions handling
@@ -428,51 +292,7 @@ export default function GatewaysPage() {
   return (
     <main className="min-w-0 w-full overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-2 relative min-h-0 select-none pb-2">
       
-      {/* 1. Dynamic Simulating Floating Controls (Gear Button) */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
-        {showDebug && (
-          <div className="bg-white rounded-2xl border border-[#E8DDFD] shadow-2xl p-3 flex flex-col gap-1.5 w-[210px] animate-in slide-in-from-bottom-5 duration-300">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-1 shrink-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Simular Estados:</span>
-              <button onClick={() => setShowDebug(false)} className="p-0.5 text-slate-400 hover:text-slate-600">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            {[
-              { id: 'com_dados', label: 'Com Dados' },
-              { id: 'loading', label: 'Carregando' },
-              { id: 'vazio', label: 'Vazio' },
-              { id: 'erro', label: 'Erro' },
-              { id: 'sem_permissao', label: 'Sem Permissão' },
-            ].map((st) => (
-              <button
-                key={st.id}
-                onClick={() => {
-                  setDemoState(st.id as any);
-                  setCurrentPage(1);
-                  setShowDebug(false);
-                }}
-                className={cn(
-                  "w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all border flex items-center justify-between",
-                  demoState === st.id 
-                    ? "bg-brand/10 border-brand/20 text-brand font-black" 
-                    : "bg-[#FAF8FF] border-[#E8DDFD]/60 text-slate-600 hover:bg-brand-soft"
-                )}
-              >
-                {st.label}
-                {demoState === st.id && <Check className="w-3.5 h-3.5" />}
-              </button>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="w-10 h-10 bg-brand text-white rounded-full shadow-lg shadow-brand/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-          title="Configurações de Simulação"
-        >
-          <Settings className="w-5 h-5 animate-spin-slow" />
-        </button>
-      </div>
+
 
       {/* 2. Success Alert Notification */}
       {successAlert && (
@@ -487,7 +307,10 @@ export default function GatewaysPage() {
         </div>
       )}
 
-      {/* 3. Connection Test Modal */}
+      {/* 3. Gateway Connection Wizard */}
+      <GatewayConnectionWizard key={wizardKey} open={wizardOpen} onClose={() => setWizardOpen(false)} onSuccess={fetchGateways} />
+
+      {/* 4. Connection Test Modal */}
       {testingGateway && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-[#E8DDFD] shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200">
@@ -510,13 +333,8 @@ export default function GatewaysPage() {
                   <ShieldCheck className="w-8 h-8 shrink-0 text-green-600" />
                   <div>
                     <p className="text-[12.5px] font-black leading-tight">Conexão Estabelecida com Sucesso</p>
-                    <p className="text-[10px] font-bold text-green-600/80 mt-0.5">Credenciais válidas. Latência de ping: 142ms.</p>
+                    <p className="text-[10px] font-bold text-green-600/80 mt-0.5">Gateway autenticado e operacional.</p>
                   </div>
-                </div>
-                <div className="space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200/50 text-[10px] font-bold text-slate-600">
-                  <p>• API Connection: OK</p>
-                  <p>• PIX Authorization: OK</p>
-                  <p>• Credit Card Sandbox Loop: OK</p>
                 </div>
               </div>
             ) : (
@@ -525,11 +343,11 @@ export default function GatewaysPage() {
                   <ShieldAlert className="w-8 h-8 shrink-0 text-red-600" />
                   <div>
                     <p className="text-[12.5px] font-black leading-tight">Conexão Falhou</p>
-                    <p className="text-[10px] font-bold text-red-600/80 mt-0.5">Erro retornado pelo provedor externo.</p>
+                    <p className="text-[10px] font-bold text-red-600/80 mt-0.5">{testErrorMsg || 'Erro retornado pelo provedor externo.'}</p>
                   </div>
                 </div>
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/50 text-[10.5px] font-mono text-red-600 break-words leading-tight">
-                  Status Code: 502 Bad Gateway. Message: "Timeout on auth token resolve."
+                  {testErrorMsg || 'Erro desconhecido'}
                 </div>
               </div>
             )}
@@ -545,7 +363,7 @@ export default function GatewaysPage() {
               )}
               <button
                 disabled={testResult === 'testing'}
-                onClick={() => { setTestingGateway(null); setTestResult(null); }}
+                onClick={() => { setTestingGateway(null); setTestResult(null); setTestErrorMsg(null); }}
                 className="px-4 py-1.5 bg-brand text-white hover:bg-brand-deep transition-all rounded-xl text-[10.5px] font-black uppercase tracking-tight disabled:opacity-50"
               >
                 Concluir
@@ -555,7 +373,7 @@ export default function GatewaysPage() {
         </div>
       )}
 
-      {/* 4. Disable Dependency Confirmation Modal */}
+      {/* 5. Disable Dependency Confirmation Modal */}
       {disablingGateway && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-[#E8DDFD] shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200">
@@ -604,7 +422,7 @@ export default function GatewaysPage() {
         </div>
       )}
 
-      {/* 5. Page Header */}
+      {/* 6. Page Header */}
       <header className="flex items-center justify-between w-full px-1 shrink-0">
         <div className="space-y-0.5">
           <div className="flex items-center gap-1.5">
@@ -627,34 +445,33 @@ export default function GatewaysPage() {
           </button>
           
           <button 
-            onClick={() => triggerSuccessAlert('Fluxo para adicionar novo gateway de pagamento iniciado!')}
+            onClick={openWizard}
             className="flex items-center gap-1.5 px-4 py-1.5 bg-brand text-white rounded-xl text-[10px] 2xl:text-[11px] font-black shadow-lg shadow-brand/10 hover:shadow-brand/35 hover:-translate-y-0.5 transition-all active:translate-y-0 uppercase tracking-tight h-[34px] 2xl:h-[36px]"
           >
-            <Plus className="w-3.5 h-3.5 text-white/80" />
             Novo gateway
           </button>
         </div>
       </header>
 
-      {/* RENDER BASED ON SIMULATION STATE */}
-      {demoState === 'loading' && (
+      {/* RENDER BASED ON REAL STATE */}
+      {loading && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-20 flex flex-col items-center justify-center gap-4 shadow-sm h-[400px]">
           <Loader2 className="animate-spin text-brand w-8 h-8" />
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando provedores e credenciais de pagamento...</p>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando provedores...</p>
         </div>
       )}
 
-      {demoState === 'erro' && (
+      {!loading && error && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-4 shadow-sm h-[400px]">
           <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-500">
             <AlertCircle className="w-6 h-6" />
           </div>
           <div>
             <h3 className="text-slate-950 font-black text-base">Não foi possível carregar os gateways</h3>
-            <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto font-medium">Tente novamente ou verifique a integridade da comunicação com as chaves de API da empresa.</p>
+            <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto font-medium">{error}</p>
           </div>
           <button 
-            onClick={() => setDemoState('com_dados')}
+            onClick={fetchGateways}
             className="px-4 py-2 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-all h-[34px]"
           >
             Tentar novamente
@@ -662,25 +479,7 @@ export default function GatewaysPage() {
         </div>
       )}
 
-      {demoState === 'sem_permissao' && (
-        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-4 shadow-sm h-[400px]">
-          <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-slate-950 font-black text-base">Acesso Não Autorizado</h3>
-            <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto font-medium">Sua conta operacional não possui as credenciais necessárias para visualizar chaves, segredos ou rotas financeiras.</p>
-          </div>
-          <button 
-            onClick={() => triggerSuccessAlert('Solicitação de liberação financeira enviada ao conselho executivo!')}
-            className="px-4 py-2 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-all h-[34px]"
-          >
-            Solicitar Acesso Operacional
-          </button>
-        </div>
-      )}
-
-      {demoState === 'vazio' && (
+      {!loading && !error && gateways.length === 0 && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-5 shadow-sm h-[400px]">
           <div className="w-16 h-16 rounded-full bg-[#FAF8FF] border border-[#E8DDFD] flex items-center justify-center text-violet-400">
             <Network className="w-7 h-7" />
@@ -692,11 +491,7 @@ export default function GatewaysPage() {
             </p>
           </div>
           <button 
-            onClick={() => {
-              setGateways(initialGateways);
-              setDemoState('com_dados');
-              triggerSuccessAlert('Gateways de demonstração ativados com sucesso!');
-            }}
+            onClick={openWizard}
             className="px-5 py-2.5 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all"
           >
             Conectar gateway
@@ -704,9 +499,9 @@ export default function GatewaysPage() {
         </div>
       )}
 
-      {demoState === 'com_dados' && (
+      {!loading && !error && gateways.length > 0 && (
         <>
-          {/* 6. Advanced Filters Bar (Unified max h-[62px] Layout) */}
+          {/* 6. Advanced Filters Bar */}
           <div className="bg-white px-3 py-1.5 rounded-[20px] border border-[#E8DDFD] flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-sm w-full shrink-0 h-[62px] min-h-[62px] max-h-[62px]">
             <div className="flex flex-col md:flex-row md:items-center gap-2 flex-1 min-w-0">
               <div className="relative w-full md:w-[240px] 2xl:w-[270px] shrink-0">

@@ -47,7 +47,7 @@ export function StudioIframe({ checkoutId, className }: StudioIframeProps) {
         case 'STUDIO_READY':
           setLoading(false);
           // Send auth token and checkout ID to the iframe
-          const token = window.__studioToken || localStorage.getItem('basileia_token');
+          const token = window.__studioToken || '';
           if (iframeRef.current?.contentWindow) {
             iframeRef.current.contentWindow.postMessage(
               { type: 'STUDIO_INIT', payload: { token, checkoutId } },

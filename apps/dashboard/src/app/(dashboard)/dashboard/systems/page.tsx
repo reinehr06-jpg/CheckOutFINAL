@@ -24,7 +24,7 @@ export default function SystemsPage() {
       });
       setShowNew(false);
       setKey(k => k + 1);
-    } catch {} finally {
+    } catch (err) { console.error('Failed to save system:', err); } finally {
       setSaving(false);
     }
   };

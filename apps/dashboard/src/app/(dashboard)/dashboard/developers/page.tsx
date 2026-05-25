@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { DevelopersHeader } from '@/components/developers/DevelopersHeader';
 import { DevelopersKpiCards } from '@/components/developers/DevelopersKpiCards';
@@ -17,12 +17,42 @@ import { MOCK_DEVELOPER_SUMMARY, MOCK_API_KEYS, MOCK_DEVELOPER_LOGS } from './__
 import { DeveloperSummary, DeveloperApiKey, DeveloperLog, SandboxRequest } from '@/types/developers';
 import { cn } from '@/lib/utils';
 import { ShieldCheck, ShieldAlert, Key } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 export default function DevelopersPage() {
   const [activeTab, setActiveTab] = useState<DeveloperTabValue>('overview');
-  const [apiKeys, setApiKeys] = useState<DeveloperApiKey[]>(MOCK_API_KEYS);
-  const [logs, setLogs] = useState<DeveloperLog[]>(MOCK_DEVELOPER_LOGS);
+  const [apiKeys, setApiKeys] = useState<DeveloperApiKey[]>([]);
+  const [logs, setLogs] = useState<DeveloperLog[]>([]);
   const [summary, setSummary] = useState<DeveloperSummary>(MOCK_DEVELOPER_SUMMARY);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await apiFetch('/api/v1/dashboard/api-keys');
+        if (res.success && Array.isArray(res.data)) {
+          setApiKeys(res.data.map((k: any) => ({
+            id: k.uuid || k.id?.toString(),
+            name: k.name || '',
+            prefix: k.key_preview || '',
+            systemId: k.connected_system_id?.toString() || '',
+            systemName: k.system_name || '',
+            environment: k.environment || 'production',
+            scopes: ['payments.read'],
+            status: 'active' as const,
+            createdAt: k.created_at || '',
+            createdBy: '',
+          })));
+        } else {
+          setApiKeys(MOCK_API_KEYS);
+        }
+      } catch (err) { console.error('Failed to fetch API keys:', err); setApiKeys(MOCK_API_KEYS); } finally {
+        setLoading(false);
+      }
+    })();
+    setLogs(MOCK_DEVELOPER_LOGS);
+  }, []);
   
   // Toast notifications
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
@@ -54,10 +84,7 @@ export default function DevelopersPage() {
     setApiKeys([freshKey, ...apiKeys]);
     
     // Simulate updating counts
-    setSummary({
-      ...summary,
-      apiKeysActive: summary.apiKeysActive + 1
-    });
+    setSummary({ ...summary, apiKeysActive: summary.apiKeysActive + 1 });
 
     triggerFeedback(`Chave "${freshKey.name}" criada com sucesso. Evento de auditoria registrado.`);
   };
@@ -66,10 +93,7 @@ export default function DevelopersPage() {
     setApiKeys(apiKeys.map(k => k.id === id ? { ...k, status: 'revoked' } : k));
     
     // Simulate updating counts
-    setSummary({
-      ...summary,
-      apiKeysActive: Math.max(0, summary.apiKeysActive - 1)
-    });
+    setSummary({ ...summary, apiKeysActive: Math.max(0, summary.apiKeysActive - 1) });
 
     triggerFeedback("Chave de API revogada permanentemente. Log de auditoria gerado.");
   };
@@ -96,11 +120,7 @@ export default function DevelopersPage() {
     setLogs([newLog, ...logs]);
 
     // Update sandbox metrics counts
-    setSummary({
-      ...summary,
-      sandboxRequests24h: summary.sandboxRequests24h + 1,
-      apiCalls24h: summary.apiCalls24h + 1
-    });
+    setSummary({ ...summary, sandboxRequests24h: summary.sandboxRequests24h + 1, apiCalls24h: summary.apiCalls24h + 1 });
   };
 
   // Determine if side panel should render next to active tab

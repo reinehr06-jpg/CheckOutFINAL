@@ -58,9 +58,6 @@ import {
 } from '@/types/webhook';
 
 import { 
-  MOCK_ENDPOINTS, 
-  MOCK_DELIVERIES, 
-  MOCK_KPI, 
   MOCK_FLOW_POINTS 
 } from './__mocks__/webhooks';
 
@@ -119,23 +116,27 @@ export default function WebhooksPage() {
   const [permissionDenied, setPermissionDenied] = useState(false); // Can trigger to show state
 
   // Core lists state
-  const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>(MOCK_ENDPOINTS);
-  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>(MOCK_DELIVERIES);
+  const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
 
   useEffect(() => {
+    setMounted(true);
     (async () => {
       try {
+        setLoading(true);
         const [epRes, delRes] = await Promise.all([
           apiFetch('/api/v1/dashboard/webhooks/endpoints'),
           apiFetch('/api/v1/dashboard/webhooks/deliveries'),
         ]);
-        if (epRes.success && Array.isArray(epRes.data) && epRes.data.length > 0) {
+        if (epRes.success && Array.isArray(epRes.data)) {
           setEndpoints(epRes.data.map(mapApiEndpoint));
         }
-        if (delRes.success && Array.isArray(delRes.data) && delRes.data.length > 0) {
+        if (delRes.success && Array.isArray(delRes.data)) {
           setDeliveries(delRes.data.map(mapApiDelivery));
         }
-      } catch {}
+      } catch (err) { console.error('Failed to fetch webhooks data:', err); } finally {
+        setLoading(false);
+      }
     })();
   }, []);
   
@@ -188,37 +189,6 @@ export default function WebhooksPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Initialize live feed with first 8 deliveries
-    setLiveFeed(MOCK_DELIVERIES.slice(0, 8));
-
-    // Simulated real-time polling every 6 seconds to inject a live delivery
-    const timer = setInterval(() => {
-      const randomEndpoint = MOCK_ENDPOINTS[Math.floor(Math.random() * MOCK_ENDPOINTS.length)];
-      const randomEvent = randomEndpoint.subscribedEvents[Math.floor(Math.random() * randomEndpoint.subscribedEvents.length)] || "payment.approved";
-      const isSuccess = Math.random() > 0.08;
-      const status: WebhookDeliveryStatus = isSuccess ? "delivered" : (Math.random() > 0.5 ? "failed" : "retrying");
-      
-      const newDlv: WebhookDelivery = {
-        id: `wh_dlv_live_${Math.floor(1000 + Math.random() * 9000)}`,
-        endpointId: randomEndpoint.id,
-        endpointName: randomEndpoint.name,
-        event: randomEvent,
-        status: status,
-        systemId: randomEndpoint.systemId,
-        httpStatus: isSuccess ? 200 : 500,
-        latencyMs: 90 + Math.floor(Math.random() * 300),
-        attempts: 1,
-        maxAttempts: randomEndpoint.maxRetries,
-        payload: { event: randomEvent, simulated: true },
-        createdAt: new Date().toISOString()
-      };
-
-      setLiveFeed(prev => [newDlv, ...prev.slice(0, 7)]);
-      // Also inject into general list
-      setDeliveries(prev => [newDlv, ...prev]);
-    }, 6000);
-
-    return () => clearInterval(timer);
   }, []);
 
   const triggerSuccessAlert = (message: string) => {

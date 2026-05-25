@@ -39,8 +39,8 @@ class AuthController extends Controller
         $user = User::where('email', $email)->first();
 
         if ($user) {
-            if ($user->locked_until && now()->lessThan($user->locked_until)) {
-                $minutes = now()->diffInMinutes($user->locked_until);
+            if ($user->locked_at && now()->lessThan($user->locked_at)) {
+                $minutes = now()->diffInMinutes($user->locked_at);
                 
                 $this->registrarTentativa($user, $request, false, 'Conta bloqueada');
                 
@@ -50,14 +50,14 @@ class AuthController extends Controller
             }
 
             if (!Hash::check($password, $user->password)) {
-                $user->increment('failed_login_attempts');
+                $user->increment('failed_attempts');
                 
-                $totalTentativas = $user->failed_login_attempts;
+                $totalTentativas = $user->failed_attempts;
                 
                 if ($totalTentativas >= self::MAX_FAILED_ATTEMPTS) {
                     $user->update([
-                        'locked_until' => now()->addMinutes(self::LOCKOUT_MINUTES),
-                        'failed_login_attempts' => 0,
+                        'locked_at' => now()->addMinutes(self::LOCKOUT_MINUTES),
+                        'failed_attempts' => 0,
                     ]);
                     
                     Log::warning('Login: Conta bloqueada por múltiplas tentativas', [
@@ -90,8 +90,8 @@ class AuthController extends Controller
             Auth::login($user, $request->boolean('remember'));
             
             $user->update([
-                'failed_login_attempts' => 0,
-                'locked_until' => null,
+                'failed_attempts' => 0,
+                'locked_at' => null,
             ]);
             
             $this->registrarTentativa($user, $request, true);

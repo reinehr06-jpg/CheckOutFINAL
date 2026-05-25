@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GripVertical, AlertTriangle, ArrowUp, ArrowDown, Edit2, Play, Power, Trash2, MoreHorizontal, CheckCircle2, PauseCircle, HelpCircle } from 'lucide-react';
-import { RoutingRule, RoutingRuleType, RoutingRuleStatus } from '@/types/routing';
+import { RoutingRule, RoutingRuleType, RoutingRuleStatus, RoutingCondition } from '@/types/routing';
 import { cn } from '@/lib/utils';
 
 interface RoutingRulesTableProps {
@@ -97,7 +97,7 @@ export function RoutingRulesTable({
     fallback: { label: 'Fallback', color: 'bg-slate-100 text-slate-700 border-slate-200/50' },
   };
 
-  const formatCondition = (cond: any) => {
+  const formatCondition = (cond: RoutingCondition) => {
     const fieldNames: Record<string, string> = {
       system: 'Sistema',
       method: 'Método',

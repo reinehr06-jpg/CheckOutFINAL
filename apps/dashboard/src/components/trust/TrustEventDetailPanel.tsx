@@ -43,6 +43,7 @@ export function TrustEventDetailPanel({ event, onClose, onViewFullAnalysis }: Tr
           <button 
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+            aria-label="Fechar"
           >
             <X className="w-4.5 h-4.5" />
           </button>

@@ -2,13 +2,16 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { fetchWithTimeout, getCsrfToken } from '@/lib/api';
 
 type User = {
   id: string;
+  uuid?: string;
   name: string;
   email: string;
   role: string;
   two_factor_enabled?: boolean;
+  needs_2fa_setup?: boolean;
   company_id?: number | null;
   is_master?: boolean;
 };
@@ -23,137 +26,137 @@ type Company = {
 
 type AuthContextType = {
   user: User | null;
-  token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ needs_2fa_setup?: boolean }>;
   logout: () => void;
   isLoading: boolean;
   isMaster: boolean;
+  isAuthenticated: boolean;
   availableCompanies: Company[];
   switchCompany: (companyId: number) => void;
   activeCompanyId: number | null;
+  checkSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function setClientCookie(name: string, value: string, days: number = 1) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax; Secure`;
-}
-
-function removeClientCookie(name: string) {
-  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [availableCompanies, setAvailableCompanies] = useState<Company[]>([]);
   const [activeCompanyId, setActiveCompanyId] = useState<number | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchUser = useCallback(async (authToken: string) => {
+  const checkSession = useCallback(async () => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${API_URL}/api/v1/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Accept': 'application/json',
-        },
+      const res = await fetchWithTimeout(`${API_URL}/api/user`, {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'include',
       });
 
-      if (!res.ok) throw new Error('Invalid token');
+      if (!res.ok) {
+        setUser(null);
+        return;
+      }
 
       const data = await res.json();
-      const userData = data.success ? data.data.user : data;
+      const userData = data.success ? data.data : data;
 
       setUser(userData);
-      return userData;
+
+      // Load active company from cookie
+      const match = document.cookie.match(/(?:^|;\s*)basileia_active_company=(\d+)/);
+      if (match) setActiveCompanyId(Number(match[1]));
     } catch {
-      setToken(null);
       setUser(null);
-      localStorage.removeItem('basileia_token');
-      localStorage.removeItem('basileia_user');
-      removeClientCookie('basileia_session');
-      return null;
     }
   }, []);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('basileia_token');
-
-    if (storedToken) {
-      setToken(storedToken);
-      fetchUser(storedToken).then((fetchedUser) => {
-        if (fetchedUser) {
-          setClientCookie('basileia_session', storedToken);
-        }
-      }).finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
-  }, [fetchUser]);
+    checkSession().finally(() => setIsLoading(false));
+  }, [checkSession]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    // Initialize CSRF token
+    await fetchWithTimeout(`${API_URL}/sanctum/csrf-cookie`, {
+      method: 'GET',
+      credentials: 'include',
+    });
 
-    const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+    const csrfToken = getCsrfToken();
+    const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+      },
+      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
 
     if (!res.ok || !data.success) {
-      throw new Error(data.error?.message || 'Credenciais invalidas');
+      throw new Error(data.message || data.error?.message || 'Credenciais inválidas');
     }
 
-    const newToken = data.data.token;
-    const newUser = data.data.user;
+    const userData = data.data?.user || data.user || data.data;
+    setUser(userData);
 
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('basileia_token', newToken);
-    localStorage.setItem('basileia_user', JSON.stringify(newUser));
-    setClientCookie('basileia_session', newToken);
-
-    if (newUser.role === 'super_admin') {
+    if (userData.role === 'super_admin') {
       try {
-        const companiesRes = await fetch(`${API_URL}/api/v1/auth/master/companies`, {
-          headers: { 'Authorization': `Bearer ${newToken}` },
+        const companiesRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/master/companies`, {
+          headers: { 'Accept': 'application/json' },
+          credentials: 'include',
         });
         const companiesData = await companiesRes.json();
         if (companiesData.success) {
           setAvailableCompanies(companiesData.data);
         }
-      } catch {}
+      } catch (err) {
+        console.error('Failed to load companies:', err);
+      }
     }
+
+    return { needs_2fa_setup: userData.needs_2fa_setup ?? data.needs_2fa_setup ?? false };
   }, []);
 
-  const logout = useCallback(() => {
-    setToken(null);
+  const logout = useCallback(async () => {
+    try {
+      const csrfToken = getCsrfToken();
+      await fetchWithTimeout(`${API_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+        },
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.error('Logout request failed:', err);
+    }
     setUser(null);
-    localStorage.removeItem('basileia_token');
-    localStorage.removeItem('basileia_user');
-    removeClientCookie('basileia_session');
     setAvailableCompanies([]);
     setActiveCompanyId(null);
     router.push('/login');
   }, [router]);
 
   const isMaster = user?.role === 'super_admin';
+  const isAuthenticated = !!user;
 
   const switchCompany = useCallback((companyId: number) => {
     setActiveCompanyId(companyId);
-    localStorage.setItem('basileia_active_company', String(companyId));
+    document.cookie = `basileia_active_company=${companyId}; path=/; SameSite=Lax; Secure; Max-Age=86400`;
   }, []);
 
   return (
     <AuthContext.Provider value={{
-      user, token, login, logout, isLoading,
-      isMaster, availableCompanies, switchCompany, activeCompanyId,
+      user, login, logout, isLoading,
+      isMaster, isAuthenticated, availableCompanies, switchCompany, activeCompanyId,
+      checkSession,
     }}>
       {children}
     </AuthContext.Provider>

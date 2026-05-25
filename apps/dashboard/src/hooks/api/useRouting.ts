@@ -2,19 +2,19 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api/client';
 
 export type RoutingData = {
-  gateways: any[];
-  routing: Record<string, any>;
-  rules: any[];
+  gateways: unknown[];
+  routing: Record<string, unknown>;
+  rules: unknown[];
   recommended: { recommended_payment_method: string; reason: string; source: string };
-  recent_decisions: any[];
+  recent_decisions: unknown[];
 };
 
 export type SimulationResult = {
-  simulation: any;
-  routing: any;
-  trust: any;
-  recommendation: any;
-  alerts: any[];
+  simulation: unknown;
+  routing: unknown;
+  trust: unknown;
+  recommendation: unknown;
+  alerts: unknown[];
 };
 
 export function useRouting() {
@@ -38,7 +38,7 @@ export function useRouting() {
     return res.success ? res.data : null;
   };
 
-  const saveRule = async (rule: any) => {
+  const saveRule = async (rule: Record<string, unknown>) => {
     const res = await apiClient('/api/v1/dashboard/routing/rules', {
       method: 'POST',
       body: JSON.stringify(rule),

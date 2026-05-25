@@ -6,7 +6,7 @@ export type Company = {
   uuid: string;
   name: string;
   slug: string;
-  settings: any;
+  settings: Record<string, unknown>;
   created_at: string;
 };
 

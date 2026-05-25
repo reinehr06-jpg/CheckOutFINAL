@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { 
@@ -217,20 +217,32 @@ function apiPaymentToPage(p: any) {
 }
 
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState(initialPayments);
+  const [payments, setPayments] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPayments = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiFetch('/api/v1/dashboard/payments');
+      if (res.success && Array.isArray(res.data)) {
+        setPayments(res.data.map(apiPaymentToPage));
+      } else {
+        setError(res.error?.message || 'Erro ao carregar pagamentos');
+      }
+    } catch {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await apiFetch('/api/v1/dashboard/payments');
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-          setPayments(res.data.map(apiPaymentToPage));
-        }
-      } catch {}
-    })();
-  }, []);
+    fetchPayments();
+  }, [fetchPayments]);
   
   // Advanced Filter state variables
   const [filterPeriod, setFilterPeriod] = useState('Hoje');
@@ -245,9 +257,6 @@ export default function PaymentsPage() {
   const [filterMinAmount, setFilterMinAmount] = useState('');
   const [filterMaxAmount, setFilterMaxAmount] = useState('');
 
-  // Simulator Demo State
-  const [demoState, setDemoState] = useState<'com_dados' | 'loading' | 'vazio' | 'erro' | 'sem_permissao'>('com_dados');
-  const [showDebug, setShowDebug] = useState(false);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
 
   // Pagination State
@@ -367,8 +376,6 @@ export default function PaymentsPage() {
 
   // Filtering Logic
   const filteredPayments = useMemo(() => {
-    if (demoState !== 'com_dados') return [];
-
     return payments.filter(p => {
       const matchSearch = 
         p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -402,10 +409,10 @@ export default function PaymentsPage() {
 
       return matchSearch && matchStatusTab && matchStatus && matchResult && matchMethod && matchGateway && matchSystem && matchRisk && matchMinVal && matchMaxVal && matchOrigem;
     });
-  }, [payments, searchQuery, filterStatusTab, filterStatus, filterResult, filterMethod, filterGateway, filterSystem, filterRisk, filterMinAmount, filterMaxAmount, filterOrigem, demoState]);
+  }, [payments, searchQuery, filterStatusTab, filterStatus, filterResult, filterMethod, filterGateway, filterSystem, filterRisk, filterMinAmount, filterMaxAmount, filterOrigem]);
 
   // Pagination calculation
-  const totalItems = demoState === 'com_dados' ? 2156 : 0;
+  const totalItems = filteredPayments.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const displayPayments = useMemo(() => {
@@ -428,55 +435,16 @@ export default function PaymentsPage() {
     }
   };
 
-  const uniqueGateways = ['Todos', 'Asaas Principal', 'Stripe Global', 'Mercado Pago BR', 'Banco do Brasil PIX', 'Cielo Principal'];
-  const uniqueMethods = ['Todos', 'Cartão', 'PIX', 'Boleto'];
-  const uniqueRisks = ['Todos', 'Baixo', 'Médio', 'Alto', 'Crítico'];
-  const uniqueStatuses = ['Todos', 'Aprovado', 'Pendente', 'Recusado', 'Falha técnica', 'Em análise', 'Reembolsado', 'Cancelado'];
-  const uniqueResults = ['Todos', 'Autorizado', 'Do not honor', 'Aguardando pagamento PIX', 'Timeout no gateway', 'Antifraude em revisão', 'Reembolso concluído'];
+  const uniqueGateways = useMemo(() => ['Todos', ...new Set(payments.map(p => p.gateway).filter(Boolean))], [payments]);
+  const uniqueMethods = useMemo(() => ['Todos', ...new Set(payments.map(p => p.metodo).filter(Boolean))], [payments]);
+  const uniqueRisks = useMemo(() => ['Todos', ...new Set(payments.map(p => p.risco).filter(Boolean))], [payments]);
+  const uniqueStatuses = useMemo(() => ['Todos', ...new Set(payments.map(p => p.status).filter(Boolean))], [payments]);
+  const uniqueResults = useMemo(() => ['Todos', ...new Set(payments.map(p => p.resultado).filter(Boolean))], [payments]);
 
   return (
     <div className="flex flex-col gap-4 w-full select-none">
       
-      {/* Simulation state selector floating bottom right */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
-        {showDebug && (
-          <div className="bg-white rounded-2xl border border-[#E8DDFD] shadow-2xl p-2.5 flex flex-col gap-1.5 min-w-[150px] animate-in slide-in-from-bottom-3 duration-200">
-            <span className="text-[9px] font-black text-brand uppercase tracking-widest px-2.5 pb-1 border-b border-slate-100 mb-1 leading-none">Simular Estados</span>
-            {[
-              { id: 'com_dados', label: 'Com Dados' },
-              { id: 'loading', label: 'Carregando' },
-              { id: 'vazio', label: 'Lista Vazia' },
-              { id: 'erro', label: 'Erro Técnico' },
-              { id: 'sem_permissao', label: 'Sem Permissão' },
-            ].map((st) => (
-              <button
-                key={st.id}
-                onClick={() => {
-                  setDemoState(st.id as any);
-                  setCurrentPage(1);
-                  setShowDebug(false);
-                }}
-                className={cn(
-                  "w-full text-left px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all border flex items-center justify-between",
-                  demoState === st.id 
-                    ? "bg-brand/10 border-brand/20 text-brand font-black" 
-                    : "bg-[#FAF8FF] border-[#E8DDFD]/60 text-slate-600 hover:bg-brand-soft"
-                )}
-              >
-                {st.label}
-                {demoState === st.id && <Check className="w-3.5 h-3.5" />}
-              </button>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className="w-10 h-10 bg-brand text-white rounded-full shadow-lg shadow-brand/20 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-          title="Painel de Simulação"
-        >
-          <Settings className="w-5 h-5 animate-spin-slow" />
-        </button>
-      </div>
+
 
       {/* Notifications Alert */}
       {successAlert && (
@@ -844,12 +812,9 @@ export default function PaymentsPage() {
                 onChange={(e) => { setFilterSystem(e.target.value); setCurrentPage(1); }}
                 className="appearance-none w-full bg-[#FAF8FF] border border-[#E8DDFD] rounded-xl pl-3 pr-8 py-1.5 text-xs font-black text-slate-700 focus:outline-none focus:border-brand cursor-pointer h-[34px]"
               >
-                <option value="Todos">Todos</option>
-                <option value="Sistema Core">Sistema Core</option>
-                <option value="Marketplace">Marketplace</option>
-                <option value="Assinaturas">Assinaturas</option>
-                <option value="Sistema Eventos">Sistema Eventos</option>
-                <option value="Church">Church</option>
+                {['Todos', ...new Set(payments.map(p => p.sistema).filter(Boolean))].map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
             </div>
@@ -957,12 +922,12 @@ export default function PaymentsPage() {
       {/* 6. Tabs of Status with counters */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none pb-0.5">
         {[
-          { id: 'Todos', label: 'Todos', count: 2156 },
-          { id: 'Aprovados', label: 'Aprovados', count: 1932 },
-          { id: 'Recusados', label: 'Recusados', count: 142 },
-          { id: 'Pendentes', label: 'Pendentes', count: 62 },
-          { id: 'Em análise', label: 'Em análise', count: 20 },
-          { id: 'Falhas técnicas', label: 'Falhas técnicas', count: 31 }
+          { id: 'Todos', label: 'Todos' },
+          { id: 'Aprovados', label: 'Aprovados' },
+          { id: 'Recusados', label: 'Recusados' },
+          { id: 'Pendentes', label: 'Pendentes' },
+          { id: 'Em análise', label: 'Em análise' },
+          { id: 'Falhas técnicas', label: 'Falhas técnicas' }
         ].map((tab) => {
           const isActive = filterStatusTab === tab.id;
           return (
@@ -981,22 +946,40 @@ export default function PaymentsPage() {
                 "px-1.5 py-0.5 rounded-lg text-[9px] font-bold",
                 isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
               )}>
-                {tab.count.toLocaleString('pt-BR')}
+                {payments.length.toLocaleString('pt-BR')}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* 7. Simulation state renders */}
-      {demoState === 'loading' && (
+      {/* 7. Real state renders */}
+      {loading && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-20 flex flex-col items-center justify-center gap-4 shadow-sm h-[320px]">
           <Loader2 className="animate-spin text-brand w-8 h-8" />
-          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando dados de troubleshooting...</p>
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando dados...</p>
         </div>
       )}
 
-      {demoState === 'vazio' && (
+      {!loading && error && (
+        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
+          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-slate-950 font-black text-[13.5px]">Erro de Rastreamento</h3>
+            <p className="text-slate-400 font-bold text-[11.5px] mt-0.5">{error}</p>
+          </div>
+          <button 
+            onClick={fetchPayments}
+            className="mt-2 px-4 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10.5px] font-black uppercase tracking-tight transition-all"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && payments.length === 0 && (
         <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
           <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
             <Activity className="w-6 h-6" />
@@ -1008,37 +991,7 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      {demoState === 'erro' && (
-        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
-          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-slate-950 font-black text-[13.5px]">Erro de Rastreamento</h3>
-            <p className="text-slate-400 font-bold text-[11.5px] mt-0.5">Não foi possível carregar os pagamentos. Tente novamente ou verifique sua conexão.</p>
-          </div>
-          <button 
-            onClick={() => setDemoState('com_dados')}
-            className="mt-2 px-4 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10.5px] font-black uppercase tracking-tight transition-all"
-          >
-            Tentar Novamente
-          </button>
-        </div>
-      )}
-
-      {demoState === 'sem_permissao' && (
-        <div className="w-full bg-white/60 backdrop-blur-md rounded-[24px] border border-[#E8DDFD] p-16 flex flex-col items-center justify-center text-center gap-3 shadow-sm h-[320px]">
-          <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-slate-955 font-black text-[13.5px]">Acesso Restrito</h3>
-            <p className="text-slate-400 font-bold text-[11.5px] mt-0.5">Você não tem permissão para visualizar pagamentos. Solicite acesso a um administrador.</p>
-          </div>
-        </div>
-      )}
-
-      {demoState === 'com_dados' && (
+      {!loading && !error && payments.length > 0 && (
         <>
           {/* 8. main payments table */}
           <div className="w-full bg-white rounded-3xl border border-[#E8DDFD] overflow-hidden shadow-sm shrink-0">

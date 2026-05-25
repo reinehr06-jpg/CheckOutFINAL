@@ -21,6 +21,7 @@ import {
   Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { fetchWithTimeout, getCsrfToken } from '@/lib/api';
 
 type AuthState = 'credentials' | 'two_factor' | 'recovery' | 'locked_out' | 'session_expired' | 'restricted';
 
@@ -45,7 +46,7 @@ export default function LoginPage() {
   const [lockoutTime, setLockoutTime] = useState(899); // 14:59 minutes
 
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (authState === 'locked_out' && lockoutTime > 0) {
       timer = setInterval(() => {
         setLockoutTime((prev) => prev - 1);
@@ -77,13 +78,22 @@ export default function LoginPage() {
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+      // Initialize CSRF-protected session
+      await fetchWithTimeout(`${API_URL}/sanctum/csrf-cookie`, {
+        method: 'GET',
+        credentials: 'include',
+      });
       
-      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+      const csrfToken = getCsrfToken();
+      const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -95,16 +105,22 @@ export default function LoginPage() {
         return;
       }
 
-      // Salva token e dados do usuário
-      localStorage.setItem('basileia_token', data.data.token);
-      localStorage.setItem('basileia_user', JSON.stringify(data.data.user));
-      document.cookie = `basileia_session=${encodeURIComponent(data.data.token)}; path=/; SameSite=Lax; Secure; Max-Age=86400`;
+      // Auth via httpOnly cookie (set by server), no localStorage storage
 
       // Se é super_admin, vai direto pro dashboard
       if (data.data.user.role === 'super_admin') {
         triggerToast('Login super admin realizado!');
         setTimeout(() => {
           window.location.href = '/dashboard';
+        }, 500);
+        return;
+      }
+
+      // Se precisa configurar 2FA, vai para setup
+      if (data.needs_2fa_setup) {
+        triggerToast('Configure a autenticação de dois fatores para continuar.');
+        setTimeout(() => {
+          window.location.href = '/2fa/setup';
         }, 500);
         return;
       }
@@ -170,15 +186,16 @@ export default function LoginPage() {
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const token = localStorage.getItem('basileia_token');
 
-      const res = await fetch(`${API_URL}/api/v2/auth/2fa/verify`, {
+      const csrfToken = getCsrfToken();
+      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/2fa/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ code: fullCode }),
       });
 
@@ -214,11 +231,13 @@ export default function LoginPage() {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       
-      const res = await fetch(`${API_URL}/api/v1/auth/password/forgot`, {
+      const csrfToken = getCsrfToken();
+      const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/password/forgot`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
         },
         body: JSON.stringify({ email: recoveryEmail }),
       });

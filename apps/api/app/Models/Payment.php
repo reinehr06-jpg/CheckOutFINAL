@@ -19,6 +19,7 @@ class Payment extends Model
         'order_id',
         'checkout_session_id',
         'gateway_account_id',
+        'gateway_id',
         'method',
         'status',
         'amount',
@@ -48,6 +49,11 @@ class Payment extends Model
     public function gatewayAccount(): BelongsTo
     {
         return $this->belongsTo(GatewayAccount::class);
+    }
+
+    public function gateway(): BelongsTo
+    {
+        return $this->belongsTo(Gateway::class);
     }
 
     public function attempts(): HasMany

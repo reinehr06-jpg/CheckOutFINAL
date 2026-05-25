@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Validação para pagamento com cartão de crédito.
- *
- * [Fase 3.3] Request segregada por método de pagamento.
- * Verifica se a transação ainda está pendente antes de autorizar.
+ * Inclui verificação Luhn para número do cartão.
  */
 class ProcessCardPaymentRequest extends FormRequest
 {
@@ -29,7 +28,7 @@ class ProcessCardPaymentRequest extends FormRequest
     {
         return [
             'card_name'        => 'required|string|min:3',
-            'card_number'      => 'required|string',
+            'card_number'      => ['required', 'string', $this->luhnRule()],
             'card_expiry'      => 'required|string',
             'card_cvv'         => 'required|string|min:3|max:4',
             'customer_name'    => 'required|string|min:3',
@@ -52,5 +51,16 @@ class ProcessCardPaymentRequest extends FormRequest
             'email.email'            => 'Informe um e-mail válido.',
             'customer_document.required' => 'O documento é obrigatório.',
         ];
+    }
+
+    private function luhnRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            $service = app(\App\Services\CardValidator::class);
+            $sanitized = $service->sanitize($value);
+            if (!$sanitized || !$service->validate($sanitized)['valid']) {
+                $fail('O número do cartão é inválido.');
+            }
+        };
     }
 }

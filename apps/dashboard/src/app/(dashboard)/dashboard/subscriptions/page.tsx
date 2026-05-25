@@ -39,6 +39,7 @@ import {
   Cell 
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
 
 // Types and status styling
 type Subscription = {
@@ -69,167 +70,68 @@ const STATUS_THEME: Record<string, { label: string; text: string; bg: string; bo
   'Cancelada': { label: 'Cancelada', text: 'text-slate-500', bg: 'bg-slate-50/40', border: 'border-slate-200/50', dot: 'bg-slate-400' }
 };
 
-const initialSubscriptions: Subscription[] = [
-  {
-    id: '#ASS-892347',
-    ref: 'sub_hN9x72h3c9d456ef',
-    criadoEm: '15/04/2024',
-    cliente: 'Mariana Souza',
-    email: 'mariana@email.com',
-    cliId: 'CLI-57829',
-    plano: 'PRO Anual',
-    status: 'Ativa',
-    ciclo: 'Anual 12/12',
-    proximaCobranca: '15/05/2024',
-    proximaCobrancaMeta: 'Em 3 dias',
-    valor: 1299.00,
-    inadimplencia: '0% — Em dia',
-    inadimplenciaPct: 0,
+function subscriptionFromApi(sub: any): Subscription {
+  const amount = sub.amount || 0;
+  const statusMap: Record<string, Subscription['status']> = {
+    'active': 'Ativa',
+    'paused': 'Pausada',
+    'cancelled': 'Cancelada',
+    'overdue': 'Em atraso',
+    'failed': 'Falha no pagamento',
+  };
+  const status = statusMap[sub.status] || 'Ativa';
+  return {
+    id: sub.uuid || `#SUB-${sub.id}`,
+    ref: sub.uuid || '',
+    criadoEm: sub.created_at ? new Date(sub.created_at).toLocaleDateString('pt-BR') : '',
+    cliente: sub.customer?.name || sub.name || '—',
+    email: sub.customer?.email || '',
+    cliId: sub.customer?.uuid || `CLI-${sub.customer_id}`,
+    plano: sub.description || sub.name || '—',
+    status,
+    ciclo: `${sub.interval_type} ${sub.interval_count}/${sub.current_cycle || 0}`,
+    proximaCobranca: sub.next_billing_at ? new Date(sub.next_billing_at).toLocaleDateString('pt-BR') : '—',
+    proximaCobrancaMeta: sub.next_billing_at ? formatRelative(new Date(sub.next_billing_at)) : '—',
+    valor: amount / 100,
+    inadimplencia: sub.total_failed > 0 ? `${sub.total_failed} falhas` : '0% — Em dia',
+    inadimplenciaPct: Math.min(100, Math.round((sub.total_failed / Math.max(sub.current_cycle, 1)) * 100)),
     metodo: 'Cartão',
-    metodoDetalhe: 'VISA •••• 4242',
-    checkout: 'Pagar.me Checkout Padrão'
-  },
-  {
-    id: '#ASS-892344',
-    ref: 'sub_j2k9s2k8s9f212a',
-    criadoEm: '20/05/2023',
-    cliente: 'Carlos Lima',
-    email: 'carlos@email.com',
-    cliId: 'CLI-89301',
-    plano: 'PRO Mensal',
-    status: 'Ativa',
-    ciclo: 'Mensal 1/12',
-    proximaCobranca: '20/05/2024',
-    proximaCobrancaMeta: 'Em 8 dias',
-    valor: 129.90,
-    inadimplencia: '0% — Em dia',
-    inadimplenciaPct: 0,
-    metodo: 'Cartão',
-    metodoDetalhe: 'Mastercard •••• 8888',
-    checkout: 'Checkout Principal API'
-  },
-  {
-    id: '#ASS-892349',
-    ref: 'sub_f8s2j9sk10s29f8',
-    criadoEm: '10/11/2023',
-    cliente: 'Juliana Martins',
-    email: 'juliana@email.com',
-    cliId: 'CLI-48201',
-    plano: 'BASIC Mensal',
-    status: 'Em atraso',
-    ciclo: 'Mensal 7/12',
-    proximaCobranca: '10/05/2024',
-    proximaCobrancaMeta: 'Há 6 dias em atraso',
-    valor: 49.90,
-    inadimplencia: '12% — 6 dias',
-    inadimplenciaPct: 12,
-    metodo: 'Cartão',
-    metodoDetalhe: 'VISA •••• 1111',
-    checkout: 'Checkout Integrado'
-  },
-  {
-    id: '#ASS-892350',
-    ref: 'sub_k9w2j8s9d201la8',
-    criadoEm: '12/05/2024',
-    cliente: 'Pedro Alves',
-    email: 'pedro@email.com',
-    cliId: 'CLI-10294',
-    plano: 'PRO Anual',
-    status: 'Ativa',
-    ciclo: 'Anual 2/12',
-    proximaCobranca: '12/07/2024',
-    proximaCobrancaMeta: 'Em 57 dias',
-    valor: 1299.00,
-    inadimplencia: '0% — Em dia',
-    inadimplenciaPct: 0,
-    metodo: 'PIX',
-    metodoDetalhe: 'Chave Aleatória',
-    checkout: 'Checkout Principal API'
-  },
-  {
-    id: '#ASS-892350.1',
-    ref: 'sub_f2j8sk92j1d029f',
-    criadoEm: '01/01/2024',
-    cliente: 'Fernanda Rocha',
-    email: 'fernanda@email.com',
-    cliId: 'CLI-89302',
-    plano: 'BASIC Mensal',
-    status: 'Pausada',
-    ciclo: 'Mensal',
-    proximaCobranca: 'Pausada',
-    proximaCobrancaMeta: 'Sem previsão',
-    valor: 49.90,
-    inadimplencia: '0% — Em dia',
-    inadimplenciaPct: 0,
-    metodo: 'Cartão',
-    metodoDetalhe: 'Mastercard •••• 2222',
-    checkout: 'Checkout Integrado'
-  },
-  {
-    id: '#ASS-892352',
-    ref: 'sub_d8s2jk9s2a192aa',
-    criadoEm: '18/03/2024',
-    cliente: 'Rafael Mendes',
-    email: 'rafael@email.com',
-    cliId: 'CLI-48202',
-    plano: 'PRO Mensal',
-    status: 'Falha no pagamento',
-    ciclo: 'Mensal 2/12',
-    proximaCobranca: '18/05/2024',
-    proximaCobrancaMeta: 'Falha na cobrança',
-    valor: 129.90,
-    inadimplencia: 'Falha',
-    inadimplenciaPct: 100,
-    metodo: 'Cartão',
-    metodoDetalhe: 'VISA •••• 5555',
-    checkout: 'Checkout Principal API'
-  },
-  {
-    id: '#ASS-892353',
-    ref: 'sub_k9w2j8s9d201la9',
-    criadoEm: '05/05/2024',
-    cliente: 'Beatriz Carvalho',
-    email: 'beatriz@email.com',
-    cliId: 'CLI-10295',
-    plano: 'PREMIUM Anual',
-    status: 'Ativa',
-    ciclo: 'Anual 1/12',
-    proximaCobranca: '05/06/2024',
-    proximaCobrancaMeta: 'Em 20 dias',
-    valor: 2499.00,
-    inadimplencia: '0% — Em dia',
-    inadimplenciaPct: 0,
-    metodo: 'Cartão',
-    metodoDetalhe: 'Amex •••• 9999',
-    checkout: 'Pagar.me Checkout Padrão'
-  },
-  {
-    id: '#ASS-892354',
-    ref: 'sub_f2j8sk92j1d029g',
-    criadoEm: '15/02/2024',
-    cliente: 'Lucas Ferreira',
-    email: 'lucas@email.com',
-    cliId: 'CLI-89303',
-    plano: 'BASIC Mensal',
-    status: 'Cancelada',
-    ciclo: 'Mensal',
-    proximaCobranca: 'Cancelada',
-    proximaCobrancaMeta: 'Cobranças encerradas',
-    valor: 49.90,
-    inadimplencia: '0% — Em dia',
-    inadimplenciaPct: 0,
-    metodo: 'PIX',
-    metodoDetalhe: 'Chave Aleatória',
-    checkout: 'Checkout Integrado'
-  }
-];
+    metodoDetalhe: '—',
+    checkout: '—',
+  };
+}
+
+function formatRelative(date: Date): string {
+  const now = new Date();
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.round(diffMs / 86400000);
+  if (diffDays < 0) return `Há ${Math.abs(diffDays)}d em atraso`;
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Amanhã';
+  return `Em ${diffDays} dias`;
+}
 
 export default function SubscriptionsPage() {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await apiFetch('/api/v1/subscriptions');
+        if (res.success && Array.isArray(res.data)) {
+          setSubscriptions(res.data.map(subscriptionFromApi));
+        }
+      } catch (err) { console.error('Failed to fetch subscriptions:', err); } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');

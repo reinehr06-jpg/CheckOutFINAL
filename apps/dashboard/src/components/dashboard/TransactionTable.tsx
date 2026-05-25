@@ -154,8 +154,8 @@ export function TransactionTable() {
                     </td>
                     <td className="px-5">
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 text-slate/30 hover:text-brand transition-colors"><Eye className="w-3 h-3" /></button>
-                        <button className="p-1.5 text-slate/30 hover:text-brand transition-colors"><MoreVertical className="w-3 h-3" /></button>
+                        <button className="p-1.5 text-slate/30 hover:text-brand transition-colors" aria-label="Ver transação"><Eye className="w-3 h-3" /></button>
+                        <button className="p-1.5 text-slate/30 hover:text-brand transition-colors" aria-label="Mais ações"><MoreVertical className="w-3 h-3" /></button>
                       </div>
                     </td>
                   </tr>

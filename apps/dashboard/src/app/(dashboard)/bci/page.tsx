@@ -59,7 +59,7 @@ export default function BCIPage() {
                                 <span className={s.color}>{s.value}/100</span>
                             </div>
                             <div className="h-1.5 w-full bg-border rounded-full overflow-hidden">
-                                <div className={`h-full ${s.color.replace('text', 'bg')}`} style={{ width: `${s.value}%` }}></div>
+                                <div className={`h-full ${s.color === 'text-success' ? 'bg-success' : s.color === 'text-warning' ? 'bg-warning' : 'bg-danger'}`} style={{ width: `${s.value}%` }}></div>
                             </div>
                         </div>
                     ))}

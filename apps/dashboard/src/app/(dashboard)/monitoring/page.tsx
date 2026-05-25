@@ -3,7 +3,7 @@
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card } from '@/components/ui/card';
 import { useMonitoring } from '@/hooks/api/useMonitoring';
-import { Activity, Webhook, CreditCard, ShoppingBag, Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Activity, Webhook, CreditCard, ShoppingBag, Loader2, CheckCircle2, XCircle, AlertTriangle, type LucideIcon } from 'lucide-react';
 
 function HealthBadge({ rate, label }: { rate: number | null; label: string }) {
   if (rate === null) return <span className="text-xs text-ink-subtle">Sem dados</span>;
@@ -17,7 +17,9 @@ function HealthBadge({ rate, label }: { rate: number | null; label: string }) {
   );
 }
 
-function MetricCard({ label, value, sub, icon: Icon }: { label: string; value: string | number; sub?: string; icon: any }) {
+
+
+function MetricCard({ label, value, sub, icon: Icon }: { label: string; value: string | number; sub?: string; icon: LucideIcon }) {
   return (
     <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-surface">
       <div className="p-2 rounded-md bg-brand-muted text-brand"><Icon size={18} /></div>

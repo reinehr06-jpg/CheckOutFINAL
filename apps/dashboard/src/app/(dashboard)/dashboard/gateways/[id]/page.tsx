@@ -1,257 +1,30 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { 
   ArrowLeft,
   ShieldCheck,
-  ShieldAlert,
   Key,
-  Network,
   Activity,
   Layers,
-  Settings,
   X,
-  Check,
   Loader2,
-  Lock,
-  Play,
-  Pause,
-  AlertCircle,
-  Copy,
-  ChevronDown,
-  TrendingUp,
   Cpu,
   Globe,
-  Clock,
   RefreshCw,
   Eye,
   EyeOff,
   Database,
   Terminal,
   Calendar,
-  CheckCircle2,
-  HelpCircle
+  AlertCircle,
+  Network,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// Static Gateway Mock List for Details
-const gatewaysDetailsMocks = [
-  {
-    id: 'pagarme',
-    name: 'Pagar.me',
-    provider: 'Pagar.me',
-    desc: 'Gateway de cartão, PIX e boleto',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '98,72%',
-    pp: '+1,4 p.p.',
-    uptime: '99,92%',
-    p95: '184ms',
-    reqs: '142 req/s',
-    conta: 'Pagar.me Principal',
-    contaId: 'acc_pagarme_001',
-    client_id: 'cli_live_pagarme_8829f01',
-    api_key: 'ak_live_pagarme_a89f92e81cfb29a8a7c6e',
-    secret: 'sh_live_pagarme_9c8a2ef81cfb9b8b7a6d5c',
-    webhooks: [
-      { event: 'payment.succeeded', status: '200 OK', time: 'há 2 min', id: 'evt_pgm_102' },
-      { event: 'payment.failed', status: '200 OK', time: 'há 15 min', id: 'evt_pgm_101' },
-      { event: 'charge.refunded', status: '200 OK', time: 'há 1 h', id: 'evt_pgm_100' },
-    ],
-    eventos: [
-      { title: 'Credenciais verificadas', user: 'Trust Layer', time: 'há 10 min', desc: 'Revalidação periódica de integridade bem-sucedida.' },
-      { title: 'Rota de Cartão de Crédito ativada', user: 'Vinícius Admin', time: 'há 2 dias', desc: 'Checkout Pagar.me Padrão vinculado ao Sistema Core.' },
-      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 1 mês', desc: 'Cadastro de conta de recebimento acc_pagarme_001.' }
-    ]
-  },
-  {
-    id: 'mercadopago',
-    name: 'Mercado Pago',
-    provider: 'Mercado Pago',
-    desc: 'Provedor de Pix e carteiras',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '96,31%',
-    pp: '+0,8 p.p.',
-    uptime: '99,78%',
-    p95: '210ms',
-    reqs: '118 req/s',
-    conta: 'Mercado Pago BR',
-    contaId: 'acc_mp_002',
-    client_id: 'cli_live_mp_4492b02',
-    api_key: 'ak_live_mp_b89f81dfbc1a28a9b7c3e',
-    secret: 'sh_live_mp_8c8a1ef91bfb2b7b6a5d4c',
-    webhooks: [
-      { event: 'payment.succeeded', status: '200 OK', time: 'há 5 min', id: 'evt_mp_202' },
-      { event: 'payment.failed', status: '200 OK', time: 'há 12 min', id: 'evt_mp_201' },
-    ],
-    eventos: [
-      { title: 'Chave API atualizada', user: 'Vinícius Admin', time: 'há 3 dias', desc: 'Credenciais de produção rotacionadas para acc_mp_002.' },
-      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 2 meses', desc: 'Configuração da conta Mercado Pago BR.' }
-    ]
-  },
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    provider: 'Stripe',
-    desc: 'Infraestrutura global de pagamentos',
-    status: 'Atenção',
-    ambiente: 'Produção',
-    aprovacao: '92,15%',
-    pp: '-3,2 p.p.',
-    uptime: '98,21%',
-    p95: '430ms',
-    reqs: '86 req/s',
-    conta: 'Stripe Global',
-    contaId: 'acc_stripe_003',
-    client_id: 'cli_live_stripe_9930c03',
-    api_key: 'ak_live_stripe_c89f71efbc1b28a9b7c3e',
-    secret: 'sh_live_stripe_7c8a1ef91bfb2b7b6a5d4c',
-    webhooks: [
-      { event: 'payment.succeeded', status: '200 OK', time: 'há 14 min', id: 'evt_str_302' },
-      { event: 'charge.failed', status: '504 Gateway Timeout', time: 'há 14 min', id: 'evt_str_301' },
-    ],
-    eventos: [
-      { title: 'Timeout na autorização detectado', user: 'Trust Layer', time: 'há 14 min', desc: 'Latência do ping de checkout ultrapassou limite crítico de 4000ms.' },
-      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 3 meses', desc: 'Vinculação da conta Stripe Global acc_stripe_003.' }
-    ]
-  },
-  {
-    id: 'asaas',
-    name: 'Asaas',
-    provider: 'Asaas',
-    desc: 'Conta digital para boletos e Pix',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '97,08%',
-    pp: '+0,5 p.p.',
-    uptime: '99,95%',
-    p95: '165ms',
-    reqs: '74 req/s',
-    conta: 'Asaas Principal',
-    contaId: 'acc_asaas_004',
-    client_id: 'cli_live_asaas_1120a04',
-    api_key: 'ak_live_asaas_d89f61efbc1c28a9b7c3e',
-    secret: 'sh_live_asaas_6c8a1ef91bfb2b7b6a5d4c',
-    webhooks: [
-      { event: 'payment.succeeded', status: '200 OK', time: 'há 1 h', id: 'evt_asa_402' },
-    ],
-    eventos: [
-      { title: 'Gateway conectado', user: 'Vinícius Admin', time: 'há 4 meses', desc: 'Cadastro de conta digital de recebimento acc_asaas_004.' }
-    ]
-  },
-  {
-    id: 'cielo',
-    name: 'Cielo',
-    provider: 'Cielo',
-    desc: 'Adquirente tradicional de cartões',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '95,42%',
-    pp: '-0,9 p.p.',
-    uptime: '99,61%',
-    p95: '390ms',
-    reqs: '91 req/s',
-    conta: 'Cielo Principal',
-    contaId: 'acc_cielo_005',
-    client_id: 'cli_live_cielo_2220b05',
-    api_key: 'ak_live_cielo_e89f51efbc1d28a9b7c3e',
-    secret: 'sh_live_cielo_5c8a1ef91bfb2b7b6a5d4c',
-    webhooks: [
-      { event: 'payment.succeeded', status: '200 OK', time: 'há 3 h', id: 'evt_cie_502' },
-    ],
-    eventos: [
-      { title: 'Alerta de p95 elevado', user: 'Trust Layer', time: 'há 5 h', desc: 'Latência média superou p90 configurado de 350ms.' }
-    ]
-  },
-  {
-    id: 'adyen',
-    name: 'Adyen',
-    provider: 'Adyen',
-    desc: 'Plataforma unificada global',
-    status: 'Desativado',
-    ambiente: 'Sandbox',
-    aprovacao: '—',
-    pp: '—',
-    uptime: '0%',
-    p95: '—',
-    reqs: '0 req/s',
-    conta: 'Sem conta padrão',
-    contaId: '',
-    client_id: 'cli_sand_adyen_0982d06',
-    api_key: 'ak_sand_adyen_f89f41efbc1e28a9b7c3e',
-    secret: 'sh_sand_adyen_4c8a1ef91bfb2b7b6a5d4c',
-    webhooks: [],
-    eventos: [
-      { title: 'Gateway desativado', user: 'Vinícius Admin', time: 'há 1 semana', desc: 'Desativação manual devido a encerramento de período de testes.' }
-    ]
-  },
-  {
-    id: 'bb_pix',
-    name: 'Banco do Brasil PIX',
-    provider: 'Banco do Brasil PIX',
-    desc: 'Integração direta corporativa Pix',
-    status: 'Instável',
-    ambiente: 'Produção',
-    aprovacao: '89,27%',
-    pp: '-5,4 p.p.',
-    uptime: '95,12%',
-    p95: '890ms',
-    reqs: '62 req/s',
-    conta: 'BB PIX',
-    contaId: 'acc_bb_pix_006',
-    client_id: 'cli_live_bb_pix_3389a06',
-    api_key: 'ak_live_bb_pix_a89f31efbc1f28a9b7c3e',
-    secret: 'sh_live_bb_pix_3c8a1ef91bfb2b7b6a5d4c',
-    webhooks: [
-      { event: 'pix.received', status: '500 Server Error', time: 'há 28 min', id: 'evt_bb_602' },
-      { event: 'pix.received', status: '200 OK', time: 'há 1 h', id: 'evt_bb_601' },
-    ],
-    eventos: [
-      { title: 'Erros 500 recorrentes', user: 'Trust Layer', time: 'há 28 min', desc: 'Detecção de 12 falhas 500 seguidas no retorno do webhook do BB PIX.' }
-    ]
-  },
-  {
-    id: 'internal',
-    name: 'Internal Router',
-    provider: 'Internal Router',
-    desc: 'Roteador inteligente Basileia Pay',
-    status: 'Operacional',
-    ambiente: 'Produção',
-    aprovacao: '99,91%',
-    pp: '+0,1 p.p.',
-    uptime: '100%',
-    p95: '120ms',
-    reqs: '23 req/s',
-    erro: 'Sem erros recentes',
-    conta: 'Internal Router',
-    contaId: 'acc_internal_007',
-    client_id: 'cli_live_internal_0001a07',
-    api_key: 'ak_live_internal_f89f21efbc1a28a9b7c3e',
-    secret: 'sh_live_internal_2c8a1ef91bfb2b7b6a5d4c',
-    webhooks: [],
-    eventos: [
-      { title: 'Gateway conectado', user: 'Trust Layer', time: 'há 6 meses', desc: 'Roteador interno ativo para sistemas da empresa.' }
-    ]
-  }
-];
-
-// Methods Mock Data
-const methodsMock = [
-  { method: 'Cartão de Crédito', active: true, tax: '98,22%', fee: '2,99% + R$ 0,30', trans: 'há 2 min' },
-  { method: 'Pix Dinâmico', active: true, tax: '99,84%', fee: '0,99%', trans: 'há 4 min' },
-  { method: 'Boleto Bancário', active: true, tax: '94,50%', fee: 'R$ 1,80 fixo', trans: 'há 1 h' },
-  { method: 'Apple / Google Pay', active: false, tax: '—', fee: '3,29% + R$ 0,10', trans: 'Nunca' },
-];
-
-// Systems Linkage Mock Data
-const systemsMock = [
-  { name: 'Sistema Core', active: true, checkout: 'Checkout Pagar.Me Padrão', vol: 'R$ 1.849.200,00', share: '62%' },
-  { name: 'Assinaturas', active: true, checkout: 'Checkout Assinatura Pro', vol: 'R$ 840.100,00', share: '28%' },
-  { name: 'Eventos', active: false, checkout: 'Checkout Evento', vol: 'R$ 290.420,00', share: '10%' },
-];
+import { fetchGateway, updateGateway, testGatewayConnection } from '@/lib/api/gateways'
+import type { GatewayDetail, ConnectionResult } from '@/types/gateway'
 
 function ProviderLogo({ name }: { name: string }) {
   const letters = name.substring(0, 2).toUpperCase();
@@ -271,16 +44,94 @@ function ProviderLogo({ name }: { name: string }) {
   );
 }
 
+const STATUS_MAP: Record<string, string> = {
+  active: 'Ativo', inactive: 'Desativado', attention: 'Atenção',
+  unstable: 'Instável', testing: 'Teste',
+};
+
+const ENV_MAP: Record<string, string> = {
+  production: 'Produção', sandbox: 'Sandbox',
+};
+
+// Methods Mock Data (kept for now — no API equivalent)
+const methodsMock = [
+  { method: 'Cartão de Crédito', active: true, tax: '98,22%', fee: '2,99% + R$ 0,30', trans: 'há 2 min' },
+  { method: 'Pix Dinâmico', active: true, tax: '99,84%', fee: '0,99%', trans: 'há 4 min' },
+  { method: 'Boleto Bancário', active: true, tax: '94,50%', fee: 'R$ 1,80 fixo', trans: 'há 1 h' },
+  { method: 'Apple / Google Pay', active: false, tax: '—', fee: '3,29% + R$ 0,10', trans: 'Nunca' },
+];
+
+// Systems Linkage Mock Data (kept for now — no API equivalent)
+const systemsMock = [
+  { name: 'Sistema Core', active: true, checkout: 'Checkout Pagar.Me Padrão', vol: 'R$ 1.849.200,00', share: '62%' },
+  { name: 'Assinaturas', active: true, checkout: 'Checkout Assinatura Pro', vol: 'R$ 840.100,00', share: '28%' },
+  { name: 'Eventos', active: false, checkout: 'Checkout Evento', vol: 'R$ 290.420,00', share: '10%' },
+];
+
 export default function GatewayDetailPage() {
   const params = useParams();
-  const id = params?.id as string;
-  
-  // Find matching gateway details or fallback to Pagarme mock
-  const gw = useMemo(() => {
-    return gatewaysDetailsMocks.find(g => g.id === id) || gatewaysDetailsMocks[0];
-  }, [id]);
+  const uuid = params?.id as string;
 
-  const [statusActive, setStatusActive] = useState(gw.status !== 'Desativado');
+  const [data, setData] = useState<GatewayDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await fetchGateway(uuid)
+      setData(result)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao carregar gateway')
+    } finally {
+      setLoading(false)
+    }
+  }, [uuid])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const gw = useMemo(() => {
+    if (!data) return null
+    const g = data.gateway
+    const a = data.account
+    const h = data.health
+    const env = ENV_MAP[a.environment] || a.environment || 'Produção'
+    const status = STATUS_MAP[g.status] || g.status || 'Ativo'
+    const capKey = data.capabilities?.key || ''
+    const capMethods = data.capabilities?.methods || []
+    return {
+      id: a.uuid,
+      name: g.name || a.name,
+      provider: g.provider || a.gateway_type,
+      desc: capMethods.length ? capMethods.join(', ') : 'Gateway de Pagamento',
+      status,
+      ambiente: env,
+      aprovacao: h?.approval_rate != null ? `${h.approval_rate.toFixed(1)}%` : '—',
+      pp: '—',
+      uptime: h?.avg_latency_ms != null ? `${(100 - (h.failure_rate ?? 0) * 100).toFixed(1)}%` : '—',
+      p95: h?.avg_latency_ms != null ? `${h.avg_latency_ms}ms` : '—',
+      reqs: '—',
+      conta: a.name,
+      contaId: a.uuid?.substring(0, 8) || '—',
+      erro: '—',
+      client_id: '—',
+      api_key: '—',
+      secret: '—',
+      webhooks: [] as { event: string; status: string; time: string; id: string }[],
+      eventos: [] as { title: string; user: string; time: string; desc: string }[],
+      circuit_breaker: data.circuit_breaker,
+      capabilities: capMethods,
+    }
+  }, [data])
+
+  const [statusActive, setStatusActive] = useState(true)
+  useEffect(() => {
+    if (gw) setStatusActive(gw.status !== 'Desativado')
+  }, [gw])
+
   const [activeTab, setActiveTab] = useState<'resumo' | 'credenciais' | 'metodos' | 'sistemas' | 'webhooks' | 'testes' | 'eventos'>('resumo');
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
 
@@ -304,6 +155,7 @@ export default function GatewayDetailPage() {
 
   // Run isolated tab diagnostic tests
   const executeDiagnosticTest = (testType: string) => {
+    if (!gw) return
     setDiagnosticTask(testType);
     setDiagnosticStatus('running');
     setDiagnosticTerminal([
@@ -317,6 +169,7 @@ export default function GatewayDetailPage() {
     }, 800);
 
     setTimeout(() => {
+      if (!gw) return
       if (testType === 'auth_verify') {
         if (gw.status === 'Instável') {
           setDiagnosticStatus('failed');
@@ -354,6 +207,34 @@ export default function GatewayDetailPage() {
       }
     }, 2200);
   };
+
+  if (loading) {
+    return (
+      <div className="w-full animate-in fade-in duration-700 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="animate-spin text-brand w-8 h-8" />
+          <p className="text-slate-500 font-bold text-xs uppercase tracking-widest animate-pulse">Carregando gateway...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !gw) {
+    return (
+      <div className="w-full animate-in fade-in duration-700 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center text-red-500">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-slate-950 font-black text-base">Erro ao carregar gateway</h3>
+          <p className="text-slate-500 text-xs font-medium">{error || 'Gateway não encontrado'}</p>
+          <button onClick={fetchData} className="px-4 py-2 bg-brand text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider transition-all">
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-2.5 2xl:gap-3.5 relative min-h-0 select-none pb-4">
@@ -428,9 +309,16 @@ export default function GatewayDetailPage() {
               type="checkbox" 
               className="sr-only peer" 
               checked={statusActive}
-              onChange={() => {
-                setStatusActive(!statusActive);
-                triggerSuccessAlert(`Status do gateway alterado com sucesso!`);
+              onChange={async () => {
+                const newActive = !statusActive;
+                setStatusActive(newActive);
+                try {
+                  await updateGateway(uuid, { environment: newActive ? 'production' : 'sandbox' });
+                  triggerSuccessAlert(`Gateway ${newActive ? 'ativado' : 'desativado'} com sucesso!`);
+                } catch {
+                  setStatusActive(!newActive);
+                  triggerSuccessAlert('Erro ao alterar status do gateway.');
+                }
               }}
             />
             <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand"></div>
@@ -518,7 +406,14 @@ export default function GatewayDetailPage() {
                     <p className="text-[11.5px] font-black text-slate-900 truncate leading-snug">{gw.erro}</p>
                   </div>
                   <button 
-                    onClick={() => triggerSuccessAlert('Revalidação estática concluída com sucesso!')}
+                    onClick={async () => {
+                      try {
+                        const result = await testGatewayConnection(uuid);
+                        triggerSuccessAlert(result.success ? 'Gateway operacional!' : 'Falha na conexão.');
+                      } catch {
+                        triggerSuccessAlert('Erro ao testar conexão.');
+                      }
+                    }}
                     className="w-full mt-3 h-[30px] bg-white border border-[#E8DDFD] hover:bg-brand hover:text-white hover:border-brand rounded-xl text-[9.5px] font-black uppercase tracking-tight transition-all shadow-sm flex items-center justify-center gap-1.5"
                   >
                     <RefreshCw className="w-3 h-3" /> Revalidar status
@@ -546,7 +441,7 @@ export default function GatewayDetailPage() {
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{k.label}</span>
                   <div className="relative flex items-center border border-[#E8DDFD] rounded-2xl bg-[#FAF8FF] px-3.5 h-12 shadow-inner">
                     <span className="text-[12.5px] font-mono font-bold text-slate-700 truncate pr-8">
-                      {k.reveal ? k.val : k.val.substring(0, 8) + '••••••••••••••••••••••••'}
+                      {k.reveal ? k.val : '••••••••••••••••••••••••'}
                     </span>
                     <button 
                       onClick={() => k.setter(!k.reveal)}
@@ -562,7 +457,7 @@ export default function GatewayDetailPage() {
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Secret Key / Assinatura do Provedor</span>
                 <div className="relative flex items-center border border-[#E8DDFD] rounded-2xl bg-[#FAF8FF] px-3.5 h-12 shadow-inner">
                   <span className="text-[12.5px] font-mono font-bold text-slate-700 truncate pr-8">
-                    {revealSecret ? gw.secret : 'sh_live_••••••••••••••••••••••••••••••••••••••••••••'}
+                    {revealSecret ? gw.secret : '••••••••••••••••••••••••••••••••••••••••••••'}
                   </span>
                   <button 
                     onClick={() => setRevealSecret(!revealSecret)}
@@ -575,9 +470,9 @@ export default function GatewayDetailPage() {
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-3">
-              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 bg-green-50 border border-green-200/50 px-2.5 py-1 rounded-xl text-green-700 shadow-sm">
-                <ShieldCheck className="w-4 h-4 text-green-600 shrink-0" />
-                Integridade auditada e aprovada pelo Trust Layer
+              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 bg-[#FAF8FF] border border-[#E8DDFD] px-2.5 py-1 rounded-xl text-slate-600 shadow-sm">
+                <Key className="w-4 h-4 text-brand shrink-0" />
+                Credenciais gerenciadas pelo Gateway Engine
               </span>
 
               <div className="flex gap-2">

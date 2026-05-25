@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Search, 
   Bell, 
@@ -24,10 +25,14 @@ interface TopbarProps {
 
 export function Topbar({ title, description }: TopbarProps) {
   const { user, isMaster, logout } = useAuth();
+  const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [dark, setDark] = useState(() => {
     if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
+      const saved = localStorage.getItem('basileia-theme') || localStorage.getItem('basileia_theme');
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
   });
@@ -37,10 +42,12 @@ export function Topbar({ title, description }: TopbarProps) {
     setDark(next);
     if (next) {
       document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
     }
-    localStorage.setItem('basileia_theme', next ? 'dark' : 'light');
+    localStorage.setItem('basileia-theme', next ? 'dark' : 'light');
   };
 
   const roleLabel = (role: string) => {
@@ -67,6 +74,7 @@ export function Topbar({ title, description }: TopbarProps) {
         <input 
           type="text" 
           placeholder="Buscar transacao, cliente, pedido ou evento"
+          aria-label="Buscar"
           className="w-full bg-white/60 border border-border/50 rounded-xl pl-10 pr-10 py-1.5 2xl:py-2 text-[12px] 2xl:text-[13px] font-medium text-ink placeholder:text-slate/40 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 transition-all shadow-sm"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 px-1 py-0.5 bg-background border border-border rounded text-[9px] font-black text-slate/30 uppercase tracking-tighter">
@@ -80,14 +88,14 @@ export function Topbar({ title, description }: TopbarProps) {
       {/* Right Controls */}
       <div className="flex items-center gap-1.5 2xl:gap-3">
         {/* Notifications */}
-        <div className="relative p-1.5 2xl:p-2 text-slate/40 hover:text-brand hover:bg-brand-soft rounded-lg transition-all cursor-pointer">
+        <button onClick={() => router.push('/dashboard/trust')} className="relative p-1.5 2xl:p-2 text-slate/40 hover:text-brand hover:bg-brand-soft rounded-lg transition-all cursor-pointer" aria-label="Notificações">
           <Bell className="w-4.5 h-4.5" />
-        </div>
+        </button>
 
         {/* Theme Toggle */}
-        <div onClick={toggleTheme} className="p-1.5 2xl:p-2 text-slate/40 hover:text-brand hover:bg-brand-soft rounded-lg transition-all cursor-pointer">
+        <button onClick={toggleTheme} className="p-1.5 2xl:p-2 text-slate/40 hover:text-brand hover:bg-brand-soft rounded-lg transition-all cursor-pointer" aria-label="Alternar tema">
           {dark ? <Moon className="w-4.5 h-4.5" /> : <Sun className="w-4.5 h-4.5" />}
-        </div>
+        </button>
 
         <div className="h-6 w-px bg-border/40 mx-0.5 2xl:mx-1.5" />
 
@@ -117,10 +125,10 @@ export function Topbar({ title, description }: TopbarProps) {
                     <p className="text-[9px] font-bold text-brand mt-0.5">{roleLabel(user.role)}</p>
                   </div>
                 )}
-                <button className="w-full px-3 py-2 text-left text-[12px] font-bold text-ink hover:bg-brand-soft flex items-center gap-2">
+                <button onClick={() => { setShowUserMenu(false); router.push('/dashboard/settings'); }} className="w-full px-3 py-2 text-left text-[12px] font-bold text-ink hover:bg-brand-soft flex items-center gap-2">
                   <User className="w-3.5 h-3.5" /> Minha conta
                 </button>
-                <button className="w-full px-3 py-2 text-left text-[12px] font-bold text-ink hover:bg-brand-soft flex items-center gap-2">
+                <button onClick={() => { setShowUserMenu(false); router.push('/dashboard/settings'); }} className="w-full px-3 py-2 text-left text-[12px] font-bold text-ink hover:bg-brand-soft flex items-center gap-2">
                   <Settings className="w-3.5 h-3.5" /> Configuracoes
                 </button>
                 {isMaster && (

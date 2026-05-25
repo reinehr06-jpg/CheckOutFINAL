@@ -28,7 +28,19 @@ class Subscription extends Model
         'gateway_subscription_id',
         'metadata',
         'callback_url',
+        'retry_count',
         'cancelled_at',
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'interval' => 'integer',
+        'retry_count' => 'integer',
+        'current_period_start' => 'date',
+        'current_period_end' => 'date',
+        'next_billing_date' => 'date',
+        'cancelled_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     protected $appends = ['payment_url'];
@@ -51,6 +63,11 @@ class Subscription extends Model
     public function gateway(): BelongsTo
     {
         return $this->belongsTo(Gateway::class);
+    }
+
+    public function integration(): BelongsTo
+    {
+        return $this->belongsTo(Integration::class);
     }
 
     public function scopeActive($query)
