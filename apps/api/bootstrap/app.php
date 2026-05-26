@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // webhooks continua igual
         then: function () {
             \Illuminate\Support\Facades\Route::middleware('web')
+                ->group(base_path('routes/checkout.php'));
+
+            \Illuminate\Support\Facades\Route::middleware('web')
                 ->group(base_path('routes/webhook.php'));
 
             \Illuminate\Support\Facades\Route::middleware('api')
@@ -24,6 +27,18 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Exclui rotas de pagamento e processamento de verificação CSRF
+        $middleware->validateCsrfTokens(except: [
+            'checkout/process/*',
+            'checkout/pix/process/*',
+            'checkout/boleto/process/*',
+            'checkout/asaas/process/*',
+            'evento/*/pay',
+            'pay/*/process',
+            'webhooks/*',
+            'webhooks/checkout'
+        ]);
+
         // Global tracing for all requests
         $middleware->prepend(\App\Http\Middleware\RequestTracingMiddleware::class);
 
@@ -42,6 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Route middleware aliases
         $middleware->alias([
+            'api.auth' => \App\Http\Middleware\AuthenticateApi::class,
             'reauth' => \App\Http\Middleware\RequireReauth::class,
             'resolve.api.key' => \App\Http\Middleware\ResolveApiKey::class,
             'validate.session' => \App\Http\Middleware\ValidateSessionContext::class,

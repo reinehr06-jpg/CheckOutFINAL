@@ -45,7 +45,7 @@ class SendRecoveryEmailJob implements ShouldQueue
             'recovery_email_sent_at' => now(),
         ]);
 
-        $recoveryUrl = config('app.checkout_url') . '/pay/' . $session->session_token . '?recover=' . $rawToken;
+        $recoveryUrl = config('basileia.checkout_url') . '/pay/' . $session->session_token . '?recover=' . $rawToken;
 
         // Mock mail sending for now, or just log
         \Illuminate\Support\Facades\Log::info("E-mail de recuperação simulado para {$session->customer->email}: {$recoveryUrl}");

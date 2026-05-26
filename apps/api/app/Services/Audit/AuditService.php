@@ -22,17 +22,47 @@ class AuditService
         $user = Auth::user();
         $ip = Request::ip();
 
+        $previousLog = AuditLog::latest('id')->first();
+        $previousHash = $previousLog->record_hash ?? str_repeat('0', 64);
+
+        $uuid = (string) \Illuminate\Support\Str::uuid();
+        $companyId = $user?->company_id ?? $entity?->company_id ?? null;
+        $userId = $user?->id;
+        $entityType = $entity ? get_class($entity) : null;
+        $entityId = $entity ? $entity->id : null;
+        $ipHash = $this->hashIp($ip);
+        $userAgent = Request::userAgent();
+        $maskedMetadata = $this->maskSensitive($metadata);
+        $createdAt = now();
+
+        $dataToHash = json_encode([
+            'uuid' => $uuid,
+            'company_id' => $companyId,
+            'user_id' => $userId,
+            'event' => $event,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'ip_address_hash' => $ipHash,
+            'user_agent' => $userAgent,
+            'metadata' => $maskedMetadata,
+            'created_at' => $createdAt->toIso8601String(),
+        ]);
+
+        $recordHash = hash('sha256', $previousHash . $dataToHash);
+
         return AuditLog::create([
-            'uuid'              => \Illuminate\Support\Str::uuid(),
-            'company_id'        => $user?->company_id ?? $entity?->company_id ?? null,
-            'user_id'           => $user?->id,
+            'uuid'              => $uuid,
+            'company_id'        => $companyId,
+            'user_id'           => $userId,
             'event'             => $event,
-            'entity_type'       => $entity ? get_class($entity) : null,
-            'entity_id'         => $entity ? $entity->id : null,
-            'ip_address_hash'   => $this->hashIp($ip),
-            'user_agent'        => Request::userAgent(),
-            'metadata'          => $this->maskSensitive($metadata),
-            'created_at'        => now(),
+            'entity_type'       => $entityType,
+            'entity_id'         => $entityId,
+            'ip_address_hash'   => $ipHash,
+            'user_agent'        => $userAgent,
+            'metadata'          => $maskedMetadata,
+            'previous_hash'     => $previousHash,
+            'record_hash'       => $recordHash,
+            'created_at'        => $createdAt,
         ]);
     }
 

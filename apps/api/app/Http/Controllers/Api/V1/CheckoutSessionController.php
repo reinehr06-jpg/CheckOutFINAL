@@ -85,7 +85,7 @@ class CheckoutSessionController extends Controller
 
         $result = [
             'session_id'   => $session->uuid,
-            'checkout_url' => config('app.checkout_url') . '/pay/' . $sessionToken,
+            'checkout_url' => config('basileia.checkout_url') . '/pay/' . $sessionToken,
             'expires_at'   => $session->expires_at->toIso8601String(),
             'amount'       => $session->amount,
             'currency'     => $session->currency,
