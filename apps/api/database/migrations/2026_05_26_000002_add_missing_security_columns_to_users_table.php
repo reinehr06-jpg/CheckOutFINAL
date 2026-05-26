@@ -9,6 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            if (!Schema::hasColumn('users', 'email_verified_at')) {
+                $table->timestamp('email_verified_at')->nullable();
+            }
             if (!Schema::hasColumn('users', 'two_factor_enabled')) {
                 $table->boolean('two_factor_enabled')->default(false);
             }
@@ -41,6 +44,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $columnsToDrop = [];
             
+            if (Schema::hasColumn('users', 'email_verified_at')) $columnsToDrop[] = 'email_verified_at';
             if (Schema::hasColumn('users', 'two_factor_enabled')) $columnsToDrop[] = 'two_factor_enabled';
             if (Schema::hasColumn('users', 'two_factor_secret')) $columnsToDrop[] = 'two_factor_secret';
             if (Schema::hasColumn('users', 'two_factor_confirmed_at')) $columnsToDrop[] = 'two_factor_confirmed_at';
