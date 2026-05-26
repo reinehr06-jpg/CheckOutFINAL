@@ -15,6 +15,7 @@ RUN apk add --no-cache \
         libzip-dev \
         icu-dev \
         curl \
+        wget \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) \
         pdo_pgsql \
