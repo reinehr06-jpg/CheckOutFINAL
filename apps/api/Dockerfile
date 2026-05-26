@@ -73,9 +73,9 @@ RUN rm -rf \
         .github/
 
 # Create runtime directories
-RUN mkdir -p /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx /run \
-    && chown -R www-data:www-data /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx /run \
-    && chmod 755 /run
+RUN mkdir -p /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx \
+    && chown -R www-data:www-data /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx \
+    && chmod 755 /run /run/nginx
 
 VOLUME ["/var/www/html/storage"]
 
