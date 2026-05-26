@@ -4,7 +4,7 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     environment:
-      - FORCE_RESTART=1
+      - FORCE_RESTART=2
     ports:
       - "8000:8000"
     volumes:
