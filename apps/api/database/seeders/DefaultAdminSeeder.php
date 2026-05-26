@@ -30,6 +30,8 @@ class DefaultAdminSeeder extends Seeder
             $adminPassword = $this->command->secret('Digite a senha do Super Admin (deixe vazio para gerar uma senha aleatória)');
         }
 
+        $adminEmail = strtolower(trim($adminEmail ?? ''));
+
         // Fallbacks caso não seja interativo ou esteja vazio
         if (empty($adminEmail)) {
             $this->command->error('Erro: Nenhum e-mail de administrador foi fornecido.');
