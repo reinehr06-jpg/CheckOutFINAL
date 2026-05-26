@@ -29,20 +29,20 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
-      - APP_KEY=${APP_KEY}
+      - APP_KEY=${APP_KEY:-base64:v18Y00+MjO74hvN+KVoN/B5dnr3tyXmPXn0vr5YkOD8=}
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_DATABASE=${DB_DATABASE:-basileia}
       - DB_USERNAME=${DB_USERNAME:-basileia}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD:-basileia_secure_pass_2026}
       - SESSION_DRIVER=database
       - CACHE_STORE=database
       - QUEUE_CONNECTION=database
       - APP_URL=${APP_URL:-https://secure.basileia.global}
       - FRONTEND_URL=${FRONTEND_URL:-https://secure.basileia.global}
-      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS:-secure.basileia.global,localhost:3000,localhost:8000}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://secure.basileia.global,http://localhost:3000,http://localhost:8000}
       - SENTRY_LARAVEL_DSN=${SENTRY_LARAVEL_DSN:-}
       - SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE:-0.1}
     depends_on:
