@@ -77,7 +77,7 @@ RUN mkdir -p /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx /run
     && chown -R www-data:www-data /var/log/php-fpm /var/log/nginx /var/log/supervisor /run/nginx /run \
     && chmod 755 /run
 
-VOLUME ["/var/www/html/storage", "/var/log", "/var/run"]
+VOLUME ["/var/www/html/storage"]
 
 EXPOSE 8000
 
