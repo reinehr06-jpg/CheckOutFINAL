@@ -40,7 +40,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
+ENV NEXT_TELEMETRY_DISABLED=1
+
 USER nextjs
 
 EXPOSE 3000
-CMD sh -c "npx next start -H 0.0.0.0 -p 3000 > /tmp/index.html 2>&1 || httpd -f -p 3000 -h /tmp"
+CMD ["npm", "start"]
