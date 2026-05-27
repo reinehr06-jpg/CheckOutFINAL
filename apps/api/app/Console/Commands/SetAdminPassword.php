@@ -28,15 +28,29 @@ class SetAdminPassword extends Command
     public function handle(): int
     {
         $email = $this->argument('email');
-        $user = User::where('email', $email)->first();
+        // Busca case-insensitive
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower(trim($email))])->first();
 
         if (!$user) {
             $this->error("❌ Usuário não encontrado: {$email}");
             return self::FAILURE;
         }
 
-        // [BUG-13] Nunca usa senha hardcoded
-        $password = $this->option('password') ?? $this->generateStrongPassword();
+        $password = $this->option('password');
+        $generated = false;
+
+        if (empty($password)) {
+            if ($this->confirm('Deseja digitar a nova senha manualmente?', true)) {
+                $password = $this->secret('Digite a nova senha para o usuário (mínimo 12 caracteres)');
+                while (empty($password) || strlen($password) < 12) {
+                    $this->error('❌ A senha deve ter no mínimo 12 caracteres.');
+                    $password = $this->secret('Digite a nova senha para o usuário (mínimo 12 caracteres)');
+                }
+            } else {
+                $password = $this->generateStrongPassword();
+                $generated = true;
+            }
+        }
 
         if (strlen($password) < 12) {
             $this->error('❌ A senha deve ter no mínimo 12 caracteres.');
@@ -45,11 +59,14 @@ class SetAdminPassword extends Command
 
         $user->update(['password' => Hash::make($password)]);
 
-        $this->info("✅ Senha atualizada para: {$email}");
+        $this->info("✅ Senha atualizada com sucesso para: {$user->email}");
 
-        if (!$this->option('password')) {
-            $this->warn("🔑 Senha gerada: {$password}");
-            $this->warn("   ⚠️  Salve agora — não será mostrada novamente.");
+        if ($generated) {
+            $this->line("--------------------------------------------------");
+            $this->warn("🔑 SENHA GERADA COM SEGURANÇA:");
+            $this->info($password);
+            $this->line("--------------------------------------------------");
+            $this->warn("⚠️  Salve esta senha agora — ela não será mostrada novamente.");
         }
 
         return self::SUCCESS;
