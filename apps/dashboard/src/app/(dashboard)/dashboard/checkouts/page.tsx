@@ -206,7 +206,7 @@ export default function CheckoutsPage() {
           </button>
           
           <button 
-            onClick={() => router.push('/dashboard/checkouts/studio')}
+            onClick={() => router.push('/dashboard/checkouts/new')}
             className="flex items-center gap-1.5 px-4 py-1.5 bg-brand text-white rounded-xl text-[10px] 2xl:text-[11px] font-black shadow-lg shadow-brand/10 hover:shadow-brand/35 hover:-translate-y-0.5 transition-all active:translate-y-0 uppercase tracking-tight h-[34px] 2xl:h-[36px]"
           >
             <Plus className="w-3.5 h-3.5 text-white/80" />
@@ -253,7 +253,7 @@ export default function CheckoutsPage() {
             </p>
           </div>
           <button 
-            onClick={() => router.push('/dashboard/checkouts/studio')}
+            onClick={() => router.push('/dashboard/checkouts/new')}
             className="px-5 py-2.5 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all"
           >
             Criar primeiro checkout
@@ -478,7 +478,7 @@ export default function CheckoutsPage() {
                             </button>
 
                             <button 
-                              onClick={() => router.push('/dashboard/checkouts/studio')}
+                              onClick={() => router.push(`/dashboard/checkouts/${chk.id}/studio`)}
                               className="h-[28px] px-2.5 border border-[#E8DDFD] bg-white hover:bg-slate-50 transition-all rounded-lg text-[9.5px] font-black text-slate-700"
                             >
                               Abrir no Studio
@@ -487,7 +487,7 @@ export default function CheckoutsPage() {
                         ) : chk.status === 'Rascunho' ? (
                           <>
                             <button 
-                              onClick={() => router.push('/dashboard/checkouts/studio')}
+                              onClick={() => router.push(`/dashboard/checkouts/${chk.id}/studio`)}
                               className="h-[28px] px-2.5 border border-[#E8DDFD] bg-white hover:bg-slate-50 transition-all rounded-lg text-[9.5px] font-black text-slate-700"
                             >
                               Editar
@@ -508,7 +508,7 @@ export default function CheckoutsPage() {
                         ) : (
                           <>
                             <button 
-                              onClick={() => router.push('/dashboard/checkouts/studio')}
+                              onClick={() => router.push(`/dashboard/checkouts/${chk.id}/studio`)}
                               className="h-[28px] px-2.5 border border-[#E8DDFD] bg-white hover:bg-slate-50 transition-all rounded-lg text-[9.5px] font-black text-slate-700"
                             >
                               Editar
@@ -520,7 +520,7 @@ export default function CheckoutsPage() {
                               Duplicar
                             </button>
                             <button 
-                              onClick={() => router.push('/dashboard/checkouts/studio')}
+                              onClick={() => router.push(`/dashboard/checkouts/${chk.id}/studio`)}
                               className="h-[28px] px-3 bg-[#FAF8FF] border border-brand/20 text-brand hover:bg-brand hover:text-white transition-all rounded-lg text-[9.5px] font-black flex items-center gap-1 shadow-sm"
                             >
                               Abrir no Studio
@@ -652,14 +652,14 @@ export default function CheckoutsPage() {
                           <td className="pl-2 pr-3 py-3.5 min-w-0 overflow-hidden">
                             <div className="flex items-center gap-1 relative">
                               <button 
-                                onClick={() => router.push('/dashboard/checkouts/studio')}
-                                className="h-[34px] px-2.5 border border-[#E8DDFD] bg-white hover:bg-slate-50 hover:border-brand/40 transition-all rounded-xl text-[10px] font-black text-slate-950 shrink-0"
+                                onClick={() => router.push(`/dashboard/checkouts/${chk.id}/studio`)}
+                                className="h-[34px] px-2.5 border border-[#E8DDFD] bg-white hover:bg-slate-50 hover:border-brand/40 transition-all rounded-xl text-[10px] font-black text-slate-955 shrink-0"
                               >
                                 Editar
                               </button>
                               
                               <button 
-                                onClick={() => router.push('/dashboard/checkouts/studio')}
+                                onClick={() => router.push(`/dashboard/checkouts/${chk.id}/studio`)}
                                 className="h-[34px] px-2.5 bg-brand/10 border border-brand/20 text-brand hover:bg-brand hover:text-white transition-all rounded-xl text-[10px] font-black shrink-0 flex items-center gap-1 uppercase tracking-tight"
                               >
                                 Studio <ArrowUpRight className="w-2.5 h-2.5" />

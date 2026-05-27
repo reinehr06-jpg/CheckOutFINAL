@@ -22,7 +22,21 @@ export function StudioIframe({ checkoutId, className }: StudioIframeProps) {
   const [error, setError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  const studioUrl = process.env.NEXT_PUBLIC_CHECKOUT_STUDIO_URL || 'http://localhost:5173';
+  const studioUrl = process.env.NEXT_PUBLIC_CHECKOUT_STUDIO_URL || '/studio';
+
+  const getOrigin = (url: string) => {
+    try {
+      if (url.startsWith('/')) {
+        if (typeof window !== 'undefined') {
+          return window.location.origin;
+        }
+        return '';
+      }
+      return new URL(url).origin;
+    } catch {
+      return '';
+    }
+  };
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -32,7 +46,8 @@ export function StudioIframe({ checkoutId, className }: StudioIframeProps) {
   // Listen for postMessage from checkout-studio
   useEffect(() => {
     const handler = (event: MessageEvent) => {
-      if (event.origin !== studioUrl) return;
+      const originToCheck = getOrigin(studioUrl);
+      if (event.origin !== originToCheck) return;
       const { type, payload } = event.data || {};
       switch (type) {
         case 'STUDIO_SAVED':
@@ -49,9 +64,10 @@ export function StudioIframe({ checkoutId, className }: StudioIframeProps) {
           // Send auth token and checkout ID to the iframe
           const token = window.__studioToken || '';
           if (iframeRef.current?.contentWindow) {
+            const targetOrigin = studioUrl.startsWith('/') ? window.location.origin : studioUrl;
             iframeRef.current.contentWindow.postMessage(
               { type: 'STUDIO_INIT', payload: { token, checkoutId } },
-              studioUrl
+              targetOrigin
             );
           }
           break;

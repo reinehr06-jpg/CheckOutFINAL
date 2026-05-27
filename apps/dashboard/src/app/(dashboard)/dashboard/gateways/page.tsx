@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Plus, 
   Download, 
@@ -92,6 +93,7 @@ function apiGatewayToPage(g: any) {
 }
 
 export default function GatewaysPage() {
+  const router = useRouter();
   const [gateways, setGateways] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,11 +138,8 @@ export default function GatewaysPage() {
   const [disablingGateway, setDisablingGateway] = useState<any | null>(null);
 
   // Gateway Connection Wizard state
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [wizardKey, setWizardKey] = useState(0);
   const openWizard = () => {
-    setWizardKey(k => k + 1);
-    setWizardOpen(true);
+    router.push('/dashboard/gateways/new');
   };
 
   // Pagination current page
@@ -307,8 +306,7 @@ export default function GatewaysPage() {
         </div>
       )}
 
-      {/* 3. Gateway Connection Wizard */}
-      <GatewayConnectionWizard key={wizardKey} open={wizardOpen} onClose={() => setWizardOpen(false)} onSuccess={fetchGateways} />
+      {/* 3. Gateway Connection Wizard (Moved to page /dashboard/gateways/new) */}
 
       {/* 4. Connection Test Modal */}
       {testingGateway && (
