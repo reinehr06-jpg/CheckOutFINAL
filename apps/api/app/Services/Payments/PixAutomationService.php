@@ -3,7 +3,7 @@
 namespace App\Services\Payments;
 
 use App\Models\Payment;
-use App\Services\Gateways\GatewayFactory;
+use App\Services\Gateway\GatewayFactory;
 use Illuminate\Support\Facades\Log;
 
 class PixAutomationService

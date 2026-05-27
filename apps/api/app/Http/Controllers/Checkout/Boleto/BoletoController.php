@@ -39,8 +39,10 @@ class BoletoController extends AbstractCheckoutController
      * @param ProcessBoletoPaymentRequest $request Requisição validada.
      * @param string                      $uuid    UUID da transação.
      */
-    public function process(ProcessBoletoPaymentRequest $request, string $uuid): mixed
+    public function process(string $uuid, Request $request): mixed
     {
+        app(ProcessBoletoPaymentRequest::class);
+
         $resource = CheckoutService::findResource($uuid);
         $transaction = $resource instanceof Transaction ? $resource : null;
 

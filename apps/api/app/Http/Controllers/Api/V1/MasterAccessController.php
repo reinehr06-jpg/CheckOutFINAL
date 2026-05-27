@@ -230,7 +230,7 @@ class MasterAccessController extends Controller
        Camada 4 — Login com Session Binding
        ═══════════════════════════════════════ */
 
-    public function validate(Request $request): JsonResponse
+    public function validateMaster(Request $request): JsonResponse
     {
         $data = $request->validate([
             'email' => 'required|email',

@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Basileia;
 
 use App\Models\GatewayAccount;
-use App\Services\Gateways\GatewayFactory;
+use App\Services\Gateway\GatewayFactory;
 use Illuminate\Console\Command;
 
 class TestGatewaysCommand extends Command

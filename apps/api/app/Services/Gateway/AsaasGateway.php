@@ -223,10 +223,12 @@ class AsaasGateway implements GatewayInterface
         ];
     }
 
-    public function createSubscription(array $input, string $customerId): array
+    public function createSubscription(array $input, ?string $customerId = null): array
     {
+        $resolvedCustomerId = $customerId ?? $input['customer'] ?? $input['customer_id'] ?? $input['customerId'] ?? '';
+
         $payload = [
-            'customer' => $customerId,
+            'customer' => $resolvedCustomerId,
             'billingType' => $input['billingType'] ?? 'CREDIT_CARD',
             'value' => round((float) $input['amountBRL'], 2),
             'nextDueDate' => now()->addMonth()->format('Y-m-d'),

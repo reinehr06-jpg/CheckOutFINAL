@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')
     ->middleware(['api', 'ip.allowlist', MasterRateLimiter::class])
     ->group(function () {
-        Route::post('auth/master/validate', [MasterAccessController::class, 'validate']);
+        Route::post('auth/master/validate', [MasterAccessController::class, 'validateMaster']);
 
         Route::get('master/link/{token}', [MasterAccessController::class, 'consumeLink'])
             ->name('master.link.consume');

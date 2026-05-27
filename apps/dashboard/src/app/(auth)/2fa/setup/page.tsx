@@ -118,17 +118,6 @@ export default function TwoFactorSetupPage() {
     }
   };
 
-  if (step === 'loading') {
-    return (
-      <div className="min-h-screen bg-gradient-to-tr from-[#FAF8FF] via-[#F4EFFF] to-[#FCFAFF] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-400">
-          <div className="w-5 h-5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
-          <span className="text-xs font-black uppercase tracking-wider">Preparando setup 2FA...</span>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-tr from-[#FAF8FF] via-[#F4EFFF] to-[#FCFAFF] flex items-center justify-center p-4">
@@ -140,6 +129,17 @@ export default function TwoFactorSetupPage() {
             className="px-6 py-2.5 bg-brand text-white rounded-xl text-xs font-black uppercase tracking-wider">
             Pular por enquanto
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-tr from-[#FAF8FF] via-[#F4EFFF] to-[#FCFAFF] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-400">
+          <div className="w-5 h-5 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
+          <span className="text-xs font-black uppercase tracking-wider">Preparando setup 2FA...</span>
         </div>
       </div>
     );

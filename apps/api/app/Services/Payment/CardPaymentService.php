@@ -2,7 +2,7 @@
 
 namespace App\Services\Payment;
 
-use App\Services\Gateways\GatewayFactory;
+use App\Services\Gateway\GatewayFactory;
 use App\Models\GatewayAccount;
 use App\Models\Order;
 use App\Helpers\PaymentStatusMapper;

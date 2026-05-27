@@ -7,7 +7,7 @@ use App\Models\CheckoutSession;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentAttempt;
-use App\Services\Gateways\GatewayFactory;
+use App\Services\Gateway\GatewayFactory;
 use App\Services\Security\IdempotencyService;
 use App\Services\Security\SensitiveDataMasker;
 use App\Services\Memory\MemoryResolverService;

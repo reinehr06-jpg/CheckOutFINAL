@@ -39,8 +39,10 @@ class CardController extends AbstractCheckoutController
      * @param ProcessCardPaymentRequest $request Requisição validada.
      * @param string                    $uuid    UUID da transação.
      */
-    public function process(ProcessCardPaymentRequest $request, string $uuid): mixed
+    public function process(string $uuid, Request $request): mixed
     {
+        app(ProcessCardPaymentRequest::class);
+
         $resource = CheckoutService::findResource($uuid);
         $transaction = $resource instanceof Transaction ? $resource : null;
 

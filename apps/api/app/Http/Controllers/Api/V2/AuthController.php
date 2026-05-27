@@ -241,7 +241,12 @@ class AuthController extends Controller
         $service = app(TwoFactorAuthService::class);
         $secret = $service->generateSecret();
         $user->update(['two_factor_secret' => $secret]);
-        $qrCodeUrl = $service->generateQRCodeUrl($user);
+        $otpUrl = $service->generateQRCodeUrl($user);
+
+        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(200)
+            ->color(30, 21, 56)
+            ->generate($otpUrl);
+        $qrCodeUrl = 'data:image/svg+xml;base64,' . base64_encode($svg);
 
         return response()->json([
             'success' => true,
