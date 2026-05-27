@@ -64,6 +64,7 @@ services:
 
   # ── Dashboard (frontend) ──
   dashboard:
+    container_name: check-out-dashboard-v2
     build:
       context: ./apps/dashboard
       dockerfile: Dockerfile
