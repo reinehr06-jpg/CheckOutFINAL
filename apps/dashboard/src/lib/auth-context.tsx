@@ -103,9 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const data = await res.json();
-        const newAccess = data.access_token || data.token;
-        const newRefresh = data.refresh_token;
-        const newExpiresAt = data.expires_at;
+        const newAccess = data.access_token || data.data?.access_token || data.token || data.data?.token;
+        const newRefresh = data.refresh_token || data.data?.refresh_token;
+        const newExpiresAt = data.expires_at || data.data?.expires_at;
 
         if (newAccess && newRefresh) {
           setTokens(newAccess, newRefresh, newExpiresAt);

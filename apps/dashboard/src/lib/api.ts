@@ -100,9 +100,9 @@ async function refreshAccessToken(): Promise<string> {
   }
 
   const data = await res.json();
-  const newAccessToken = data.access_token || data.token;
-  const newRefreshToken = data.refresh_token;
-  const expiresAt = data.expires_at;
+  const newAccessToken = data.access_token || data.data?.access_token || data.token || data.data?.token;
+  const newRefreshToken = data.refresh_token || data.data?.refresh_token;
+  const expiresAt = data.expires_at || data.data?.expires_at;
 
   if (!newAccessToken || !newRefreshToken) {
     clearTokens();
