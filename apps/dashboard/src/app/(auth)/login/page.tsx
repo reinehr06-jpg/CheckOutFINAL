@@ -107,15 +107,6 @@ export default function LoginPage() {
 
       // Auth via httpOnly cookie (set by server), no localStorage storage
 
-      // Se é super_admin e não tem 2FA ativado, vai direto pro dashboard
-      if (data.data.user.role === 'super_admin' && !data.data.user.two_factor_enabled) {
-        triggerToast('Login super admin realizado!');
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 500);
-        return;
-      }
-
       // Se precisa configurar 2FA, vai para setup
       if (data.needs_2fa_setup) {
         triggerToast('Configure a autenticação de dois fatores para continuar.');
@@ -898,6 +889,17 @@ export default function LoginPage() {
               <div className="w-7 h-7 bg-white rounded-full border border-[#E8DDFD] shadow-sm flex items-center justify-center z-10 shrink-0">
                 <Shield className="w-3.5 h-3.5 text-brand" />
               </div>
+            </div>
+
+            {/* Register section footer */}
+            <div className="text-center text-xs font-semibold text-slate-500 pb-1">
+              Não possui uma conta?{' '}
+              <Link 
+                href="/register"
+                className="text-brand font-black hover:underline"
+              >
+                Cadastre-se grátis
+              </Link>
             </div>
 
             {/* Support section footer */}

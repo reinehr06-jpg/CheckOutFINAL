@@ -36,6 +36,8 @@
   --color-danger:        #DC2626;
   --color-info:          #2563EB;
   
+  --gradient-glow:       rgba(255, 255, 255, 0.8);
+  
   background-color: var(--color-background);
   color: var(--color-ink);
 }
@@ -50,6 +52,8 @@
   --color-muted:         #64748B;
   --color-brand:         #8B5CF6;
   --color-brand-deep:    #7C3AED;
+  --color-brand-soft:    rgba(139, 92, 246, 0.15);
+  --gradient-glow:       rgba(13, 13, 18, 0.5);
 }
 
 body {
@@ -60,7 +64,7 @@ body {
   background-image: 
     radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.05) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.8) 0px, transparent 100%);
+    radial-gradient(at 50% 50%, var(--gradient-glow) 0px, transparent 100%);
   background-attachment: fixed;
   color: var(--color-ink);
   font-size: 14px;
@@ -75,6 +79,6 @@ body {
 }
 
 .card-premium {
-  @apply bg-white/90 backdrop-blur-xl border border-[var(--color-border)] rounded-[24px] shadow-sm hover:shadow-md transition-all duration-300;
+  @apply bg-surface/90 backdrop-blur-xl border border-[var(--color-border)] rounded-[24px] shadow-sm hover:shadow-md transition-all duration-300;
 }
 

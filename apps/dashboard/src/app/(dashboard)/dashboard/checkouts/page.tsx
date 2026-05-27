@@ -777,6 +777,7 @@ export default function CheckoutsPage() {
           {/* 6. Bottom Summary Section (Status, Activities, Attention) */}
           <section className="w-full mt-0.5 shrink-0">
             <CheckoutsSummary 
+              checkouts={checkouts}
               onFilterStatus={(st) => {
                 let mappedTab: 'Todos' | 'Publicados' | 'Rascunhos' | 'Pausados' = 'Todos';
                 if (st === 'Publicado') mappedTab = 'Publicados';

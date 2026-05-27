@@ -59,9 +59,17 @@ export default function App() {
   useEffect(() => {
     const handler = async (event: MessageEvent) => {
       const { type, payload } = event.data || {};
-      if (type === 'STUDIO_INIT' && payload?.token) {
-        localStorage.setItem('basileia_token', payload.token);
-        if (payload.checkoutId) {
+      if (type === 'STUDIO_INIT') {
+        if (payload?.token) {
+          localStorage.setItem('basileia_token', payload.token);
+        }
+        if (payload?.csrfToken) {
+          localStorage.setItem('basileia_csrf_token', payload.csrfToken);
+        }
+        if (payload?.apiUrl) {
+          localStorage.setItem('basileia_api_url', payload.apiUrl);
+        }
+        if (payload?.checkoutId) {
           await loadCheckoutRef.current(payload.checkoutId);
         }
       }

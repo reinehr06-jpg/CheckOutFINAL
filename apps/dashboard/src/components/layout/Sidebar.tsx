@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
+import { apiFetch } from '@/lib/api';
 
 const menuGroups = [
   {
@@ -62,8 +63,28 @@ const menuGroups = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, isMaster, logout } = useAuth();
+  const { user, isMaster, logout, activeCompanyId } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [checkoutStats, setCheckoutStats] = useState({ published: 0, draft: 0, paused: 0, archived: 0 });
+
+  useEffect(() => {
+    if (!user) return;
+    apiFetch<any[]>('/api/v1/checkouts')
+      .then((res) => {
+        if (res.success && Array.isArray(res.data)) {
+          const stats = { published: 0, draft: 0, paused: 0, archived: 0 };
+          res.data.forEach((c: any) => {
+            const status = c.status?.toLowerCase();
+            if (status === 'published' || status === 'publicado') stats.published++;
+            else if (status === 'draft' || status === 'rascunho') stats.draft++;
+            else if (status === 'paused' || status === 'pausado') stats.paused++;
+            else if (status === 'archived' || status === 'arquivado') stats.archived++;
+          });
+          setCheckoutStats(stats);
+        }
+      })
+      .catch(() => {});
+  }, [user, activeCompanyId]);
 
   const roleLabel = (role: string) => {
     switch (role) {
@@ -78,7 +99,7 @@ export function Sidebar() {
 
   return (
     <aside className="w-[228px] 2xl:w-[260px] h-screen fixed left-1.5 2xl:left-2.5 top-1.5 2xl:top-2.5 bottom-1.5 2xl:bottom-2.5 flex flex-col z-20 transition-all duration-300">
-      <div className="flex-1 bg-white/70 backdrop-blur-xl border border-border rounded-[24px] flex flex-col overflow-hidden shadow-2xl shadow-brand/5">
+      <div className="flex-1 bg-surface/70 backdrop-blur-xl border border-border rounded-[24px] flex flex-col overflow-hidden shadow-2xl shadow-brand/5">
         {/* Brand */}
         <div className="p-5 pb-2 flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-brand to-brand-accent rounded-xl flex items-center justify-center shadow-lg shadow-brand/20">
@@ -164,23 +185,23 @@ export function Sidebar() {
 
         {/* RESUMO widget */}
         {!pathname.startsWith('/dashboard/settings') && (
-          <div className="mx-2.5 mb-2.5 p-3.5 rounded-[16px] border border-[#E8DDFD] bg-white/60 text-left shadow-sm">
+          <div className="mx-2.5 mb-2.5 p-3.5 rounded-[16px] border border-border bg-surface/65 text-left shadow-sm">
             <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-widest block mb-2.5">
               Resumo
             </span>
             <div className="space-y-1.5">
               {[
-                { label: 'Publicados', val: '8', color: 'bg-emerald-500' },
-                { label: 'Rascunhos', val: '3', color: 'bg-orange-500' },
-                { label: 'Pausados', val: '1', color: 'bg-amber-500' },
-                { label: 'Arquivados', val: '2', color: 'bg-slate-400' }
+                { label: 'Publicados', val: checkoutStats.published.toString(), color: 'bg-emerald-500' },
+                { label: 'Rascunhos', val: checkoutStats.draft.toString(), color: 'bg-orange-500' },
+                { label: 'Pausados', val: checkoutStats.paused.toString(), color: 'bg-amber-500' },
+                { label: 'Arquivados', val: checkoutStats.archived.toString(), color: 'bg-slate-400' }
               ].map((res) => (
                 <div key={res.label} className="flex items-center justify-between text-[11px] font-bold text-slate-500">
                   <div className="flex items-center gap-1.5">
                     <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", res.color)} />
                     <span>{res.label}</span>
                   </div>
-                  <span className="font-extrabold text-slate-800">{res.val}</span>
+                  <span className="font-extrabold text-slate-800 dark:text-ink">{res.val}</span>
                 </div>
               ))}
             </div>

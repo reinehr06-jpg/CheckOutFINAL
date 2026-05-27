@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getCsrfToken } from '@/lib/api';
 
 interface StudioIframeProps {
   checkoutId?: string;
@@ -63,10 +64,20 @@ export function StudioIframe({ checkoutId, className }: StudioIframeProps) {
           setLoading(false);
           // Send auth token and checkout ID to the iframe
           const token = window.__studioToken || '';
+          const csrfToken = getCsrfToken();
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
           if (iframeRef.current?.contentWindow) {
             const targetOrigin = studioUrl.startsWith('/') ? window.location.origin : studioUrl;
             iframeRef.current.contentWindow.postMessage(
-              { type: 'STUDIO_INIT', payload: { token, checkoutId } },
+              { 
+                type: 'STUDIO_INIT', 
+                payload: { 
+                  token, 
+                  checkoutId,
+                  csrfToken,
+                  apiUrl
+                } 
+              },
               targetOrigin
             );
           }
