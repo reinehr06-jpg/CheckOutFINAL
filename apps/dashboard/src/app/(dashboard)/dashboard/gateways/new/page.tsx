@@ -26,6 +26,7 @@ export default function NewGatewayPage() {
   const [testResult, setTestResult] = useState<'success' | 'failed' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingCaps, setLoadingCaps] = useState(true);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCapabilities()
@@ -37,6 +38,14 @@ export default function NewGatewayPage() {
   const handleSelectProvider = (key: string) => {
     setSelectedProvider(key);
     setName(PROVIDER_META[key]?.name || key);
+    
+    // Auto-generate a secure random token for the gateway webhook validation
+    const token = crypto.randomUUID().replace(/-/g, '');
+    setCredentials({
+      webhook_token: token,
+      sandbox: '1',
+    });
+    
     setStep('configure');
   };
 
@@ -72,6 +81,17 @@ export default function NewGatewayPage() {
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      {copiedText && (
+        <div className="fixed top-6 right-6 z-50 bg-brand text-white p-3.5 rounded-2xl shadow-xl border border-brand/50 flex items-center justify-between gap-3 max-w-sm animate-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-white shrink-0" />
+            <span className="text-[11.5px] font-bold">{copiedText}</span>
+          </div>
+          <button onClick={() => setCopiedText(null)} className="p-0.5 text-white/70 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
       {/* Header */}
       <header className="flex items-center gap-3">
         <button
@@ -237,6 +257,18 @@ export default function NewGatewayPage() {
                   />
                   <p className="text-[9px] font-bold text-slate-400 pl-1">Digite 1 se estiver usando credenciais de testes (Sandbox).</p>
                 </div>
+
+                <div className="space-y-1 pt-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider pl-1">Token de Webhook (Autorização)</label>
+                  <input
+                    type="text"
+                    placeholder="Token de Webhook"
+                    value={credentials.webhook_token || ''}
+                    onChange={e => handleCredentialChange('webhook_token', e.target.value)}
+                    className="w-full h-12 px-4 bg-slate-50 border border-[#E8DDFD] rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:border-brand focus:bg-white transition-all shadow-sm"
+                  />
+                  <p className="text-[9px] font-bold text-slate-400 pl-1">Token de segurança para validar os webhooks deste gateway no Basileia Pay.</p>
+                </div>
               </div>
               <p className="text-[10px] font-bold text-slate-400 mt-2">
                 As credenciais são criptografadas em repouso e nunca armazenadas em texto puro.
@@ -284,6 +316,64 @@ export default function NewGatewayPage() {
                   <p className="text-xs font-bold text-red-600/80 mt-1">
                     {error || 'Não foi possível autenticar com as credenciais fornecidas.'}
                   </p>
+                </div>
+              </div>
+            )}
+
+            {testResult === 'success' && selectedProvider && (
+              <div className="bg-brand-soft/20 border border-[#E8DDFD] p-6 rounded-3xl space-y-4 text-left">
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Configuração de Webhook Obrigatória</h3>
+                  <p className="text-[11px] text-slate-500 font-bold mt-1">
+                    Configure os dados abaixo no painel do seu gateway ({PROVIDER_META[selectedProvider]?.name || selectedProvider}) para receber notificações de pagamentos em tempo real:
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">URL do Webhook</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/gateway/${selectedProvider}` : `/api/v1/webhooks/gateway/${selectedProvider}`}
+                        className="flex-1 h-9 px-3 bg-slate-50 border border-[#E8DDFD] rounded-xl text-[10.5px] font-mono text-slate-600 select-all focus:outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          const url = typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/gateway/${selectedProvider}` : `/api/v1/webhooks/gateway/${selectedProvider}`;
+                          navigator.clipboard.writeText(url);
+                          setCopiedText('URL do webhook copiada!');
+                          setTimeout(() => setCopiedText(null), 3000);
+                        }}
+                        className="px-3 h-9 bg-slate-100 hover:bg-slate-200 border border-[#E8DDFD] rounded-xl text-[10px] font-black uppercase text-slate-700 transition-colors"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Token de Autorização (asaas-access-token)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={credentials.webhook_token || ''}
+                        className="flex-1 h-9 px-3 bg-slate-50 border border-[#E8DDFD] rounded-xl text-[10.5px] font-mono text-slate-600 select-all focus:outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(credentials.webhook_token || '');
+                          setCopiedText('Token do webhook copiado!');
+                          setTimeout(() => setCopiedText(null), 3000);
+                        }}
+                        className="px-3 h-9 bg-slate-100 hover:bg-slate-200 border border-[#E8DDFD] rounded-xl text-[10px] font-black uppercase text-slate-700 transition-colors"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

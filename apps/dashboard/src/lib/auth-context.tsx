@@ -69,6 +69,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Load active company from cookie
       const match = document.cookie.match(/(?:^|;\s*)basileia_active_company=(\d+)/);
       if (match) setActiveCompanyId(Number(match[1]));
+
+      // Fetch companies list for super_admin users to populate switcher on refresh
+      if (userData.role === 'super_admin') {
+        try {
+          const companiesRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/master/companies`, {
+            headers: { 'Accept': 'application/json' },
+            credentials: 'include',
+          });
+          const companiesData = await companiesRes.json();
+          if (companiesData.success) {
+            setAvailableCompanies(companiesData.data);
+          }
+        } catch (err) {
+          console.error('Failed to load companies in checkSession:', err);
+        }
+      }
     } catch {
       setUser(null);
     }

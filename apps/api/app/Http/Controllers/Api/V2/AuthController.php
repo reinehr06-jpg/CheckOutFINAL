@@ -212,6 +212,10 @@ class AuthController extends Controller
 
         if ($twoFactorService->verifyCode($user, $data['code'])) {
             $user->update(['last_auth_at' => now()]);
+            
+            // Set session verification flag for two factor authentication
+            $request->session()->put('2fa_verified_at', now()->timestamp);
+            
             return response()->json([
                 'success' => true,
                 'message' => '2FA verificado com sucesso.',

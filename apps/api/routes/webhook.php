@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\CheckoutWebhookController;
 Route::prefix('/webhooks/gateway')->group(function () {
     Route::post('/stripe', [WebhookController::class, 'stripe'])->name('webhooks.stripe');
     Route::post('/pagseguro', [WebhookController::class, 'pagseguro'])->name('webhooks.pagseguro');
+    Route::post('/asaas', [\App\Http\Controllers\AsaasWebhookController::class, 'handle'])->name('webhooks.asaas');
 });
 
 // Webhook que o Checkout recebe de sistemas externos (ex: Basileia Vendas)

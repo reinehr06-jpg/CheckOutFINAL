@@ -298,18 +298,21 @@ class MasterAccessController extends Controller
             return response()->json(['message' => 'Não autorizado.'], 403);
         }
 
-        if (!$this->binder->check($request)) {
-            $this->audit->log('master.session.fingerprint_mismatch', $user, [
-                'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-            ]);
-            $request->user()->currentAccessToken()->delete();
-            return response()->json(['message' => 'Session fingerprint changed. Re-login required.'], 401);
-        }
+        // Only enforce binder check if the session has a master fingerprint (e.g. Master TOTP access page)
+        if (session()->has('master_fingerprint')) {
+            if (!$this->binder->check($request)) {
+                $this->audit->log('master.session.fingerprint_mismatch', $user, [
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+                $request->user()->currentAccessToken()->delete();
+                return response()->json(['message' => 'Session fingerprint changed. Re-login required.'], 401);
+            }
 
-        if ($this->binder->isExpired()) {
-            $request->user()->currentAccessToken()->delete();
-            return response()->json(['message' => 'Master session expired (20 min). Re-login required.'], 401);
+            if ($this->binder->isExpired()) {
+                $request->user()->currentAccessToken()->delete();
+                return response()->json(['message' => 'Master session expired (20 min). Re-login required.'], 401);
+            }
         }
 
         $companies = \App\Models\Company::select('id', 'uuid', 'name', 'slug', 'status')

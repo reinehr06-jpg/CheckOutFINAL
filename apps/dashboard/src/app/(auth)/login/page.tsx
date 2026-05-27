@@ -107,8 +107,8 @@ export default function LoginPage() {
 
       // Auth via httpOnly cookie (set by server), no localStorage storage
 
-      // Se é super_admin, vai direto pro dashboard
-      if (data.data.user.role === 'super_admin') {
+      // Se é super_admin e não tem 2FA ativado, vai direto pro dashboard
+      if (data.data.user.role === 'super_admin' && !data.data.user.two_factor_enabled) {
         triggerToast('Login super admin realizado!');
         setTimeout(() => {
           window.location.href = '/dashboard';
