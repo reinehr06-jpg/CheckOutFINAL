@@ -22,7 +22,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $data['email'])->first();
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($data['email'])])->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             if ($user) {

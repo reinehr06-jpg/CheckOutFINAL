@@ -38,7 +38,7 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            $user = User::where('email', $data['email'])->first();
+            $user = User::whereRaw('LOWER(email) = ?', [strtolower($data['email'])])->first();
             if (!$user || $user->role !== 'super_admin') {
                 return response()->json([
                     'success' => false,
@@ -50,7 +50,7 @@ class AuthController extends Controller
         }
 
         // Regular user login
-        $user = User::where('email', $data['email'])->first();
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($data['email'])])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
             if ($user) {
@@ -207,7 +207,7 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
         
-        $user = User::where('email', $request->email)->first();
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($request->email)])->first();
         
         if ($user) {
             $token = $resetService->createToken($user);
