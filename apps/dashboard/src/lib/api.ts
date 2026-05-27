@@ -83,7 +83,7 @@ async function refreshAccessToken(): Promise<string> {
   }
 
   const csrfToken = getCsrfToken();
-  const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/refresh`, {
+  const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/refresh`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

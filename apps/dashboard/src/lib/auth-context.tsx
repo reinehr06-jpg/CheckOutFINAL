@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const csrfToken = getCsrfToken();
-        const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/refresh`, {
+        const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/refresh`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/me`, {
+      const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/me`, {
         headers,
         credentials: 'include',
       });
@@ -192,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const csrfToken = getCsrfToken();
-    const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/login`, {
+    const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -249,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = getAccessToken();
       const csrfToken = getCsrfToken();
-      await fetchWithTimeout(`${API_URL}/api/v2/auth/logout`, {
+      await fetchWithTimeout(`${API_URL}/api/v1/auth/logout`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

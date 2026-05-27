@@ -93,7 +93,7 @@ export default function LoginPage() {
       });
       
       const csrfToken = getCsrfToken();
-      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/login`, {
+      const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
