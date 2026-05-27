@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, ArrowRight, Check, AlertTriangle, Copy } from 'lucide-react';
-import { fetchWithTimeout, getCsrfToken, getAccessToken } from '@/lib/api';
+import { fetchWithTimeout, getCsrfToken, getAccessToken, clearTokens } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -137,9 +137,9 @@ export default function TwoFactorSetupPage() {
           <AlertTriangle className="w-12 h-12 text-red-400 mx-auto" />
           <h2 className="text-lg font-black text-slate-800">Erro ao configurar 2FA</h2>
           <p className="text-xs font-bold text-slate-500">{error}</p>
-          <button onClick={() => router.push('/dashboard/onboarding')}
+          <button onClick={() => { clearTokens(); router.push('/login'); }}
             className="px-6 py-2.5 bg-brand text-white rounded-xl text-xs font-black uppercase tracking-wider">
-            Pular por enquanto
+            Voltar ao Login
           </button>
         </div>
       </div>
@@ -319,10 +319,10 @@ export default function TwoFactorSetupPage() {
                 </div>
               )}
 
-              <button onClick={() => router.push('/dashboard/onboarding')}
+              <button onClick={() => { window.location.href = '/dashboard/onboarding'; }}
                 className="w-full h-12 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all flex items-center justify-center gap-1.5"
               >
-                Continuar para Onboarding <ArrowRight className="w-4 h-4" />
+                Continuar para o Dashboard <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           )}
