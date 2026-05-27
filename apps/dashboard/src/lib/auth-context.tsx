@@ -1,8 +1,17 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { fetchWithTimeout, getCsrfToken } from '@/lib/api';
+import {
+  fetchWithTimeout,
+  getCsrfToken,
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+  clearTokens,
+  getTokenExpiresAt,
+  apiFetch,
+} from '@/lib/api';
 
 type User = {
   id: string;
@@ -41,6 +50,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// Refresh 10 minutos antes de expirar
+const REFRESH_BUFFER_MS = 10 * 60 * 1000;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,11 +60,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [activeCompanyId, setActiveCompanyId] = useState<number | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Schedule auto-refresh ──────────────────────────────────────
+  const scheduleRefresh = useCallback(() => {
+    // Clear any existing timer
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+
+    const expiresAt = getTokenExpiresAt();
+    if (!expiresAt) return;
+
+    const now = Date.now();
+    const expiresMs = expiresAt.getTime();
+    // Renew 10 minutes before expiration, minimum 30 seconds
+    const delayMs = Math.max(expiresMs - now - REFRESH_BUFFER_MS, 30_000);
+
+    refreshTimerRef.current = setTimeout(async () => {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) return;
+
+      try {
+        const csrfToken = getCsrfToken();
+        const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${refreshToken}`,
+            ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+          },
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          clearTokens();
+          setUser(null);
+          router.push('/login?reason=expired');
+          return;
+        }
+
+        const data = await res.json();
+        const newAccess = data.access_token || data.token;
+        const newRefresh = data.refresh_token;
+        const newExpiresAt = data.expires_at;
+
+        if (newAccess && newRefresh) {
+          setTokens(newAccess, newRefresh, newExpiresAt);
+          // Reschedule with new expiration
+          scheduleRefresh();
+        }
+      } catch {
+        // Silent failure — the interceptor in api.ts will handle 401s on the next request
+        console.warn('[Auth] Background refresh failed, will retry on next API call.');
+      }
+    }, delayMs);
+  }, [router]);
+
+  // ── Check session on mount ────────────────────────────────────
   const checkSession = useCallback(async () => {
     try {
-      const res = await fetchWithTimeout(`${API_URL}/api/user`, {
-        headers: { 'Accept': 'application/json' },
+      const token = getAccessToken();
+      const headers: Record<string, string> = { 'Accept': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/me`, {
+        headers,
         credentials: 'include',
       });
 
@@ -70,11 +147,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const match = document.cookie.match(/(?:^|;\s*)basileia_active_company=(\d+)/);
       if (match) setActiveCompanyId(Number(match[1]));
 
+      // Schedule token auto-refresh
+      scheduleRefresh();
+
       // Fetch companies list for super_admin users to populate switcher on refresh
       if (userData.role === 'super_admin') {
         try {
           const companiesRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/master/companies`, {
-            headers: { 'Accept': 'application/json' },
+            headers: {
+              'Accept': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
             credentials: 'include',
           });
           const companiesData = await companiesRes.json();
@@ -88,10 +171,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setUser(null);
     }
-  }, []);
+  }, [scheduleRefresh]);
 
   useEffect(() => {
     checkSession().finally(() => setIsLoading(false));
+
+    // Cleanup timer on unmount
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
   }, [checkSession]);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -119,13 +209,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(data.message || data.error?.message || 'Credenciais inválidas');
     }
 
+    // Store tokens in sessionStorage
+    const accessToken = data.access_token || data.data?.access_token || data.token || data.data?.token;
+    const refreshToken = data.refresh_token || data.data?.refresh_token;
+    const expiresAt = data.expires_at || data.data?.expires_at;
+
+    if (accessToken && refreshToken) {
+      setTokens(accessToken, refreshToken, expiresAt);
+    }
+
     const userData = data.data?.user || data.user || data.data;
     setUser(userData);
+
+    // Schedule auto-refresh now that we have tokens
+    scheduleRefresh();
 
     if (userData.role === 'super_admin') {
       try {
         const companiesRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/master/companies`, {
-          headers: { 'Accept': 'application/json' },
+          headers: {
+            'Accept': 'application/json',
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+          },
           credentials: 'include',
         });
         const companiesData = await companiesRes.json();
@@ -138,15 +243,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     return { needs_2fa_setup: userData.needs_2fa_setup ?? data.needs_2fa_setup ?? false };
-  }, []);
+  }, [scheduleRefresh]);
 
   const logout = useCallback(async () => {
     try {
+      const token = getAccessToken();
       const csrfToken = getCsrfToken();
-      await fetchWithTimeout(`${API_URL}/api/v1/auth/logout`, {
+      await fetchWithTimeout(`${API_URL}/api/v2/auth/logout`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
         },
         credentials: 'include',
@@ -154,6 +261,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Logout request failed:', err);
     }
+
+    // Clear local state
+    clearTokens();
+
+    // Clear refresh timer
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+
     setUser(null);
     setAvailableCompanies([]);
     setActiveCompanyId(null);

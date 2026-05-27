@@ -21,12 +21,19 @@ import {
   Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fetchWithTimeout, getCsrfToken } from '@/lib/api';
+import { fetchWithTimeout, getCsrfToken, setTokens } from '@/lib/api';
 
 type AuthState = 'credentials' | 'two_factor' | 'recovery' | 'locked_out' | 'session_expired' | 'restricted';
 
 export default function LoginPage() {
-  const [authState, setAuthState] = useState<AuthState>('credentials');
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    // Detect ?reason=expired from URL to show session expired screen
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reason') === 'expired') return 'session_expired';
+    }
+    return 'credentials';
+  });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -86,7 +93,7 @@ export default function LoginPage() {
       });
       
       const csrfToken = getCsrfToken();
-      const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/login`, {
+      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -105,7 +112,13 @@ export default function LoginPage() {
         return;
       }
 
-      // Auth via httpOnly cookie (set by server), no localStorage storage
+      // Store tokens in sessionStorage for Bearer auth
+      const accessToken = data.access_token || data.data?.access_token || data.token || data.data?.token;
+      const refreshToken = data.refresh_token || data.data?.refresh_token;
+      const expiresAt = data.expires_at || data.data?.expires_at;
+      if (accessToken && refreshToken) {
+        setTokens(accessToken, refreshToken, expiresAt);
+      }
 
       // Se precisa configurar 2FA, vai para setup
       if (data.data?.needs_2fa_setup) {

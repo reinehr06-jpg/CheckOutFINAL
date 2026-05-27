@@ -206,7 +206,7 @@ Route::prefix('v1')->group(function () {
 Route::prefix('v2')->name('api.v2.')->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])->middleware('throttle:auth_login');
     Route::post('auth/register', [\App\Http\Controllers\Api\V2\AuthController::class, 'register'])->middleware('throttle:auth_register');
-    Route::post('auth/refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])->middleware('throttle:auth_login');
+    Route::post('auth/refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])->middleware(['auth:sanctum', 'throttle:auth_login']);
     Route::middleware(['auth:sanctum', 'zero.trust'])->group(function () {
         Route::get('auth/me', [\App\Http\Controllers\Api\V2\AuthController::class, 'me']);
         Route::post('auth/2fa/verify', [\App\Http\Controllers\Api\V2\AuthController::class, 'verify2fa']);

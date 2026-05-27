@@ -75,12 +75,16 @@ return Application::configure(basePath: dirname(__DIR__))
             'anomaly.detect' => \App\Http\Middleware\AnomalyDetection::class,
             'jit' => \App\Http\Middleware\JitAccessMiddleware::class,
             'super.admin' => \App\Http\Middleware\EnsureUserIsSuperAdmin::class,
+            'token.expiry' => \App\Http\Middleware\CheckTokenExpiration::class,
         ]);
 
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
 
+    })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        $schedule->command('tokens:purge')->hourly();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Todas as exceções retornam JSON (não mais páginas Blade de erro)

@@ -13,7 +13,7 @@ import {
   Key,
   Monitor
 } from 'lucide-react';
-import { fetchWithTimeout, getCsrfToken } from '@/lib/api';
+import { fetchWithTimeout, getCsrfToken, getAccessToken } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -70,10 +70,13 @@ export default function TwoFactorPage() {
 
     try {
       const csrfToken = getCsrfToken();
+      const token = getAccessToken();
       const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/2fa/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
         },
         credentials: 'include',
