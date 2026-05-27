@@ -289,7 +289,7 @@ export default function GatewaysPage() {
   };
 
   return (
-    <main className="min-w-0 w-full overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-2 relative min-h-0 select-none pb-2">
+    <main className="min-w-0 w-full animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-2 relative pb-2">
       
 
 

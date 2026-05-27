@@ -160,7 +160,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <main className="min-w-0 w-full overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-4 relative min-h-0 select-none pt-4 pb-4 text-left">
+    <main className="min-w-0 w-full animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col gap-4 relative pt-4 pb-4 text-left">
       
       {/* Success Notifications */}
       {successAlert && (
