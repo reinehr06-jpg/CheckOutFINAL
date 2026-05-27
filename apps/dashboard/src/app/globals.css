@@ -43,18 +43,20 @@
 }
 
 [data-theme="dark"], .dark {
-  --color-background:    #0D0D12;
-  --color-surface:       #14141A;
-  --color-surface-raised:#1A1A22;
-  --color-border:        #262630;
-  --color-ink:           #F7F7FA;
-  --color-slate:         #94A3B8;
-  --color-muted:         #64748B;
-  --color-brand:         #8B5CF6;
-  --color-brand-deep:    #7C3AED;
-  --color-brand-soft:    rgba(139, 92, 246, 0.15);
-  --gradient-glow:       rgba(13, 13, 18, 0.5);
+  --color-background:    #070514; /* Deep night purple */
+  --color-surface:       #100D23; /* Sleek dark card background */
+  --color-surface-raised:#161230; /* Raised card background */
+  --color-border:        #261E42; /* Elegant purple border */
+  --color-ink:           #F5F2FF; /* Crisp violet-white text */
+  --color-slate:         #8B82A8; /* Slate purple text */
+  --color-muted:         #635B82; /* Muted text */
+  --color-brand:         #9B66FF; /* Vibrant neon violet */
+  --color-brand-deep:    #7E3AF2;
+  --color-brand-soft:    rgba(155, 102, 255, 0.12);
+  --color-brand-accent:  #D8B4FE;
+  --gradient-glow:       rgba(7, 5, 20, 0.6);
 }
+
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -81,4 +83,112 @@ body {
 .card-premium {
   @apply bg-surface/90 backdrop-blur-xl border border-[var(--color-border)] rounded-[24px] shadow-sm hover:shadow-md transition-all duration-300;
 }
+
+/* Premium Dark Mode Remapping overrides */
+.dark body {
+  background-color: var(--color-background) !important;
+  color: var(--color-ink) !important;
+}
+
+.dark .bg-white,
+.dark .bg-surface {
+  background-color: var(--color-surface) !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-100,
+.dark .bg-slate-100\/75,
+.dark .bg-slate-100\/50,
+.dark .bg-slate-55,
+.dark .bg-surface-raised,
+.dark .bg-\[\#FAF9FF\]\/40,
+.dark .bg-\[\#FAF8FF\] {
+  background-color: var(--color-surface-raised) !important;
+}
+
+.dark .bg-background,
+.dark .bg-\[\#F4F0FF\],
+.dark .bg-\[\#F8F6FC\],
+.dark .bg-\[\#FAF8FF\]\/65 {
+  background-color: var(--color-background) !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-950,
+.dark .text-ink,
+.dark .text-slate-805,
+.dark .text-slate-850,
+.dark .text-slate-800,
+.dark .text-\[\#1E1538\] {
+  color: var(--color-ink) !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-700,
+.dark .text-slate-650,
+.dark .text-slate-550,
+.dark .text-slate-750 {
+  color: var(--color-slate) !important;
+}
+
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-slate-450,
+.dark .text-slate-455,
+.dark .text-slate-350 {
+  color: var(--color-muted) !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-border,
+.dark .border-\[\#E8DDFD\],
+.dark .border-\[\#E8DDFD\]\/60,
+.dark .border-\[\#E8DDFD\]\/45,
+.dark .border-\[\#E8DDFD\]\/90,
+.dark .border-\[\#E7E5EF\],
+.dark .border-\[\#E7E4F3\] {
+  border-color: var(--color-border) !important;
+}
+
+.dark .shadow-2xl,
+.dark .shadow-xl,
+.dark .shadow-lg,
+.dark .shadow-md,
+.dark .shadow-sm {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Ensure all input forms and select boxes look premium in dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  border-color: var(--color-border) !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: var(--color-brand) !important;
+  box-shadow: 0 0 0 2px rgba(155, 102, 255, 0.25) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-muted) !important;
+}
+
+.dark .bg-brand-soft {
+  background-color: rgba(155, 102, 255, 0.15) !important;
+}
+
+.dark .text-brand {
+  color: var(--color-brand) !important;
+}
+
+
 

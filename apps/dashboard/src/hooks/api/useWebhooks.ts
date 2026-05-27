@@ -88,8 +88,8 @@ const mockDeliveries: WebhookDelivery[] = [
 ];
 
 export function useWebhooks() {
-  const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>(mockEndpoints);
-  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>(mockDeliveries);
+  const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
+  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,18 +102,21 @@ export function useWebhooks() {
       ]);
       
       if (endpointsRes.success && deliveriesRes.success) {
-        setEndpoints(endpointsRes.data.length ? endpointsRes.data : mockEndpoints);
-        setDeliveries(deliveriesRes.data.length ? deliveriesRes.data : mockDeliveries);
+        setEndpoints(endpointsRes.data || []);
+        setDeliveries(deliveriesRes.data || []);
         setError(null);
       } else {
-        setEndpoints(mockEndpoints);
-        setDeliveries(mockDeliveries);
-        setError(null);
+        setEndpoints([]);
+        setDeliveries([]);
+        const errMsg = !(endpointsRes.success)
+          ? (endpointsRes as any).error?.message
+          : (deliveriesRes as any).error?.message;
+        setError(errMsg || 'Erro ao carregar dados de webhooks');
       }
     } catch (e) {
-      setEndpoints(mockEndpoints);
-      setDeliveries(mockDeliveries);
-      setError(null);
+      setEndpoints([]);
+      setDeliveries([]);
+      setError('Erro de conexão ao carregar dados de webhooks');
     }
     setLoading(false);
   };

@@ -732,12 +732,12 @@ export default function WebhooksPage() {
         {/* 6 KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-4 shrink-0">
           {[
-            { label: 'Endpoints ativos', value: '12', delta: '+2 novos', color: 'text-brand', bg: 'bg-brand/5' },
-            { label: 'Taxa de entrega 24h', value: '98,7%', delta: '+0,3 pp.', color: 'text-green-600', bg: 'bg-green-50' },
-            { label: 'Eventos enviados 24h', value: '8.421', delta: '+14,2%', color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'Falhas 24h', value: '112', delta: '-8,1%', color: 'text-red-500', bg: 'bg-red-50', attention: true },
-            { label: 'Retries 24h', value: '47', delta: '-12%', color: 'text-amber-500', bg: 'bg-amber-50', attention: true },
-            { label: 'Tempo médio entrega', value: '142ms', delta: '-18ms', color: 'text-emerald-600', bg: 'bg-emerald-50' }
+            { label: 'Endpoints ativos', value: endpoints.filter(e => e.status === 'active').length.toString(), delta: 'total', color: 'text-brand', bg: 'bg-brand/5' },
+            { label: 'Taxa de entrega 24h', value: deliveries.length > 0 ? ((deliveries.filter(d => d.status === 'delivered').length / deliveries.length) * 100).toFixed(1) + '%' : '100%', delta: 'média', color: 'text-green-600', bg: 'bg-green-50' },
+            { label: 'Eventos enviados 24h', value: deliveries.length.toString(), delta: 'total', color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Falhas 24h', value: deliveries.filter(d => d.status === 'failed').length.toString(), delta: 'total', color: 'text-red-500', bg: 'bg-red-50', attention: true },
+            { label: 'Retries 24h', value: deliveries.filter(d => d.attempts > 1).length.toString(), delta: 'total', color: 'text-amber-500', bg: 'bg-amber-50', attention: true },
+            { label: 'Tempo médio entrega', value: '—', delta: 'tempo', color: 'text-emerald-600', bg: 'bg-emerald-50' }
           ].map((c) => (
             <div key={c.label} className="bg-white border border-[#E7E5EF] rounded-2xl p-3 shadow-sm flex flex-col justify-between h-[75px] transition-all">
               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block leading-none">{c.label}</span>
@@ -745,7 +745,7 @@ export default function WebhooksPage() {
                 <span className="text-[14px] 2xl:text-[16px] font-black text-slate-900 leading-none">{c.value}</span>
                 <span className={cn(
                   "font-black px-1 py-0.2 rounded text-[7.5px] leading-none shrink-0",
-                  c.attention ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-600'
+                  c.attention ? 'bg-red-55/15 text-red-500' : 'bg-green-55/15 text-green-600'
                 )}>
                   {c.delta}
                 </span>

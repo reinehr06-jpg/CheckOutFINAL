@@ -16,7 +16,9 @@ import {
   Trophy,
   RefreshCw,
   Layers,
-  ClipboardList
+  ClipboardList,
+  Download,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +28,17 @@ export default function BciPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<BciTabValue>('friction');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Filters State
+  const [filterPeriod, setFilterPeriod] = useState('7d');
+  const [filterSystem, setFilterSystem] = useState('Todos');
+  const [filterCheckout, setFilterCheckout] = useState('Todos');
+  const [filterMethod, setFilterMethod] = useState('Todos');
+
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'excel' | 'pdf'>('excel');
+  const [exportSections, setExportSections] = useState<string[]>(['friction', 'performance', 'activity']);
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -39,6 +52,179 @@ export default function BciPage() {
       setLoading(false);
       triggerToast("Análise de checkout concluída! Score geral recalculado: 84/100 (Bom).");
     }, 1500);
+  };
+
+  const handleConfirmExport = () => {
+    setShowExportModal(false);
+    triggerToast(`Preparando exportação em formato ${exportFormat.toUpperCase()}...`);
+
+    setTimeout(() => {
+      if (exportFormat === 'pdf') {
+        const printWindow = document.createElement('iframe');
+        printWindow.style.position = 'absolute';
+        printWindow.style.top = '-1000px';
+        document.body.appendChild(printWindow);
+
+        const doc = printWindow.contentWindow?.document;
+        if (doc) {
+          doc.write(`
+            <html>
+              <head>
+                <title>Relatório BCI - Basileia Pay</title>
+                <style>
+                  body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e1b4b; background-color: #faf5ff; }
+                  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #8b5cf6; padding-bottom: 20px; margin-bottom: 30px; }
+                  .header h1 { margin: 0; color: #6d28d9; font-size: 28px; font-weight: 900; }
+                  .header p { margin: 5px 0 0 0; color: #7c3aed; font-size: 14px; font-weight: 700; }
+                  .meta { background-color: #f3e8ff; border: 1px solid #e9d5ff; border-radius: 16px; padding: 15px; margin-bottom: 30px; font-size: 11px; color: #581c87; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                  .meta p { margin: 0; }
+                  .section { background-color: #ffffff; border: 1px solid #f3e8ff; border-radius: 20px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+                  .section h2 { margin-top: 0; color: #581c87; font-size: 18px; font-weight: 800; border-bottom: 1px solid #f3e8ff; padding-bottom: 8px; }
+                  .score-badge { display: inline-block; background-color: #8b5cf6; color: #ffffff; padding: 5px 12px; rounded: 12px; font-weight: 900; font-size: 18px; border-radius: 8px; }
+                  table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+                  th, td { border-bottom: 1px solid #f3e8ff; padding: 12px; text-align: left; }
+                  th { background-color: #faf5ff; color: #581c87; font-weight: 800; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+                  td { color: #374151; font-weight: 500; }
+                  .high-impact { color: #dc2626; font-weight: 700; }
+                  .gain { color: #16a34a; font-weight: 700; }
+                </style>
+              </head>
+              <body>
+                <div class="header">
+                  <div>
+                    <h1>Basileia Pay - Relatório BCI</h1>
+                    <p>Business Intelligence & Otimização do Checkout</p>
+                  </div>
+                  <div class="score-badge">Score: 84/100</div>
+                </div>
+
+                <div class="meta">
+                  <p><strong>Período:</strong> ${filterPeriod === '7d' ? 'Últimos 7 dias' : filterPeriod === '30d' ? 'Últimos 30 dias' : filterPeriod}</p>
+                  <p><strong>Data de Geração:</strong> ${new Date().toLocaleString()}</p>
+                  <p><strong>Filtro de Sistema:</strong> ${filterSystem}</p>
+                  <p><strong>Filtro de Checkout:</strong> ${filterCheckout}</p>
+                </div>
+
+                ${exportSections.includes('friction') ? `
+                  <div class="section">
+                    <h2>Fricções Detectadas pela IA</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Ponto de Fricção</th>
+                          <th>Fase</th>
+                          <th>Severidade</th>
+                          <th>Impacto Estimado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>Campos excessivos na identificação</td><td>Identificação</td><td>Crítica</td><td class="high-impact">-3,2%</td></tr>
+                        <tr><td>PIX com baixa clareza na etapa</td><td>Pagamento</td><td>Alta</td><td class="high-impact">-2,1%</td></tr>
+                        <tr><td>CTA secundário competindo</td><td>Revisão</td><td>Média</td><td class="high-impact">-1,4%</td></tr>
+                        <tr><td>Latência alta no mobile</td><td>Identificação</td><td>Alta</td><td class="high-impact">-1,1%</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ` : ''}
+
+                ${exportSections.includes('performance') ? `
+                  <div class="section">
+                    <h2>Histórico e Comparativo de Versões</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Versão</th>
+                          <th>Status</th>
+                          <th>Conversão</th>
+                          <th>Tempo Médio</th>
+                          <th>Score BCI</th>
+                          <th>Receita Mensal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>v2.5.0</td><td>Atual / Produção</td><td>18,42%</td><td>6m 12s</td><td>84/100</td><td>R$ 128.940,00</td></tr>
+                        <tr><td>v2.4.1</td><td>Anterior</td><td>16,98%</td><td>7m 03s</td><td>76/100</td><td>R$ 104.310,00</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ` : ''}
+
+                ${exportSections.includes('activity') ? `
+                  <div class="section">
+                    <h2>Benchmarks e Auditoria</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Checkout</th>
+                          <th>Score</th>
+                          <th>Conversão</th>
+                          <th>Posição</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td>Basileia Checkout Pro</td><td>88/100</td><td>19,21%</td><td>1º 👑</td></tr>
+                        <tr><td>Mercado Pago Checkout</td><td>84/100</td><td>18,42%</td><td>2º</td></tr>
+                        <tr><td>Loja Experiência</td><td>79/100</td><td>16,02%</td><td>3º</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ` : ''}
+              </body>
+            </html>
+          `);
+          doc.close();
+          setTimeout(() => {
+            printWindow.contentWindow?.print();
+            document.body.removeChild(printWindow);
+            triggerToast("Download do PDF concluído com sucesso!");
+          }, 800);
+        }
+      } else {
+        // Generate CSV or Excel (XLS)
+        let fileContent = '\ufeff'; // UTF-8 BOM
+        fileContent += "RELATÓRIO OPERACIONAL BCI - BASILEIA PAY\r\n";
+        fileContent += `Data de Geração:;${new Date().toLocaleString()}\r\n`;
+        fileContent += `Período:;${filterPeriod}\r\n`;
+        fileContent += `Sistema:;${filterSystem}\r\n`;
+        fileContent += `Checkout:;${filterCheckout}\r\n`;
+        fileContent += `Método:;${filterMethod}\r\n\r\n`;
+
+        if (exportSections.includes('friction')) {
+          fileContent += "SEÇÃO: FRICÇÕES E RECOMENDAÇÕES DA IA\r\n";
+          fileContent += "Item de Fricção;Fase;Severidade;Impacto Estimado\r\n";
+          fileContent += "Campos excessivos na identif.;Identif.;Crítica;-3,2%\r\n";
+          fileContent += "PIX com baixa clareza na etapa;Pagam.;Alta;-2,1%\r\n";
+          fileContent += "CTA secundário competindo;Revisão;Média;-1,4%\r\n";
+          fileContent += "Latência alta no mobile;Identif.;Alta;-1,1%\r\n\r\n";
+        }
+
+        if (exportSections.includes('performance')) {
+          fileContent += "SEÇÃO: DESEMPENHO A/B E HISTÓRICO\r\n";
+          fileContent += "Versão;Status;Conversão;Tempo Médio;Score BCI;Receita Mensal\r\n";
+          fileContent += "v2.5.0;Atual;18,42%;6m 12s;84/100;R$ 128.940,00\r\n";
+          fileContent += "v2.4.1;Anterior;16,98%;7m 03s;76/100;R$ 104.310,00\r\n\r\n";
+        }
+
+        if (exportSections.includes('activity')) {
+          fileContent += "SEÇÃO: AUDITORIA E BENCHMARKS\r\n";
+          fileContent += "Nome do Checkout;Score;Conversão;Posição\r\n";
+          fileContent += "Basileia Checkout Pro;88;19,21%;1º\r\n";
+          fileContent += "Mercado Pago Checkout;84;18,42%;2º\r\n";
+          fileContent += "Loja Experiência;79;16,02%;3º\r\n";
+        }
+
+        const mimeType = exportFormat === 'csv' ? 'text/csv;charset=utf-8;' : 'application/vnd.ms-excel;charset=utf-8;';
+        const blob = new Blob([fileContent], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `relatorio_bci_${filterPeriod}_${Date.now()}.${exportFormat === 'csv' ? 'csv' : 'xls'}`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        triggerToast(`Download do ${exportFormat.toUpperCase()} concluído com sucesso!`);
+      }
+    }, 1000);
   };
 
   return (
@@ -70,6 +256,14 @@ export default function BciPage() {
 
         <div className="flex items-center gap-2 shrink-0">
           <button 
+            onClick={() => setShowExportModal(true)}
+            className="h-8 px-3.5 bg-white border border-[#E8DDFD]/90 text-slate-700 hover:bg-slate-50 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-500" />
+            Exportar relatório
+          </button>
+
+          <button 
             onClick={() => triggerToast("Abrindo portal de configurações do modelo BCI...")}
             className="h-8 px-3.5 bg-white border border-[#E8DDFD]/90 text-slate-700 hover:bg-slate-50 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm"
           >
@@ -92,7 +286,80 @@ export default function BciPage() {
         </div>
       </div>
 
+      {/* Advanced Filters Bar */}
+      <div className="bg-white border border-[#E8DDFD] p-3.5 rounded-2xl shadow-sm grid grid-cols-2 md:grid-cols-4 gap-3 text-left">
+        <div className="flex flex-col min-w-0">
+          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider pl-1 mb-1 block leading-none">Período</span>
+          <div className="relative">
+            <select
+              value={filterPeriod}
+              onChange={(e) => setFilterPeriod(e.target.value)}
+              className="appearance-none w-full bg-[#FAF8FF] border border-[#E8DDFD] rounded-xl pl-3 pr-8 py-1.5 text-xs font-black text-slate-700 focus:outline-none focus:border-brand cursor-pointer h-[34px]"
+            >
+              <option value="Hoje">Hoje</option>
+              <option value="Ontem">Ontem</option>
+              <option value="7d">Últimos 7 dias</option>
+              <option value="30d">Últimos 30 dias</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="flex flex-col min-w-0">
+          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider pl-1 mb-1 block leading-none">Sistema</span>
+          <div className="relative">
+            <select
+              value={filterSystem}
+              onChange={(e) => setFilterSystem(e.target.value)}
+              className="appearance-none w-full bg-[#FAF8FF] border border-[#E8DDFD] rounded-xl pl-3 pr-8 py-1.5 text-xs font-black text-slate-700 focus:outline-none focus:border-brand cursor-pointer h-[34px]"
+            >
+              <option value="Todos">Todos os Sistemas</option>
+              <option value="E-commerce">E-commerce Central</option>
+              <option value="ERP">ERP Conectado</option>
+              <option value="CRM">CRM Vendas</option>
+              <option value="Plataforma EAD">Plataforma EAD</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="flex flex-col min-w-0">
+          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider pl-1 mb-1 block leading-none">Checkout</span>
+          <div className="relative">
+            <select
+              value={filterCheckout}
+              onChange={(e) => setFilterCheckout(e.target.value)}
+              className="appearance-none w-full bg-[#FAF8FF] border border-[#E8DDFD] rounded-xl pl-3 pr-8 py-1.5 text-xs font-black text-slate-700 focus:outline-none focus:border-brand cursor-pointer h-[34px]"
+            >
+              <option value="Todos">Todos os Checkouts</option>
+              <option value="Basileia Checkout Pro">Basileia Checkout Pro</option>
+              <option value="Mercado Pago Checkout">Mercado Pago Checkout</option>
+              <option value="Checkout Básico">Checkout Básico</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="flex flex-col min-w-0">
+          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider pl-1 mb-1 block leading-none">Método</span>
+          <div className="relative">
+            <select
+              value={filterMethod}
+              onChange={(e) => setFilterMethod(e.target.value)}
+              className="appearance-none w-full bg-[#FAF8FF] border border-[#E8DDFD] rounded-xl pl-3 pr-8 py-1.5 text-xs font-black text-slate-700 focus:outline-none focus:border-brand cursor-pointer h-[34px]"
+            >
+              <option value="Todos">Todos os Métodos</option>
+              <option value="PIX">PIX</option>
+              <option value="Cartão">Cartão de Crédito</option>
+              <option value="Boleto">Boleto Bancário</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
+          </div>
+        </div>
+      </div>
+
       {/* Grid Superior de Diagnósticos */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
         
         {/* Card 1: Score do checkout */}
@@ -618,6 +885,100 @@ export default function BciPage() {
         </div>
 
       </div>
+
+      {showExportModal && (
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-[#E8DDFD] shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200 text-left">
+            <div className="flex items-center gap-3 text-brand border-b border-slate-100 pb-3 mb-4">
+              <Download className="w-5 h-5 shrink-0" />
+              <h3 className="text-slate-950 font-black text-sm">Exportar Relatório BCI</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-[#FAF8FF] border border-[#E8DDFD]/60 p-3.5 rounded-2xl">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">Filtros aplicados</p>
+                <div className="grid grid-cols-2 gap-2 mt-2 text-[11px] font-bold text-slate-700">
+                  <div><span className="text-slate-400 font-medium">Período:</span> {filterPeriod === '7d' ? 'Últimos 7 dias' : filterPeriod === '30d' ? 'Últimos 30 dias' : filterPeriod}</div>
+                  <div><span className="text-slate-400 font-medium">Sistema:</span> {filterSystem}</div>
+                  <div><span className="text-slate-400 font-medium">Checkout:</span> {filterCheckout}</div>
+                  <div><span className="text-slate-400 font-medium">Método:</span> {filterMethod}</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">Formato de exportação</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'csv', label: 'CSV', desc: 'Dados brutos' },
+                    { id: 'excel', label: 'Excel', desc: 'Planilha formatada' },
+                    { id: 'pdf', label: 'PDF', desc: 'Documento impresso' }
+                  ].map((fmt) => (
+                    <button
+                      key={fmt.id}
+                      onClick={() => setExportFormat(fmt.id as 'csv' | 'excel' | 'pdf')}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-center font-bold text-xs transition-all flex flex-col items-center justify-center gap-1 cursor-pointer",
+                        exportFormat === fmt.id 
+                          ? "bg-brand/10 border-brand/40 text-brand"
+                          : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50"
+                      )}
+                    >
+                      <span className="font-black leading-none">{fmt.label}</span>
+                      <span className="text-[8px] font-medium text-slate-400 leading-none">{fmt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">Seções para incluir</label>
+                <div className="space-y-2">
+                  {[
+                    { id: 'friction', label: 'Fricções & Recomendações da IA' },
+                    { id: 'performance', label: 'Desempenho A/B & Histórico de Versões' },
+                    { id: 'activity', label: 'Auditoria, Benchmarks & Eventos' }
+                  ].map((sec) => {
+                    const isChecked = exportSections.includes(sec.id);
+                    return (
+                      <label key={sec.id} className="flex items-center gap-2.5 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                        <input 
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setExportSections([...exportSections, sec.id]);
+                            } else {
+                              setExportSections(exportSections.filter(s => s !== sec.id));
+                            }
+                          }}
+                          className="rounded border-border text-brand focus:ring-brand cursor-pointer w-4 h-4"
+                        />
+                        {sec.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="px-4 py-1.5 border border-[#E8DDFD] hover:bg-slate-50 transition-all rounded-xl text-[10.5px] font-black text-slate-700 uppercase tracking-tight h-[32px] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmExport}
+                className="px-4 py-1.5 bg-brand text-white hover:bg-brand-deep transition-all rounded-xl text-[10.5px] font-black uppercase tracking-tight h-[32px] cursor-pointer flex items-center gap-1"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Confirmar e Baixar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </PageLayout>
   );

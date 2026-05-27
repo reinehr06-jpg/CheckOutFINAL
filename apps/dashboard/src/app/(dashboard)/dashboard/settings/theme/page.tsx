@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Save, Check, X, Moon, Sun, Monitor } from 'lucide-react';
 
@@ -8,14 +8,43 @@ export default function ThemeSettingsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [theme, setTheme] = useState('system');
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('basileia-theme') || localStorage.getItem('basileia_theme') || 'system';
+      setTheme(savedTheme);
+    }
+  }, []);
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+    setTimeout(() => setToastMessage(null), 4500);
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    triggerToast('Preferências de tema salvas com sucesso.');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('basileia-theme', theme);
+      
+      let isDark = false;
+      if (theme === 'dark') {
+        isDark = true;
+      } else if (theme === 'system') {
+        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+      
+      // Dispatch custom event to notify components on the same window
+      window.dispatchEvent(new Event('storage'));
+      
+      triggerToast('Preferências de tema salvas com sucesso.');
+    }
   };
 
   return (
@@ -84,14 +113,14 @@ export default function ThemeSettingsPage() {
               key={item.id}
               onClick={() => {
                 setTheme(item.id);
-                triggerToast(`Tema alterado para: ${item.label}.`);
+                triggerToast(`Aparência selecionada: ${item.label}. Clique em Salvar para aplicar.`);
               }}
               className={`p-4 border rounded-xl cursor-pointer transition text-center space-y-2 flex flex-col items-center justify-center ${theme === item.id ? 'border-brand bg-brand-soft/20' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
             >
               <item.icon className="w-6 h-6 text-slate-700" />
               <div>
                 <span className="text-xs font-black text-slate-900 block">{item.label}</span>
-                <span className="text-[9px] font-semibold text-slate-450 block mt-0.5 leading-normal">{item.desc}</span>
+                <span className="text-[9px] font-semibold text-slate-455 block mt-0.5 leading-normal">{item.desc}</span>
               </div>
             </div>
           ))}

@@ -108,7 +108,7 @@ export default function LoginPage() {
       // Auth via httpOnly cookie (set by server), no localStorage storage
 
       // Se precisa configurar 2FA, vai para setup
-      if (data.needs_2fa_setup) {
+      if (data.data?.needs_2fa_setup) {
         triggerToast('Configure a autenticação de dois fatores para continuar.');
         setTimeout(() => {
           window.location.href = '/2fa/setup';
@@ -117,7 +117,7 @@ export default function LoginPage() {
       }
 
       // Se tem 2FA configurado, vai para verificação
-      if (data.data.user.two_factor_enabled) {
+      if (data.data?.user?.two_factor_enabled) {
         triggerToast('Credenciais corretas! Prossiga com o 2FA.');
         setAuthState('two_factor');
       } else {
@@ -598,6 +598,13 @@ export default function LoginPage() {
                   {loading ? 'Entrando...' : 'Continuar'}
                   <ArrowRight className="w-4 h-4 text-white" />
                 </button>
+
+                <div className="text-center text-xs text-slate-400 font-semibold mt-2">
+                  Não tem uma conta?{' '}
+                  <Link href="/register" className="text-brand font-black hover:underline">
+                    Criar conta
+                  </Link>
+                </div>
               </form>
             )}
 

@@ -23,7 +23,7 @@ export function StudioIframe({ checkoutId, className }: StudioIframeProps) {
   const [error, setError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  const studioUrl = process.env.NEXT_PUBLIC_CHECKOUT_STUDIO_URL || '/studio';
+  const studioUrl = process.env.NEXT_PUBLIC_CHECKOUT_STUDIO_URL || '/studio/index.html';
 
   const getOrigin = (url: string) => {
     try {

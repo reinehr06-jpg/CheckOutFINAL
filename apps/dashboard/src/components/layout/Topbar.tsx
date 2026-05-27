@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Search, 
@@ -36,6 +36,37 @@ export function Topbar({ title, description }: TopbarProps) {
     }
     return false;
   });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const saved = localStorage.getItem('basileia-theme') || localStorage.getItem('basileia_theme');
+      if (saved === 'dark') {
+        setDark(true);
+        document.documentElement.classList.add('dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else if (saved === 'light') {
+        setDark(false);
+        document.documentElement.classList.remove('dark');
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        const matches = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setDark(matches);
+        if (matches) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      }
+    };
+    
+    // Check theme on mount
+    handleThemeChange();
+    
+    window.addEventListener('storage', handleThemeChange);
+    return () => window.removeEventListener('storage', handleThemeChange);
+  }, []);
 
   const toggleTheme = () => {
     const next = !dark;
