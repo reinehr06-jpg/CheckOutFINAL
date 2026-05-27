@@ -42,15 +42,24 @@ class AuthController extends Controller
             if ($user) {
                 $user->incrementFailedAttempts();
             }
-            return response()->json(['message' => 'Credenciais inválidas.'], 401);
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'invalid_credentials', 'message' => 'Credenciais inválidas.'],
+            ], 401);
         }
 
         if ($user->isLocked()) {
-            return response()->json(['message' => 'Conta temporariamente bloqueada.'], 423);
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'account_locked', 'message' => 'Conta temporariamente bloqueada.'],
+            ], 423);
         }
 
         if ($user->status !== 'active') {
-            return response()->json(['message' => 'Conta inativa.'], 403);
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'account_inactive', 'message' => 'Conta inativa.'],
+            ], 403);
         }
 
         $user->resetFailedAttempts();
@@ -75,21 +84,24 @@ class AuthController extends Controller
         ]);
 
         $responseData = [
-            'access_token'       => $accessToken->plainTextToken,
-            'token'              => $accessToken->plainTextToken, // backward compatibility
-            'refresh_token'      => $refreshToken->plainTextToken,
-            'token_type'         => 'Bearer',
-            'expires_in'         => 3600, // segundos
-            'expires_at'         => Carbon::now()->addMinutes(60)->toIso8601String(),
-            'user'  => [
-                'id'              => $user->uuid,
-                'name'            => $user->name,
-                'email'           => $user->email,
-                'role'            => $user->role,
-                'two_factor_enabled' => $user->two_factor_enabled,
-                'company_id'      => $user->company_id,
+            'success' => true,
+            'data' => [
+                'access_token'       => $accessToken->plainTextToken,
+                'token'              => $accessToken->plainTextToken, // backward compatibility
+                'refresh_token'      => $refreshToken->plainTextToken,
+                'token_type'         => 'Bearer',
+                'expires_in'         => 3600, // segundos
+                'expires_at'         => Carbon::now()->addMinutes(60)->toIso8601String(),
+                'user'  => [
+                    'id'              => $user->uuid,
+                    'name'            => $user->name,
+                    'email'           => $user->email,
+                    'role'            => $user->role,
+                    'two_factor_enabled' => $user->two_factor_enabled,
+                    'company_id'      => $user->company_id,
+                ],
+                'needs_2fa_setup' => !$user->two_factor_enabled,
             ],
-            'needs_2fa_setup' => !$user->two_factor_enabled,
         ];
 
         $response = response()->json($responseData);
@@ -233,21 +245,24 @@ class AuthController extends Controller
         ]);
 
         $responseData = [
-            'access_token'       => $accessToken->plainTextToken,
-            'token'              => $accessToken->plainTextToken, // backward compatibility
-            'refresh_token'      => $refreshToken->plainTextToken,
-            'token_type'         => 'Bearer',
-            'expires_in'         => 3600,
-            'expires_at'         => Carbon::now()->addMinutes(60)->toIso8601String(),
-            'user' => [
-                'id' => $user->uuid,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'company_id' => $user->company_id,
-                'two_factor_enabled' => $user->two_factor_enabled,
+            'success' => true,
+            'data' => [
+                'access_token'       => $accessToken->plainTextToken,
+                'token'              => $accessToken->plainTextToken, // backward compatibility
+                'refresh_token'      => $refreshToken->plainTextToken,
+                'token_type'         => 'Bearer',
+                'expires_in'         => 3600,
+                'expires_at'         => Carbon::now()->addMinutes(60)->toIso8601String(),
+                'user' => [
+                    'id' => $user->uuid,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'company_id' => $user->company_id,
+                    'two_factor_enabled' => $user->two_factor_enabled,
+                ],
+                'needs_2fa_setup' => !$user->two_factor_enabled,
             ],
-            'needs_2fa_setup' => !$user->two_factor_enabled,
         ];
 
         $response = response()->json($responseData);
