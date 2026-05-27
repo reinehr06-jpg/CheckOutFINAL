@@ -44,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Sanctum stateful requests
         $middleware->api(prepend: [
+            \App\Http\Middleware\AuthenticateWithCookie::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
