@@ -128,13 +128,17 @@ class User extends Authenticatable
         }
 
         $baseDate = $this->password_changed_at ?? $this->created_at;
-        return $baseDate && $baseDate->diffInDays(now()) >= 15;
+        $expiryDays = $this->isSuperAdmin() ? 5 : 15;
+        
+        return $baseDate && $baseDate->diffInDays(now()) >= $expiryDays;
     }
 
     public function isPasswordExpired(): bool
     {
         $baseDate = $this->password_changed_at ?? $this->created_at;
-        return $baseDate && $baseDate->diffInDays(now()) >= 15;
+        $expiryDays = $this->isSuperAdmin() ? 5 : 15;
+        
+        return $baseDate && $baseDate->diffInDays(now()) >= $expiryDays;
     }
 
     public function incrementFailedAttempts(): void
