@@ -9,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function TwoFactorSetupPage() {
   const router = useRouter();
-  const [step, setStep] = useState<'loading' | 'setup' | 'verify' | 'done'>('loading');
+  const [step, setStep] = useState<'intro' | 'loading' | 'setup' | 'verify' | 'done'>('intro');
   const [secret, setSecret] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
@@ -20,39 +20,37 @@ export default function TwoFactorSetupPage() {
   const [error, setError] = useState<string | null>(null);
   const [codesCopied, setCodesCopied] = useState(false);
 
-  useEffect(() => {
-    const initSetup = async () => {
-      try {
-        const csrfToken = getCsrfToken();
-        const token = getAccessToken();
-        const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/2fa/setup`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
-          },
-          credentials: 'include',
-        });
-        if (res.status === 401) {
-          router.push('/login');
-          return;
-        }
-        const data = await res.json();
-        if (data.success) {
-          setSecret(data.data.secret);
-          setQrCodeUrl(data.data.qr_code_url);
-          setStep('setup');
-        } else {
-          setError(data.message || 'Erro ao iniciar setup 2FA');
-        }
-      } catch {
-        setError('Erro de conexão com o servidor.');
+  const initSetup = async () => {
+    setStep('loading');
+    try {
+      const csrfToken = getCsrfToken();
+      const token = getAccessToken();
+      const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/2fa/setup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+        },
+        credentials: 'include',
+      });
+      if (res.status === 401) {
+        router.push('/login');
+        return;
       }
-    };
-    initSetup();
-  }, [router]);
+      const data = await res.json();
+      if (data.success) {
+        setSecret(data.data.secret);
+        setQrCodeUrl(data.data.qr_code_url);
+        setStep('setup');
+      } else {
+        setError(data.message || 'Erro ao iniciar setup 2FA');
+      }
+    } catch {
+      setError('Erro de conexão com o servidor.');
+    }
+  };
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
@@ -141,6 +139,35 @@ export default function TwoFactorSetupPage() {
             className="px-6 py-2.5 bg-brand text-white rounded-xl text-xs font-black uppercase tracking-wider">
             Voltar ao Login
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'intro') {
+    return (
+      <div className="min-h-screen bg-gradient-to-tr from-[#FAF8FF] via-[#F4EFFF] to-[#FCFAFF] flex items-center justify-center p-4">
+        <div className="bg-white rounded-[28px] p-8 shadow-2xl max-w-md w-full text-center space-y-6 border border-[#E8DDFD]/50 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand via-purple-500 to-brand"></div>
+          
+          <div className="w-16 h-16 bg-[#F4EFFF] rounded-2xl flex items-center justify-center mx-auto rotate-3 border border-[#E8DDFD]">
+            <Shield className="w-8 h-8 text-brand -rotate-3" />
+          </div>
+          
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Mais Segurança</h1>
+            <p className="text-sm font-bold text-slate-500 leading-relaxed px-4">
+              Para proteger sua conta, a autenticação de dois fatores (2FA) é <span className="text-brand font-black">obrigatória</span> no primeiro acesso.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <button onClick={initSetup}
+              className="w-full h-12 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all flex items-center justify-center gap-1.5"
+            >
+              Conectar Autenticador <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     );
