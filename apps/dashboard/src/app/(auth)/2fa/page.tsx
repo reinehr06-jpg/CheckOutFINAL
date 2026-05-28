@@ -71,7 +71,7 @@ export default function TwoFactorPage() {
     try {
       const csrfToken = getCsrfToken();
       const token = getAccessToken();
-      const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/2fa/verify`, {
+      const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/2fa/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
