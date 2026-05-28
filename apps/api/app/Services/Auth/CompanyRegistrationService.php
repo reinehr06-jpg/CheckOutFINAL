@@ -35,6 +35,7 @@ class CompanyRegistrationService
                 'role' => 'admin',
                 'status' => 'active',
                 'must_change_password' => false,
+                'password_changed_at' => now(),
             ]);
 
             app(AuditService::class)->log('company.registered', $user, [

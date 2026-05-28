@@ -127,20 +127,14 @@ class User extends Authenticatable
             return true;
         }
 
-        if (!$this->password_changed_at) {
-            return true;
-        }
-
-        return $this->password_changed_at->diffInDays(now()) >= 15;
+        $baseDate = $this->password_changed_at ?? $this->created_at;
+        return $baseDate && $baseDate->diffInDays(now()) >= 15;
     }
 
     public function isPasswordExpired(): bool
     {
-        if (!$this->password_changed_at) {
-            return true;
-        }
-
-        return $this->password_changed_at->diffInDays(now()) >= 15;
+        $baseDate = $this->password_changed_at ?? $this->created_at;
+        return $baseDate && $baseDate->diffInDays(now()) >= 15;
     }
 
     public function incrementFailedAttempts(): void
