@@ -233,6 +233,12 @@ export default function TwoFactorSetupPage() {
                 <p className="text-slate-400 font-semibold text-xs mt-1">
                   Escaneie o QR code com seu app autenticador ou insira a chave manualmente.
                 </p>
+                <div className="mt-3 bg-amber-50 border border-amber-200/60 rounded-xl p-3 flex gap-2.5 items-start text-left">
+                  <span className="text-[14px]">⚠️</span>
+                  <p className="text-[10px] font-bold text-amber-800 leading-relaxed">
+                    Use <strong className="font-black text-amber-900">Authy</strong> em vez do Google Authenticator se quiser sincronização automática entre dispositivos da equipe — o Authy tem suporte nativo a multi-device e backup na nuvem.
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-col items-center space-y-4 py-4">
