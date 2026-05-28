@@ -286,13 +286,17 @@ class AuthController extends Controller
             return response()->json(['message' => 'Não autenticado.'], 401);
         }
 
-        $data = $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'code' => 'required|string|size:6',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Código inválido.', 'errors' => $validator->errors()], 422);
+        }
+
         $twoFactorService = app(\App\Services\TwoFactorAuthService::class);
 
-        if ($twoFactorService->verifyCode($user, $data['code'])) {
+        if ($twoFactorService->verifyCode($user, $request->input('code'))) {
             $user->update(['last_auth_at' => now()]);
             
             // Set session verification flag for two factor authentication
@@ -346,13 +350,17 @@ class AuthController extends Controller
             return response()->json(['message' => 'Não autenticado.'], 401);
         }
 
-        $data = $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'code' => 'required|string|size:6',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Código inválido.', 'errors' => $validator->errors()], 422);
+        }
+
         $service = app(TwoFactorAuthService::class);
 
-        if ($service->enable($user, $data['code'])) {
+        if ($service->enable($user, $request->input('code'))) {
             // Ensure two_factor_enabled is saved bypassing any mass-assignment issues
             $user->forceFill(['two_factor_enabled' => true])->save();
             
