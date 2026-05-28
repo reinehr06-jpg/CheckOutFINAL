@@ -353,6 +353,12 @@ class AuthController extends Controller
         $service = app(TwoFactorAuthService::class);
 
         if ($service->enable($user, $data['code'])) {
+            // Ensure two_factor_enabled is saved bypassing any mass-assignment issues
+            $user->forceFill(['two_factor_enabled' => true])->save();
+            
+            // Set session verification flag so they don't have to verify immediately
+            $request->session()->put('2fa_verified_at', now()->timestamp);
+
             $recoveryCodes = $user->two_factor_codes
                 ? json_decode(\Illuminate\Support\Facades\Crypt::decryptString($user->two_factor_codes))
                 : [];
