@@ -294,9 +294,41 @@ class AuthController extends Controller
 
     public function verify2fa(Request $request): JsonResponse
     {
-        $user = $request->user();
+        // Autenticação manual via Bearer token (rota fora do auth:sanctum para evitar redirect 302)
+        if ($request->isMethod('GET')) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'method_not_allowed',
+                    'message' => 'Use POST para verificar o código 2FA.',
+                ],
+            ], 405);
+        }
+
+        $user = null;
+
+        // Tenta autenticar via Bearer token
+        $bearerToken = $request->bearerToken();
+        if ($bearerToken) {
+            $accessToken = \Laravel\Sanctum\PersonalAccessToken::findToken($bearerToken);
+            if ($accessToken && (!$accessToken->expires_at || $accessToken->expires_at->isFuture())) {
+                $user = $accessToken->tokenable;
+            }
+        }
+
+        // Fallback: tenta via sessão Sanctum (stateful)
         if (!$user) {
-            return response()->json(['message' => 'Não autenticado.'], 401);
+            $user = $request->user();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'unauthenticated',
+                    'message' => 'Sessão expirada. Faça login novamente.',
+                ],
+            ], 401);
         }
 
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
@@ -313,10 +345,15 @@ class AuthController extends Controller
             $user->update(['last_auth_at' => now()]);
             
             // Set session verification flag for two factor authentication
-            $request->session()->put('2fa_verified_at', now()->timestamp);
+            if ($request->hasSession()) {
+                $request->session()->put('2fa_verified_at', now()->timestamp);
+            }
 
             // 100% STATELESS: Adiciona a ability de verificado direto no banco de dados do token!
             $token = $user->currentAccessToken();
+            if (!$token && $bearerToken) {
+                $token = \Laravel\Sanctum\PersonalAccessToken::findToken($bearerToken);
+            }
             if ($token) {
                 $abilities = $token->abilities ?? [];
                 if (!in_array('2fa:verified', $abilities)) {

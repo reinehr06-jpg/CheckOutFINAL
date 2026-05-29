@@ -207,9 +207,13 @@ Route::prefix('v2')->name('api.v2.')->group(function () {
     Route::post('auth/login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])->middleware('throttle:auth_login');
     Route::post('auth/register', [\App\Http\Controllers\Api\V2\AuthController::class, 'register'])->middleware('throttle:auth_register');
     Route::post('auth/refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])->middleware(['auth:sanctum', 'throttle:auth_login']);
+
+    // 2FA verify FORA do middleware auth:sanctum para evitar redirect 302 que
+    // converte POST em GET. A autenticação é validada no próprio controller.
+    Route::match(['get', 'post'], 'auth/2fa/verify', [\App\Http\Controllers\Api\V2\AuthController::class, 'verify2fa']);
+
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('auth/me', [\App\Http\Controllers\Api\V2\AuthController::class, 'me']);
-        Route::post('auth/2fa/verify', [\App\Http\Controllers\Api\V2\AuthController::class, 'verify2fa']);
         Route::post('auth/2fa/setup', [\App\Http\Controllers\Api\V2\AuthController::class, 'setup2fa']);
         Route::post('auth/2fa/enable', [\App\Http\Controllers\Api\V2\AuthController::class, 'enable2fa']);
         Route::post('auth/logout', [\App\Http\Controllers\Api\V2\AuthController::class, 'logout']);
