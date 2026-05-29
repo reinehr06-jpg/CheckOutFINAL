@@ -36,7 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'evento/*/pay',
             'pay/*/process',
             'webhooks/*',
-            'webhooks/checkout'
+            'webhooks/checkout',
+            'api/v2/auth/*',
+            'api/v1/auth/*',
         ]);
 
         // Global tracing for all requests

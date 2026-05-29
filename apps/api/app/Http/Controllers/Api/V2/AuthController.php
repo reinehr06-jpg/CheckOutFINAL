@@ -267,14 +267,20 @@ class AuthController extends Controller
 
         $response = response()->json($responseData);
 
-        $response->headers->set('Set-Cookie', implode('; ', [
+        $isSecure = $request->isSecure();
+
+        $cookieParts = [
             "basileia_session={$accessToken->plainTextToken}",
             'HttpOnly',
-            'Secure',
             'SameSite=Lax',
             'Path=/',
             'Max-Age=3600',
-        ]));
+        ];
+        if ($isSecure) {
+            $cookieParts[] = 'Secure';
+        }
+
+        $response->headers->set('Set-Cookie', implode('; ', $cookieParts));
 
         return $response;
     }
