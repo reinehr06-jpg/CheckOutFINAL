@@ -21,7 +21,7 @@ import {
   Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fetchWithTimeout, getCsrfToken, setTokens } from '@/lib/api';
+import { fetchWithTimeout, getCsrfToken, setTokens, getAccessToken } from '@/lib/api';
 
 type AuthState = 'credentials' | 'two_factor' | 'recovery' | 'locked_out' | 'session_expired' | 'restricted';
 
@@ -192,11 +192,13 @@ export default function LoginPage() {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
       const csrfToken = getCsrfToken();
+      const token = getAccessToken();
       const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/2fa/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
         },
         credentials: 'include',
