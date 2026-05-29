@@ -215,7 +215,7 @@ export default function LoginPage() {
         return;
       }
 
-      if (!res.ok || data.message) {
+      if (!res.ok || !data.success) {
         triggerToast(data.message || data.error?.message || 'Código inválido ou expirado.');
         setLoading(false);
         return;
