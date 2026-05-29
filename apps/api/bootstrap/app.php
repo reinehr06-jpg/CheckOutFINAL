@@ -91,4 +91,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         // Todas as exceções retornam JSON (não mais páginas Blade de erro)
         $exceptions->shouldRenderJsonWhen(fn($request) => true);
+
+        // Impede redirect em AuthenticationException — retorna 401 JSON diretamente
+        // Sem isso, o Laravel redireciona para /login (GET), transformando
+        // qualquer POST em GET e causando erro "method not supported"
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, Request $request) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'unauthenticated',
+                    'message' => 'Não autenticado. Faça login novamente.',
+                ],
+            ], 401);
+        });
     })->create();

@@ -207,8 +207,16 @@ export default function LoginPage() {
 
       const data = await res.json();
 
+      if (res.status === 401) {
+        triggerToast('Sessão expirada. Faça login novamente.');
+        setAuthState('credentials');
+        setCode(['', '', '', '', '', '']);
+        setLoading(false);
+        return;
+      }
+
       if (!res.ok || data.message) {
-        triggerToast(data.message || 'Código inválido ou expirado.');
+        triggerToast(data.message || data.error?.message || 'Código inválido ou expirado.');
         setLoading(false);
         return;
       }

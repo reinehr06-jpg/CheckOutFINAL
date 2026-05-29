@@ -17,17 +17,20 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['GET', 'POST', 'PATCH', 'DELETE'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => [
         env('APP_URL', 'http://localhost:8000'),
         env('FRONTEND_URL', 'http://localhost:3000'),   // checkout
         env('DASHBOARD_URL', 'http://localhost:3001'),  // dashboard
+        'https://basileia.global',
+        'https://secure.basileia.global',
+        'https://checkout.basileia.global',
     ],
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['Content-Type', 'X-API-Key', 'Authorization', 'X-Request-ID', 'X-Trace-ID', 'Accept'],
+    'allowed_headers' => ['Content-Type', 'X-API-Key', 'Authorization', 'X-Request-ID', 'X-Trace-ID', 'X-XSRF-TOKEN', 'Accept'],
 
     'exposed_headers' => [],
 

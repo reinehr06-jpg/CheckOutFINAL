@@ -84,13 +84,21 @@ export default function TwoFactorPage() {
       });
       const data = await res.json();
 
+      if (res.status === 401) {
+        triggerToast('Sessão expirada. Faça login novamente.');
+        setTimeout(() => {
+          router.push('/login');
+        }, 1000);
+        return;
+      }
+
       if (data.success) {
         triggerToast('Sessão autenticada! Redirecionando...');
         setTimeout(() => {
           router.push('/dashboard');
         }, 800);
       } else {
-        triggerToast(data.message || 'Código inválido ou expirado.');
+        triggerToast(data.message || data.error?.message || 'Código inválido ou expirado.');
       }
     } catch {
       triggerToast('Erro de conexão com o servidor.');

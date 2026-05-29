@@ -25,7 +25,8 @@ class HandleCors
             $response->headers->set('Access-Control-Allow-Origin', 'https://basileia.global');
         }
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Key');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-API-Key, X-XSRF-TOKEN, X-Request-ID, X-Trace-ID, Accept');
+        $response->headers->set('Access-Control-Allow-Credentials', 'true');
         $response->headers->set('Access-Control-Max-Age', '86400');
 
         return $response;
