@@ -115,26 +115,6 @@ export default function TwoFactorSetupPage() {
           setTokens(newAccess, newRefresh, expiresAt);
         }
 
-        // Validate session before redirecting to ensure smooth transition
-        try {
-          const meRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/me?_t=${Date.now()}`, {
-            headers: {
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${getAccessToken()}`,
-            },
-            credentials: 'include',
-          });
-          if (!meRes.ok) {
-            triggerToast('Sessão inválida. Faça login novamente.');
-            clearTokens();
-            router.push('/login');
-            return;
-          }
-        } catch {
-          // Network error - still try to redirect, let AuthGuard handle it
-          console.warn('[2FA Setup] /auth/me check failed, attempting redirect anyway');
-        }
-
         setRecoveryCodes(data.data.recovery_codes || []);
         setStep('done');
         triggerToast('2FA ativado com sucesso!');

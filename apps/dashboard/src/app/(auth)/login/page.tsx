@@ -229,28 +229,6 @@ export default function LoginPage() {
         setTokens(newAccess, newRefresh, expiresAt);
       }
 
-      // Validate session before redirecting to ensure smooth transition
-      try {
-        const meRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/me?_t=${Date.now()}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${getAccessToken()}`,
-          },
-          credentials: 'include',
-        });
-        if (!meRes.ok) {
-          triggerToast('Sessão inválida. Faça login novamente.');
-          clearTokens();
-          setAuthState('credentials');
-          setCode(['', '', '', '', '', '']);
-          setLoading(false);
-          return;
-        }
-      } catch {
-        // Network error - still try to redirect, let AuthGuard handle it
-        console.warn('[Login] /auth/me check failed, attempting redirect anyway');
-      }
-
       triggerToast('Autenticado! Redirecionando...');
       setTimeout(() => {
         window.location.href = '/dashboard';
