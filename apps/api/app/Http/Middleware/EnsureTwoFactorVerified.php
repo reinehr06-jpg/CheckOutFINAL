@@ -25,10 +25,18 @@ class EnsureTwoFactorVerified
             return $next($request);
         }
 
-        // Se 2FA está habilitado, verifica se a sessão atual foi validada
-        // Usamos uma flag na sessão do Sanctum ou no Cache vinculado ao token
-        $isVerified = $request->session()->get('2fa_verified_at') 
-            || $request->attributes->get('2fa_verified_at');
+        // Usamos Cache vinculado ao token (stateless API) ou sessão
+        $isVerified = false;
+
+        $token = $user->currentAccessToken();
+        if ($token) {
+            $isVerified = \Illuminate\Support\Facades\Cache::get("2fa_verified_{$token->id}");
+        }
+
+        if (!$isVerified) {
+            $isVerified = $request->session()->get('2fa_verified_at') 
+                || $request->attributes->get('2fa_verified_at');
+        }
 
         if (!$isVerified) {
             return response()->json([
