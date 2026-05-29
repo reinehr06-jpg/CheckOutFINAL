@@ -13,7 +13,7 @@ import {
   Key,
   Monitor
 } from 'lucide-react';
-import { fetchWithTimeout, getCsrfToken, getAccessToken } from '@/lib/api';
+import { fetchWithTimeout, getCsrfToken, getAccessToken, setTokens } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -93,6 +93,14 @@ export default function TwoFactorPage() {
       }
 
       if (data.success) {
+        // Check if the response includes new tokens (some backends rotate tokens after 2FA)
+        const newAccess = data.data?.access_token || data.access_token || data.token;
+        const newRefresh = data.data?.refresh_token || data.refresh_token;
+        const expiresAt = data.data?.expires_at || data.expires_at;
+        if (newAccess && newRefresh) {
+          setTokens(newAccess, newRefresh, expiresAt);
+        }
+        
         triggerToast('Sessão autenticada! Redirecionando...');
         setTimeout(() => {
           router.push('/dashboard');

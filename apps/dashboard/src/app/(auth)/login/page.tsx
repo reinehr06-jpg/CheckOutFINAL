@@ -21,7 +21,7 @@ import {
   Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fetchWithTimeout, getCsrfToken, setTokens, getAccessToken } from '@/lib/api';
+import { fetchWithTimeout, getCsrfToken, setTokens, getAccessToken, clearTokens } from '@/lib/api';
 
 type AuthState = 'credentials' | 'two_factor' | 'recovery' | 'locked_out' | 'session_expired' | 'restricted';
 
@@ -219,6 +219,36 @@ export default function LoginPage() {
         triggerToast(data.message || data.error?.message || 'Código inválido ou expirado.');
         setLoading(false);
         return;
+      }
+
+      // Check if the response includes new tokens (some backends rotate tokens after 2FA)
+      const newAccess = data.data?.access_token || data.access_token || data.token;
+      const newRefresh = data.data?.refresh_token || data.refresh_token;
+      const expiresAt = data.data?.expires_at || data.expires_at;
+      if (newAccess && newRefresh) {
+        setTokens(newAccess, newRefresh, expiresAt);
+      }
+
+      // Validate session before redirecting to ensure smooth transition
+      try {
+        const meRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/me?_t=${Date.now()}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${getAccessToken()}`,
+          },
+          credentials: 'include',
+        });
+        if (!meRes.ok) {
+          triggerToast('Sessão inválida. Faça login novamente.');
+          clearTokens();
+          setAuthState('credentials');
+          setCode(['', '', '', '', '', '']);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Network error - still try to redirect, let AuthGuard handle it
+        console.warn('[Login] /auth/me check failed, attempting redirect anyway');
       }
 
       triggerToast('Autenticado! Redirecionando...');

@@ -123,10 +123,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkSession = useCallback(async () => {
     try {
       const token = getAccessToken();
-      const headers: Record<string, string> = { 'Accept': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      if (!token) {
+        // No token available, user is not authenticated
+        setUser(null);
+        return;
       }
+
+      const headers: Record<string, string> = { 'Accept': 'application/json' };
+      headers['Authorization'] = `Bearer ${token}`;
 
       const res = await fetchWithTimeout(`${API_URL}/api/v1/auth/me`, {
         headers,
@@ -134,6 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!res.ok) {
+        // Token is invalid or expired, clear tokens
+        clearTokens();
         setUser(null);
         return;
       }
@@ -169,7 +175,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch {
-      setUser(null);
+      // Network error or timeout - don't clear user state,
+      // let the API interceptors handle 401s on subsequent requests
+      console.warn('[Auth] checkSession failed, will retry on next API call');
     }
   }, [scheduleRefresh]);
 

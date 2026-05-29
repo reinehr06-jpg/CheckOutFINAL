@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, ArrowRight, Check, AlertTriangle, Copy } from 'lucide-react';
-import { fetchWithTimeout, getCsrfToken, getAccessToken, clearTokens } from '@/lib/api';
+import { fetchWithTimeout, getCsrfToken, getAccessToken, clearTokens, setTokens } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -107,6 +107,34 @@ export default function TwoFactorSetupPage() {
       });
       const data = await res.json();
       if (data.success) {
+        // Check if the response includes new tokens (some backends rotate tokens after 2FA)
+        const newAccess = data.data?.access_token || data.access_token || data.token;
+        const newRefresh = data.data?.refresh_token || data.refresh_token;
+        const expiresAt = data.data?.expires_at || data.expires_at;
+        if (newAccess && newRefresh) {
+          setTokens(newAccess, newRefresh, expiresAt);
+        }
+
+        // Validate session before redirecting to ensure smooth transition
+        try {
+          const meRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/me?_t=${Date.now()}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${getAccessToken()}`,
+            },
+            credentials: 'include',
+          });
+          if (!meRes.ok) {
+            triggerToast('Sessão inválida. Faça login novamente.');
+            clearTokens();
+            router.push('/login');
+            return;
+          }
+        } catch {
+          // Network error - still try to redirect, let AuthGuard handle it
+          console.warn('[2FA Setup] /auth/me check failed, attempting redirect anyway');
+        }
+
         setRecoveryCodes(data.data.recovery_codes || []);
         setStep('done');
         triggerToast('2FA ativado com sucesso!');
