@@ -51,8 +51,15 @@ class AuthController extends Controller
         if ($user->isLocked()) {
             return response()->json([
                 'success' => false,
-                'error' => ['code' => 'account_locked', 'message' => 'Conta temporariamente bloqueada.'],
-            ], 423);
+                'error' => ['code' => 'account_locked', 'message' => 'Conta bloqueada por excesso de tentativas.'],
+            ], 403);
+        }
+
+        if ($user->isPasswordExpired()) {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'password_expired', 'message' => 'Sua senha expirou (5 dias). Por favor, utilize a recuperação de senha.'],
+            ], 403);
         }
 
         if ($user->status !== 'active') {
@@ -379,6 +386,7 @@ class AuthController extends Controller
         if ($service->enable($user, $request->input('code'))) {
             // Ensure two_factor_enabled is saved bypassing any mass-assignment issues
             $user->forceFill(['two_factor_enabled' => true])->save();
+            \Illuminate\Support\Facades\DB::table('users')->where('id', $user->id)->update(['two_factor_enabled' => true]);
             
             // Set session verification flag so they don't have to verify immediately
             $request->session()->put('2fa_verified_at', now()->timestamp);

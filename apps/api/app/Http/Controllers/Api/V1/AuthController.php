@@ -77,6 +77,16 @@ class AuthController extends Controller
             ], 423);
         }
 
+        if ($user->isPasswordExpired()) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'password_expired',
+                    'message' => 'Sua senha expirou (5 dias). Por favor, utilize a recuperação de senha.',
+                ]
+            ], 403);
+        }
+
         if ($user->status !== 'active') {
             return response()->json([
                 'success' => false,
