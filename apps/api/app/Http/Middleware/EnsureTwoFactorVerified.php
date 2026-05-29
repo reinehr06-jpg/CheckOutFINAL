@@ -25,12 +25,13 @@ class EnsureTwoFactorVerified
             return $next($request);
         }
 
-        // Usamos Cache vinculado ao token (stateless API) ou sessão
+        // 100% STATELESS E INFALÍVEL: Verifica se a "ability" de 2fa:verified está no token!
+        // Como o token está no banco de dados, isso funciona em Vercel, Serverless, Load Balancers, etc.
         $isVerified = false;
 
         $token = $user->currentAccessToken();
-        if ($token) {
-            $isVerified = \Illuminate\Support\Facades\Cache::get("2fa_verified_{$token->id}");
+        if ($token && is_array($token->abilities)) {
+            $isVerified = in_array('2fa:verified', $token->abilities);
         }
 
         if (!$isVerified) {

@@ -308,10 +308,14 @@ class AuthController extends Controller
             // Set session verification flag for two factor authentication
             $request->session()->put('2fa_verified_at', now()->timestamp);
 
-            // Also set in Cache for stateless token usage
+            // 100% STATELESS: Adiciona a ability de verificado direto no banco de dados do token!
             $token = $user->currentAccessToken();
             if ($token) {
-                \Illuminate\Support\Facades\Cache::put("2fa_verified_{$token->id}", true, now()->addHours(12));
+                $abilities = $token->abilities ?? [];
+                if (!in_array('2fa:verified', $abilities)) {
+                    $abilities[] = '2fa:verified';
+                    $token->forceFill(['abilities' => $abilities])->save();
+                }
             }
             
             return response()->json([
@@ -379,10 +383,14 @@ class AuthController extends Controller
             // Set session verification flag so they don't have to verify immediately
             $request->session()->put('2fa_verified_at', now()->timestamp);
 
-            // Also set in Cache for stateless token usage
+            // 100% STATELESS: Adiciona a ability de verificado direto no banco de dados do token!
             $token = $user->currentAccessToken();
             if ($token) {
-                \Illuminate\Support\Facades\Cache::put("2fa_verified_{$token->id}", true, now()->addHours(12));
+                $abilities = $token->abilities ?? [];
+                if (!in_array('2fa:verified', $abilities)) {
+                    $abilities[] = '2fa:verified';
+                    $token->forceFill(['abilities' => $abilities])->save();
+                }
             }
 
             $recoveryCodes = $user->two_factor_codes
