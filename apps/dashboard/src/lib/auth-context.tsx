@@ -133,7 +133,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const res = await fetchWithTimeout(`${API_URL}/api/v2/auth/me`, {
         headers,
-        credentials: 'include',
       });
 
       // If 401, try to refresh the token before giving up
@@ -146,16 +145,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         try {
-          const csrfToken = getCsrfToken();
           const refreshRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/refresh`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
               'Authorization': `Bearer ${refreshToken}`,
-              ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
             },
-            credentials: 'include',
           });
 
           if (!refreshRes.ok) {
@@ -177,7 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const meRes = await fetchWithTimeout(`${API_URL}/api/v2/auth/me`, {
               headers: newHeaders,
-              credentials: 'include',
             });
 
             if (!meRes.ok) {
