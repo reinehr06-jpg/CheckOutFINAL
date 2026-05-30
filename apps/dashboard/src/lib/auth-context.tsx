@@ -124,7 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = getAccessToken();
       if (!token) {
-        // No token available, user is not authenticated
         setUser(null);
         return;
       }
@@ -137,8 +136,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
       });
 
+      // If 401, try to refresh the token before giving up
+      if (res.status === 401) {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          clearTokens();
+          setUser(null);
+          return;
+        }
+
+        try {
+          const csrfToken = getCsrfToken();
+          const refreshRes = await fetchWithTimeout(`${API_URL}/api/v1/auth/refresh`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${refreshToken}`,
+              ...(csrfToken ? { 'X-XSRF-TOKEN': csrfToken } : {}),
+            },
+            credentials: 'include',
+          });
+
+          if (!refreshRes.ok) {
+            clearTokens();
+            setUser(null);
+            return;
+          }
+
+          const refreshData = await refreshRes.json();
+          const newAccess = refreshData.access_token || refreshData.data?.access_token || refreshData.token || refreshData.data?.token;
+          const newRefresh = refreshData.refresh_token || refreshData.data?.refresh_token;
+          const expiresAt = refreshData.expires_at || refreshData.data?.expires_at;
+
+          if (newAccess && newRefresh) {
+            setTokens(newAccess, newRefresh, expiresAt);
+            // Retry /me with new token
+            const newHeaders: Record<string, string> = { 'Accept': 'application/json' };
+            newHeaders['Authorization'] = `Bearer ${newAccess}`;
+
+            const meRes = await fetchWithTimeout(`${API_URL}/api/v2/auth/me`, {
+              headers: newHeaders,
+              credentials: 'include',
+            });
+
+            if (!meRes.ok) {
+              clearTokens();
+              setUser(null);
+              return;
+            }
+
+            const meData = await meRes.json();
+            const userData = meData.success ? meData.data : meData;
+            setUser(userData);
+            scheduleRefresh();
+            return;
+          }
+        } catch {
+          clearTokens();
+          setUser(null);
+          return;
+        }
+      }
+
       if (!res.ok) {
-        // Token is invalid or expired, clear tokens
         clearTokens();
         setUser(null);
         return;
