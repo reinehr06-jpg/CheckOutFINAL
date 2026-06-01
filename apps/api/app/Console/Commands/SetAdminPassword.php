@@ -57,7 +57,11 @@ class SetAdminPassword extends Command
             return self::FAILURE;
         }
 
-        $user->update(['password' => Hash::make($password)]);
+        $user->update([
+            'password' => Hash::make($password),
+            'password_changed_at' => now(),
+            'must_change_password' => false,
+        ]);
 
         $this->info("✅ Senha atualizada com sucesso para: {$user->email}");
 
