@@ -53,7 +53,11 @@ export function SortableBlockItem({ block, index, isSelected, onSelect }: Sortab
       >
         <span className="text-xs font-bold w-4 opacity-50 select-none shrink-0">{index + 1}.</span>
         <span className="text-sm font-semibold truncate flex-1 select-none">{block.name}</span>
-        {block.locked && <Shield size={12} className="opacity-50 shrink-0" title="Bloco nativo (não pode ser excluído)" />}
+        {block.locked && (
+          <span title="Bloco nativo (não pode ser excluído)">
+            <Shield size={12} className="opacity-50 shrink-0" />
+          </span>
+        )}
       </div>
     </div>
   );

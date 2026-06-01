@@ -187,6 +187,9 @@ export default function WebhooksPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
 
+  // Docs Modal State
+  const [showDocsModal, setShowDocsModal] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -714,7 +717,7 @@ export default function WebhooksPage() {
 
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => triggerSuccessAlert('Abrindo documentação técnica...')}
+              onClick={() => setShowDocsModal(true)}
               className="flex items-center justify-center gap-1.5 px-3 py-1 bg-white border border-[#E7E5EF] hover:bg-brand-soft rounded-xl text-[10px] font-black text-slate-700 shadow-sm transition-all h-[30px]"
             >
               Documentação
@@ -1563,6 +1566,83 @@ export default function WebhooksPage() {
 
           </div>
         </>
+      )}
+
+      {/* Modal: Documentação e Schema */}
+      {showDocsModal && (
+        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-[#E7E5EF] shadow-2xl p-6 max-w-2xl w-full animate-in zoom-in-95 duration-200 text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2 text-brand">
+                <FileText className="w-5 h-5 shrink-0" />
+                <h3 className="text-slate-950 font-black text-sm">Documentação de Webhooks</h3>
+              </div>
+              <button onClick={() => setShowDocsModal(false)} className="p-1 hover:bg-slate-50 rounded-lg text-slate-400">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <p className="text-slate-500 font-semibold leading-relaxed">
+                A Basileia Pay envia eventos via requisições HTTP POST contendo payloads no formato JSON.
+                Abaixo está o Schema Base para qualquer evento do nosso sistema.
+              </p>
+
+              <div>
+                <span className="text-[10px] font-black text-brand uppercase tracking-wider block mb-2">Schema JSON Base</span>
+                <div className="bg-slate-950 p-4 rounded-xl overflow-x-auto no-scrollbar relative group">
+                  <button 
+                    onClick={() => handleCopy(`{\n  "event": "string",\n  "data": "object",\n  "environment": "string",\n  "timestamp": "iso8601"\n}`, 'schema')}
+                    className="absolute top-3 right-3 p-1.5 bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    {copiedField === 'schema' ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                  <pre className="text-green-400 font-mono text-[11px] leading-relaxed">
+{`{
+  "id": "evt_abc123",               // UUID único do evento
+  "event": "payment.approved",      // Tipo do evento
+  "environment": "production",      // "production" ou "sandbox"
+  "created_at": "2026-05-19T10:00:00Z", // Data/hora (ISO-8601)
+  "data": {                         // Objeto flexível (Payload específico)
+    "transaction_id": "trx_...",
+    "amount": 10500,
+    "currency": "BRL"
+  }
+}`}
+                  </pre>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-black text-brand uppercase tracking-wider block mb-2">Segurança (HMAC-SHA256)</span>
+                <p className="text-slate-500 font-semibold leading-relaxed mb-2 text-[11px]">
+                  Para validar que o evento foi originado pela Basileia Pay e não sofreu alterações (Man-in-the-Middle), assine o payload usando a chave secreta gerada na criação do endpoint.
+                </p>
+                <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl font-mono text-[10px] text-slate-700">
+                  <span className="font-bold text-slate-500">Header:</span> x-basileia-signature<br/>
+                  <span className="font-bold text-slate-500">Exemplo PHP:</span><br/>
+                  <span className="text-blue-600">$signature</span> = <span className="text-violet-600">hash_hmac</span>(<span className="text-green-700">'sha256'</span>, <span className="text-blue-600">$payload</span>, <span className="text-blue-600">$secret</span>);
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-black text-brand uppercase tracking-wider block mb-2">Tentativas de Entrega (Retries)</span>
+                <p className="text-slate-500 font-semibold leading-relaxed text-[11px]">
+                  Caso seu servidor responda com um código HTTP diferente de <span className="font-mono bg-slate-100 px-1 rounded">2xx</span>, ou a requisição atinja o timeout (padrão 30s), a Basileia Pay reenviará o evento automaticamente baseada na política de Retry configurada (ex: backoff exponencial).
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 mt-6 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setShowDocsModal(false)}
+                className="px-4 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10.5px] font-black uppercase h-[32px] transition-all"
+              >
+                Fechar Documentação
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

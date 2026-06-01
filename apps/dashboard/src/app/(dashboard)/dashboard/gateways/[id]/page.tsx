@@ -132,7 +132,7 @@ export default function GatewayDetailPage() {
     if (gw) setStatusActive(gw.status !== 'Desativado')
   }, [gw])
 
-  const [activeTab, setActiveTab] = useState<'resumo' | 'credenciais' | 'metodos' | 'sistemas' | 'webhooks' | 'testes' | 'eventos'>('resumo');
+  const [activeTab, setActiveTab] = useState<'resumo' | 'credenciais' | 'metodos' | 'sistemas' | 'webhooks' | 'testes' | 'eventos' | 'assinaturas'>('resumo');
   const [successAlert, setSuccessAlert] = useState<string | null>(null);
 
   // Toggle visible credential keys
@@ -334,6 +334,7 @@ export default function GatewayDetailPage() {
             { id: 'credenciais', label: 'Credenciais API', icon: Key },
             { id: 'metodos', label: 'Métodos Ativos', icon: Cpu },
             { id: 'sistemas', label: 'Sistemas Vinculados', icon: Layers },
+            { id: 'assinaturas', label: 'Assinaturas Ativas', icon: RefreshCw },
             { id: 'webhooks', label: 'Webhooks & Entregas', icon: Globe },
             { id: 'testes', label: 'Testes Rápidos', icon: Terminal },
             { id: 'eventos', label: 'Eventos de Auditoria', icon: Calendar },
@@ -604,6 +605,83 @@ export default function GatewayDetailPage() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Assinaturas */}
+        {activeTab === 'assinaturas' && (
+          <div className="bg-white p-4 rounded-[24px] border border-[#E8DDFD] shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-[14px] font-black text-slate-950 leading-none">Assinaturas Vivas no Gateway</h3>
+                <p className="text-slate-400 font-bold text-[11px] mt-1 font-medium">Contratos recorrentes de cobrança sendo gerenciados por este provedor.</p>
+              </div>
+              <button 
+                onClick={() => triggerSuccessAlert('Sincronização de assinaturas com o provedor iniciada!')}
+                className="px-3.5 py-1.5 bg-brand text-white hover:bg-brand-deep rounded-xl text-[10px] font-black uppercase tracking-tight shadow-sm flex items-center gap-1.5"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Sincronizar
+              </button>
+            </div>
+
+            <div className="w-full overflow-hidden border border-slate-200/50 rounded-2xl mt-2 shadow-sm">
+              <table className="w-full text-left table-fixed">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200/50 text-[9.5px] font-black uppercase tracking-widest text-slate-400">
+                    <th className="py-2.5 px-3 w-[25%]">Cliente / ID</th>
+                    <th className="py-2.5 px-2 w-[25%]">Plano</th>
+                    <th className="py-2.5 px-2 w-[15%]">Valor</th>
+                    <th className="py-2.5 px-2 w-[15%]">Status</th>
+                    <th className="py-2.5 px-2 w-[20%]">Próxima Cobrança</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-[11.5px] font-bold text-slate-700">
+                  <tr className="hover:bg-slate-50/50 h-[50px] transition-colors">
+                    <td className="py-2 px-3">
+                      <div className="flex flex-col">
+                        <span className="text-slate-950 font-black truncate">João da Silva</span>
+                        <span className="text-[9px] text-slate-400 font-mono">sub_1A2B3C</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 text-slate-500 font-bold">Plano Pro - Mensal</td>
+                    <td className="py-2 px-2 text-slate-950 font-black">R$ 97,00</td>
+                    <td className="py-2 px-2">
+                      <span className="bg-green-50 border border-green-200/50 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Ativa</span>
+                    </td>
+                    <td className="py-2 px-2 text-slate-400 font-bold">15/06/2026</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50 h-[50px] transition-colors">
+                    <td className="py-2 px-3">
+                      <div className="flex flex-col">
+                        <span className="text-slate-950 font-black truncate">Maria Oliveira</span>
+                        <span className="text-[9px] text-slate-400 font-mono">sub_9X8Y7Z</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 text-slate-500 font-bold">Plano VIP - Anual</td>
+                    <td className="py-2 px-2 text-slate-950 font-black">R$ 997,00</td>
+                    <td className="py-2 px-2">
+                      <span className="bg-green-50 border border-green-200/50 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Ativa</span>
+                    </td>
+                    <td className="py-2 px-2 text-slate-400 font-bold">22/10/2026</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50 h-[50px] transition-colors">
+                    <td className="py-2 px-3">
+                      <div className="flex flex-col">
+                        <span className="text-slate-950 font-black truncate">Carlos Souza</span>
+                        <span className="text-[9px] text-slate-400 font-mono">sub_4P5Q6R</span>
+                      </div>
+                    </td>
+                    <td className="py-2 px-2 text-slate-500 font-bold">Plano Starter - Mensal</td>
+                    <td className="py-2 px-2 text-slate-950 font-black">R$ 47,00</td>
+                    <td className="py-2 px-2">
+                      <span className="bg-red-50 border border-red-200/50 text-red-700 text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Inadimplente</span>
+                    </td>
+                    <td className="py-2 px-2 text-red-400 font-bold">Atrasada</td>
+                  </tr>
                 </tbody>
               </table>
             </div>

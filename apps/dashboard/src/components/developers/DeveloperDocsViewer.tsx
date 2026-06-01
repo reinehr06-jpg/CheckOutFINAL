@@ -160,19 +160,69 @@ export function DeveloperDocsViewer({ onActionFeedback }: { onActionFeedback: (m
             </div>
 
             {/* Request example code */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
-              <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
-                <span>Payload de Resposta (JSON)</span>
-                <button
-                  onClick={() => handleCopy(JSON.stringify({ id: "chk_01JTK8X9", status: "created", checkout_url: "https://pay.basileia.com/chk_01JTK8X9" }, null, 2), "chk-res")}
-                  className="text-slate-400 hover:text-white shrink-0 cursor-pointer"
-                >
-                  {copiedText === 'chk-res' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
-                </button>
+            <div className="space-y-3 mt-4">
+              <span className="text-[9.5px] font-black uppercase text-slate-400 tracking-wider block">Exemplo de Requisição (POST)</span>
+              
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
+                  <span>cURL</span>
+                  <button onClick={() => handleCopy(`curl -X POST https://api.basileia.app/v1/checkouts \\\n  -H "Authorization: Bearer sk_live_bsl_xxx" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "system_id": "sys_church",\n    "amount": 15990\n  }'`, "chk-req-curl")} className="text-slate-400 hover:text-white shrink-0 cursor-pointer">
+                    {copiedText === 'chk-req-curl' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <pre className="font-mono text-xs text-blue-400 overflow-x-auto whitespace-pre no-scrollbar">
+                  <code>{`curl -X POST https://api.basileia.app/v1/checkouts \\
+  -H "Authorization: Bearer sk_live_bsl_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "system_id": "sys_church",
+    "amount": 15990
+  }'`}</code>
+                </pre>
               </div>
-              <pre className="font-mono text-xs text-slate-300 overflow-x-auto whitespace-pre no-scrollbar">
-                <code>{`{\n  "id": "chk_01JTK8X9A214",\n  "status": "created",\n  "amount": 15990,\n  "checkout_url": "https://pay.basileia.com/chk_01JTK8X9A214",\n  "expires_at": "2026-05-19T15:00:00Z"\n}`}</code>
-              </pre>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
+                  <span>PHP (cURL)</span>
+                  <button onClick={() => handleCopy(`<?php\n$ch = curl_init();\ncurl_setopt($ch, CURLOPT_URL, 'https://api.basileia.app/v1/checkouts');\ncurl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);\ncurl_setopt($ch, CURLOPT_POST, 1);\ncurl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([\n  "system_id" => "sys_church",\n  "amount" => 15990\n]));\n$headers = [];\n$headers[] = 'Authorization: Bearer sk_live_bsl_xxx';\n$headers[] = 'Content-Type: application/json';\ncurl_setopt($ch, CURLOPT_HTTPHEADER, $headers);\n$result = curl_exec($ch);\ncurl_close($ch);\necho $result;`, "chk-req-php")} className="text-slate-400 hover:text-white shrink-0 cursor-pointer">
+                    {copiedText === 'chk-req-php' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <pre className="font-mono text-xs text-violet-400 overflow-x-auto whitespace-pre no-scrollbar">
+                  <code>{`<?php
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, 'https://api.basileia.app/v1/checkouts');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+  "system_id" => "sys_church",
+  "amount" => 15990
+]));
+$headers = [
+  'Authorization: Bearer sk_live_bsl_xxx',
+  'Content-Type: application/json'
+];
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+$result = curl_exec($ch);
+curl_close($ch);
+echo $result;`}</code>
+                </pre>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
+                  <span>Payload de Resposta (JSON)</span>
+                  <button
+                    onClick={() => handleCopy(JSON.stringify({ id: "chk_01JTK8X9A214", status: "created", amount: 15990, checkout_url: "https://pay.basileia.com/chk_01JTK8X9A214" }, null, 2), "chk-res")}
+                    className="text-slate-400 hover:text-white shrink-0 cursor-pointer"
+                  >
+                    {copiedText === 'chk-res' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <pre className="font-mono text-xs text-green-400 overflow-x-auto whitespace-pre no-scrollbar">
+                  <code>{`{\n  "id": "chk_01JTK8X9A214",\n  "status": "created",\n  "amount": 15990,\n  "checkout_url": "https://pay.basileia.com/chk_01JTK8X9A214",\n  "expires_at": "2026-05-19T15:00:00Z"\n}`}</code>
+                </pre>
+              </div>
             </div>
           </div>
         )}
@@ -192,19 +242,34 @@ export function DeveloperDocsViewer({ onActionFeedback }: { onActionFeedback: (m
               Obtém a árvore completa de dados e o status operacional atual de uma transação pelo seu ID exclusivo.
             </p>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
-              <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
-                <span>Response (200 OK)</span>
-                <button
-                  onClick={() => handleCopy(JSON.stringify({ id: "pay_7c9d8a1e2f3", status: "succeeded" }, null, 2), "get-pay-res")}
-                  className="text-slate-400 hover:text-white shrink-0 cursor-pointer"
-                >
-                  {copiedText === 'get-pay-res' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
-                </button>
+            <div className="space-y-3 mt-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
+                  <span>cURL</span>
+                  <button onClick={() => handleCopy(`curl -X GET https://api.basileia.app/v1/payments/pay_7c9d8a1e2f3 \\\n  -H "Authorization: Bearer sk_live_bsl_xxx"`, "get-pay-curl")} className="text-slate-400 hover:text-white shrink-0 cursor-pointer">
+                    {copiedText === 'get-pay-curl' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <pre className="font-mono text-xs text-blue-400 overflow-x-auto whitespace-pre no-scrollbar">
+                  <code>{`curl -X GET https://api.basileia.app/v1/payments/pay_7c9d8a1e2f3 \\
+  -H "Authorization: Bearer sk_live_bsl_xxx"`}</code>
+                </pre>
               </div>
-              <pre className="font-mono text-xs text-slate-300 overflow-x-auto whitespace-pre no-scrollbar">
-                <code>{`{\n  "id": "pay_7c9d8a1e2f3",\n  "amount": 5000,\n  "status": "succeeded",\n  "payment_method": "pix",\n  "customer": {\n    "name": "Júlio César",\n    "email": "julio@igreja.org"\n  }\n}`}</code>
-              </pre>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
+                  <span>Response (200 OK)</span>
+                  <button
+                    onClick={() => handleCopy(JSON.stringify({ id: "pay_7c9d8a1e2f3", status: "succeeded" }, null, 2), "get-pay-res")}
+                    className="text-slate-400 hover:text-white shrink-0 cursor-pointer"
+                  >
+                    {copiedText === 'get-pay-res' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <pre className="font-mono text-xs text-green-400 overflow-x-auto whitespace-pre no-scrollbar">
+                  <code>{`{\n  "id": "pay_7c9d8a1e2f3",\n  "amount": 5000,\n  "status": "succeeded",\n  "payment_method": "pix",\n  "customer": {\n    "name": "Júlio César",\n    "email": "julio@igreja.org"\n  }\n}`}</code>
+                </pre>
+              </div>
             </div>
           </div>
         )}
@@ -223,6 +288,41 @@ export function DeveloperDocsViewer({ onActionFeedback }: { onActionFeedback: (m
             <p className="text-[11px] font-semibold text-slate-450 leading-relaxed">
               Solicita o reembolso parcial ou total de uma compra paga de Pix ou Cartão. Retorna o ID da operação e o status da devolução.
             </p>
+
+            <div className="space-y-3 mt-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
+                  <span>cURL</span>
+                  <button onClick={() => handleCopy(`curl -X POST https://api.basileia.app/v1/refunds \\\n  -H "Authorization: Bearer sk_live_bsl_xxx" \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "payment_id": "pay_7c9d8a1e2f3",\n    "amount": 2500\n  }'`, "refund-curl")} className="text-slate-400 hover:text-white shrink-0 cursor-pointer">
+                    {copiedText === 'refund-curl' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <pre className="font-mono text-xs text-blue-400 overflow-x-auto whitespace-pre no-scrollbar">
+                  <code>{`curl -X POST https://api.basileia.app/v1/refunds \\
+  -H "Authorization: Bearer sk_live_bsl_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "payment_id": "pay_7c9d8a1e2f3",
+    "amount": 2500
+  }'`}</code>
+                </pre>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-4.5 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-450 border-b border-slate-800 pb-2">
+                  <span>Response (200 OK)</span>
+                  <button
+                    onClick={() => handleCopy(JSON.stringify({ id: "ref_81jd23kd", status: "processing", amount: 2500 }, null, 2), "refund-res")}
+                    className="text-slate-400 hover:text-white shrink-0 cursor-pointer"
+                  >
+                    {copiedText === 'refund-res' ? <Check className="w-3.5 h-3.5" /> : <Clipboard className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <pre className="font-mono text-xs text-green-400 overflow-x-auto whitespace-pre no-scrollbar">
+                  <code>{`{\n  "id": "ref_81jd23kd",\n  "payment_id": "pay_7c9d8a1e2f3",\n  "amount": 2500,\n  "status": "processing"\n}`}</code>
+                </pre>
+              </div>
+            </div>
           </div>
         )}
 

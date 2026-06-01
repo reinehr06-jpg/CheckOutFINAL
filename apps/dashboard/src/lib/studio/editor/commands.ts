@@ -1,5 +1,5 @@
 import { setStudioState, getStudioState } from './store';
-import { Block, Device, EditorHistoryItem, CheckoutSchema } from '../schema/types';
+import { Block, Device, EditorHistoryItem, CheckoutSchema, EditorState } from '../schema/types';
 
 /**
  * Registra o estado atual no history stack antes de aplicar uma mutação,

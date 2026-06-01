@@ -59,7 +59,14 @@ import {
 export default function RoutingPage() {
   const [activeTab, setActiveTab] = useState<RoutingTabValue>('rules');
   const [rules, setRules] = useState<RoutingRule[]>([]);
-  const [kpis, setKpis] = useState<RoutingKpi>(MOCK_ROUTING_KPIS);
+  const [kpis, setKpis] = useState<RoutingKpi>({
+    activeRulesCount: 0,
+    activeRulesDelta: 0,
+    gatewaysInPool: 0,
+    decisionsToday: 0,
+    decisionsTodayDelta: 0,
+    conflictsCount: 0
+  });
   const [showSimulator, setShowSimulator] = useState(true);
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [editingRule, setEditingRule] = useState<RoutingRule | undefined>(undefined);
@@ -99,13 +106,20 @@ export default function RoutingPage() {
             metrics: { approvalRate: 0, volume7d: 0, avgLatency: 0, successRate: 0 },
           })));
         } else {
-          setRules(MOCK_ROUTING_RULES);
+          setRules([]);
         }
-      } catch (err) { console.error('Failed to fetch routing data:', err); setRules(MOCK_ROUTING_RULES); } finally {
+      } catch (err) { console.error('Failed to fetch routing data:', err); setRules([]); } finally {
         setLoading(false);
       }
     })();
-    setKpis(MOCK_ROUTING_KPIS);
+    setKpis({
+      activeRulesCount: 0,
+      activeRulesDelta: 0,
+      gatewaysInPool: 0,
+      decisionsToday: 0,
+      decisionsTodayDelta: 0,
+      conflictsCount: 0
+    });
   }, []);
 
   // Filters State
@@ -121,14 +135,7 @@ export default function RoutingPage() {
 
   // Smart Retries states
   const [retriesActive, setRetriesActive] = useState(true);
-  const [smartRetriesRules, setSmartRetriesRules] = useState([
-    { id: '1', priority: 1, code: '91', name: 'Banco Emissor Indisponível (Timeout)', action: 'retry_alternative', gateway: 'Mercado Pago', maxRetries: 2, delay: 0, status: 'active', count: 1482 },
-    { id: '2', priority: 2, code: '05', name: 'Não Autorizada Geral', action: 'three_d_secure', gateway: '—', maxRetries: 1, delay: 0, status: 'active', count: 981 },
-    { id: '3', priority: 3, code: '19', name: 'Refazer Transação', action: 'retry_alternative_delay', gateway: 'Mercado Pago', maxRetries: 2, delay: 5, status: 'active', count: 342 },
-    { id: '4', priority: 4, code: '500', name: 'Erro de Conexão com Adquirente', action: 'retry_alternative', gateway: 'Cielo', maxRetries: 3, delay: 2, status: 'active', count: 681 },
-    { id: '5', priority: 5, code: '51', name: 'Saldo Insuficiente', action: 'block', gateway: '—', maxRetries: 0, delay: 0, status: 'active', count: 4821 },
-    { id: '6', priority: 6, code: '57', name: 'Cartão Inválido', action: 'block', gateway: '—', maxRetries: 0, delay: 0, status: 'inactive', count: 124 }
-  ]);
+  const [smartRetriesRules, setSmartRetriesRules] = useState<any[]>([]);
 
   // Smart Retry Modal States
   const [showRetryModal, setShowRetryModal] = useState(false);
@@ -155,13 +162,7 @@ export default function RoutingPage() {
   const [simulatingInProgress, setSimulatingInProgress] = useState(false);
 
   // Simulated smart retry executions logs feed
-  const [retryLogs, setRetryLogs] = useState([
-    { time: '16:04:11', txId: 'tx_8271391a', code: '91', rule: 'Timeout Emissor', action: 'Roteado para Mercado Pago', result: 'Sucesso', details: 'Transação autorizada na tentativa 1.' },
-    { time: '15:58:22', txId: 'tx_8271391b', code: '51', rule: 'Saldo Insuficiente', action: 'Bloqueado (Sem retentativa)', result: 'Falha Final', details: 'Evitou processamento inútil de taxas.' },
-    { time: '15:42:01', txId: 'tx_8271391c', code: '05', rule: 'Não Autorizada Geral', action: 'Fluxo 3D Secure solicitado', result: 'Sucesso', details: 'Comprador autenticou em 3DS com sucesso.' },
-    { time: '15:10:45', txId: 'tx_8271391d', code: '19', rule: 'Refazer Transação', action: 'Aguardou 5s -> Mercado Pago', result: 'Sucesso', details: 'Autorizado na segunda tentativa.' },
-    { time: '14:28:10', txId: 'tx_8271391e', code: '500', rule: 'Erro Conexão', action: 'Roteou para Cielo', result: 'Falha Final', details: 'Excedeu 3 tentativas de reprocessamento.' }
-  ]);
+  const [retryLogs, setRetryLogs] = useState<any[]>([]);
 
   const triggerFeedback = (msg: string) => {
     setFeedbackMsg(msg);

@@ -40,9 +40,10 @@ export function TopToolbar() {
       // 1. Validação Zod estrita
       const result = checkoutSchemaValidator.safeParse(schema);
       if (!result.success) {
-        console.error('Erros de validação Zod:', result.error.errors);
+        const errResult = result as any;
+        console.error('Erros de validação Zod:', errResult.error.errors);
         // Pega o primeiro erro amigável para mostrar no toast
-        const firstError = result.error.errors[0];
+        const firstError = errResult.error.errors[0];
         const errorPath = firstError.path.join('.');
         showToast(`Erro de validação em "${errorPath}": ${firstError.message}`, 'error');
         setIsPublishing(false);

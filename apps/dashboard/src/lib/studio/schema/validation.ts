@@ -55,7 +55,7 @@ export const paymentConfigSchema = z.object({
 const responsiveStyleSchema = z.object({
   visible: z.boolean(),
   order: z.number(),
-  style: z.record(z.any()),
+  style: z.record(z.string(), z.any()),
 });
 
 export const blockSchema = z.object({
@@ -66,8 +66,8 @@ export const blockSchema = z.object({
   locked: z.boolean(),
   visible: z.boolean(),
   required: z.boolean(),
-  content: z.record(z.any()),
-  style: z.record(z.any()).optional(),
+  content: z.record(z.string(), z.any()),
+  style: z.record(z.string(), z.any()).optional(),
   responsive: z.object({
     desktop: responsiveStyleSchema,
     tablet: responsiveStyleSchema,

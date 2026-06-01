@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { cn } from '@/lib/utils';
 import { 
@@ -59,25 +59,27 @@ export default function RecoveryPage() {
     { label: 'ROI do recovery', val: '42,81x', change: '+5,33%', color: 'text-violet-750', icon: ArrowUpRight }
   ];
 
-  // Sessions list directly from high fidelity mockup
-  const [sessions, setSessions] = useState([
-    { id: 'SES-1A2BC4D', client: 'Mariana Souza', cliId: 'CLI-005782', avatar: 'MS', email: 'mariana@email.com', phone: '+55 11 91234-5678', cartValue: 159.90, itemsCount: 1, step: 'Pagamento PIX', timeSince: '18 min', origin: 'Instagram', attempts: '2 e-mails / 1 SMS', status: 'Não recuperado' },
-    { id: 'SES-4D5E6F7G', client: 'João Silva', cliId: 'CLI-009876', avatar: 'JS', email: 'joao@email.com', phone: '+55 21 99876-5432', cartValue: 299.00, itemsCount: 2, step: 'Pagamento Cartão de crédito', timeSince: '34 min', origin: 'Google Ads', attempts: '1 e-mail / 0 SMS', status: 'Recuperado' },
-    { id: 'SES-7H8I9J0K', client: 'Ana Costa', cliId: 'CLI-012345', avatar: 'AC', email: 'ana@email.com', phone: '+55 11 98765-4321', cartValue: 89.90, itemsCount: 1, step: 'Identificação E-mail', timeSince: '51 min', origin: 'Email', attempts: '3 e-mails / 2 SMS', status: 'Não recuperado' },
-    { id: 'SES-L1M2N3O4', client: 'Carlos Lima', cliId: 'CLI-015678', avatar: 'CL', email: 'carlos@email.com', phone: '+55 31 97654-3210', cartValue: 459.90, itemsCount: 3, step: 'Pagamento Boleto', timeSince: '1h 13min', origin: 'Facebook', attempts: '2 e-mails / 1 SMS', status: 'Recuperado' },
-    { id: 'SES-P5Q6R7S8', client: 'Juliana Santos', cliId: 'CLI-018901', avatar: 'JS', email: 'juliana@email.com', phone: '+55 51 96543-2109', cartValue: 199.90, itemsCount: 1, step: 'Entrega Frete', timeSince: '1h 21min', origin: 'Site', attempts: '1 e-mail / 0 SMS', status: 'Não recuperado' },
-    { id: 'SES-T9U0V1W2', client: 'Roberto Alves', cliId: 'CLI-021234', avatar: 'RA', email: 'roberto@email.com', phone: '+55 71 95432-1098', cartValue: 79.90, itemsCount: 1, step: 'Pagamento PIX', timeSince: '1h 44min', origin: 'Instagram', attempts: '4 e-mails / 2 SMS', status: 'Recuperado' },
-    { id: 'SES-X3Y4Z5A6', client: 'Fernanda Oliveira', cliId: 'CLI-024567', avatar: 'FO', email: 'fernanda@email.com', phone: '+55 41 94321-0987', cartValue: 599.00, itemsCount: 4, step: 'Pagamento Cartão de crédito', timeSince: '2h 05min', origin: 'Google Ads', attempts: '3 e-mails / 1 SMS', status: 'Não recuperado' },
-    { id: 'SES-B7C8D9E0', client: 'Lucas Ferreira', cliId: 'CLI-027890', avatar: 'LF', email: 'lucas@email.com', phone: '+55 11 93210-9876', cartValue: 129.90, itemsCount: 1, step: 'Identificação Telefone', timeSince: '2h 21min', origin: 'Email', attempts: '2 e-mails / 1 SMS', status: 'Recuperado' }
-  ]);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [triggers, setTriggers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Triggers lists
-  const [triggers, setTriggers] = useState([
-    { name: 'Abandono no pagamento', val: 'PIX e Cartão', active: true },
-    { name: 'Abandono na entrega', val: 'Qualquer frete', active: true },
-    { name: 'Abandono na identificação', val: 'E-mail ou telefone', active: true },
-    { name: 'Abandono por tempo', val: 'Mais de 15 minutos', active: true }
-  ]);
+  // Simulando fetch limpo (sem dados fantasmas)
+  useEffect(() => {
+    const fetchRecoveryData = async () => {
+      setLoading(true);
+      try {
+        // Exemplo: const res = await apiFetch('/api/v1/recovery');
+        // Por hora, mantemos vazio pois não temos a API pronta
+        setSessions([]);
+        setTriggers([]);
+      } catch (error) {
+        console.error("Erro ao carregar dados de recovery:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecoveryData();
+  }, []);
 
   const handleSelectRow = (id: string) => {
     if (selectedRows.includes(id)) {

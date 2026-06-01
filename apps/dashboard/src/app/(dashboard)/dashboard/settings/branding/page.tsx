@@ -89,21 +89,24 @@ export default function BrandingSettingsPage() {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border border-slate-100 bg-slate-50/50 rounded-2xl p-4 text-center cursor-pointer hover:bg-slate-50 transition">
-                <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+              <label className="border border-slate-100 bg-slate-50/50 rounded-2xl p-4 text-center cursor-pointer hover:bg-slate-50 transition group relative">
+                <input type="file" accept="image/png, image/svg+xml" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => { if(e.target.files?.length) triggerToast('Logo Claro carregado com sucesso!'); }} />
+                <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2 group-hover:text-brand transition-colors" />
                 <span className="text-[10px] font-black text-slate-800 block">Logo Claro</span>
                 <span className="text-[9px] text-slate-400 block mt-0.5">Fundo claro (PNG/SVG)</span>
-              </div>
-              <div className="border border-slate-100 bg-slate-50/50 rounded-2xl p-4 text-center cursor-pointer hover:bg-slate-50 transition">
-                <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+              </label>
+              <label className="border border-slate-100 bg-slate-50/50 rounded-2xl p-4 text-center cursor-pointer hover:bg-slate-50 transition group relative">
+                <input type="file" accept="image/png, image/svg+xml" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => { if(e.target.files?.length) triggerToast('Logo Escuro carregado com sucesso!'); }} />
+                <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2 group-hover:text-brand transition-colors" />
                 <span className="text-[10px] font-black text-slate-800 block">Logo Escuro</span>
                 <span className="text-[9px] text-slate-400 block mt-0.5">Fundo escuro (PNG/SVG)</span>
-              </div>
-              <div className="border border-slate-100 bg-slate-50/50 rounded-2xl p-4 text-center cursor-pointer hover:bg-slate-50 transition">
-                <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+              </label>
+              <label className="border border-slate-100 bg-slate-50/50 rounded-2xl p-4 text-center cursor-pointer hover:bg-slate-50 transition group relative">
+                <input type="file" accept="image/x-icon, image/png" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => { if(e.target.files?.length) triggerToast('Favicon carregado com sucesso!'); }} />
+                <Upload className="w-6 h-6 text-slate-400 mx-auto mb-2 group-hover:text-brand transition-colors" />
                 <span className="text-[10px] font-black text-slate-800 block">Favicon</span>
                 <span className="text-[9px] text-slate-400 block mt-0.5">32x32px (ICO/PNG)</span>
-              </div>
+              </label>
             </div>
           </div>
 
@@ -184,6 +187,11 @@ export default function BrandingSettingsPage() {
                 <option value="Inter">Inter (Padrão)</option>
                 <option value="Outfit">Outfit (Moderna)</option>
                 <option value="Roboto">Roboto (Clássica)</option>
+                <option value="Poppins">Poppins (Elegante)</option>
+                <option value="Montserrat">Montserrat (Minimalista)</option>
+                <option value="Open Sans">Open Sans (Legível)</option>
+                <option value="Nunito">Nunito (Amigável)</option>
+                <option value="Playfair Display">Playfair Display (Sofisticada)</option>
               </select>
             </div>
           </div>

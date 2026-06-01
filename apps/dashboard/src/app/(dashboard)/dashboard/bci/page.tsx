@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { apiFetch } from '@/lib/api';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { 
   BrainCircuit, 
@@ -52,133 +55,83 @@ export default function BciPage() {
       setLoading(false);
       triggerToast("Análise de checkout concluída! Score geral recalculado: 84/100 (Bom).");
     }, 1500);
-  };
-
-  const handleConfirmExport = () => {
+  };  const handleConfirmExport = async () => {
     setShowExportModal(false);
     triggerToast(`Preparando exportação em formato ${exportFormat.toUpperCase()}...`);
 
-    setTimeout(() => {
+    try {
+      setLoading(true);
+      // Fetch real data to avoid "ghost data"
+      const res = await apiFetch('/api/v1/dashboard/bci/export');
+      const realData: any = res.success && res.data ? res.data : {
+        friction: [],
+        performance: [],
+        activity: []
+      };
+
       if (exportFormat === 'pdf') {
-        const printWindow = document.createElement('iframe');
-        printWindow.style.position = 'absolute';
-        printWindow.style.top = '-1000px';
-        document.body.appendChild(printWindow);
+        const doc = new jsPDF();
+        
+        doc.setFontSize(18);
+        doc.setTextColor(109, 40, 217); // brand color
+        doc.text('Basileia Pay - Relatório BCI', 14, 22);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(124, 58, 237);
+        doc.text('Business Intelligence & Otimização do Checkout', 14, 30);
+        
+        doc.setFontSize(9);
+        doc.setTextColor(88, 28, 135);
+        doc.text(`Período: ${filterPeriod}`, 14, 40);
+        doc.text(`Data de Geração: ${new Date().toLocaleString()}`, 14, 45);
+        doc.text(`Filtro de Sistema: ${filterSystem}`, 100, 40);
+        doc.text(`Filtro de Checkout: ${filterCheckout}`, 100, 45);
 
-        const doc = printWindow.contentWindow?.document;
-        if (doc) {
-          doc.write(`
-            <html>
-              <head>
-                <title>Relatório BCI - Basileia Pay</title>
-                <style>
-                  body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e1b4b; background-color: #faf5ff; }
-                  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #8b5cf6; padding-bottom: 20px; margin-bottom: 30px; }
-                  .header h1 { margin: 0; color: #6d28d9; font-size: 28px; font-weight: 900; }
-                  .header p { margin: 5px 0 0 0; color: #7c3aed; font-size: 14px; font-weight: 700; }
-                  .meta { background-color: #f3e8ff; border: 1px solid #e9d5ff; border-radius: 16px; padding: 15px; margin-bottom: 30px; font-size: 11px; color: #581c87; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-                  .meta p { margin: 0; }
-                  .section { background-color: #ffffff; border: 1px solid #f3e8ff; border-radius: 20px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-                  .section h2 { margin-top: 0; color: #581c87; font-size: 18px; font-weight: 800; border-bottom: 1px solid #f3e8ff; padding-bottom: 8px; }
-                  .score-badge { display: inline-block; background-color: #8b5cf6; color: #ffffff; padding: 5px 12px; rounded: 12px; font-weight: 900; font-size: 18px; border-radius: 8px; }
-                  table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-                  th, td { border-bottom: 1px solid #f3e8ff; padding: 12px; text-align: left; }
-                  th { background-color: #faf5ff; color: #581c87; font-weight: 800; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
-                  td { color: #374151; font-weight: 500; }
-                  .high-impact { color: #dc2626; font-weight: 700; }
-                  .gain { color: #16a34a; font-weight: 700; }
-                </style>
-              </head>
-              <body>
-                <div class="header">
-                  <div>
-                    <h1>Basileia Pay - Relatório BCI</h1>
-                    <p>Business Intelligence & Otimização do Checkout</p>
-                  </div>
-                  <div class="score-badge">Score: 84/100</div>
-                </div>
+        let startY = 55;
 
-                <div class="meta">
-                  <p><strong>Período:</strong> ${filterPeriod === '7d' ? 'Últimos 7 dias' : filterPeriod === '30d' ? 'Últimos 30 dias' : filterPeriod}</p>
-                  <p><strong>Data de Geração:</strong> ${new Date().toLocaleString()}</p>
-                  <p><strong>Filtro de Sistema:</strong> ${filterSystem}</p>
-                  <p><strong>Filtro de Checkout:</strong> ${filterCheckout}</p>
-                </div>
-
-                ${exportSections.includes('friction') ? `
-                  <div class="section">
-                    <h2>Fricções Detectadas pela IA</h2>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Ponto de Fricção</th>
-                          <th>Fase</th>
-                          <th>Severidade</th>
-                          <th>Impacto Estimado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr><td>Campos excessivos na identificação</td><td>Identificação</td><td>Crítica</td><td class="high-impact">-3,2%</td></tr>
-                        <tr><td>PIX com baixa clareza na etapa</td><td>Pagamento</td><td>Alta</td><td class="high-impact">-2,1%</td></tr>
-                        <tr><td>CTA secundário competindo</td><td>Revisão</td><td>Média</td><td class="high-impact">-1,4%</td></tr>
-                        <tr><td>Latência alta no mobile</td><td>Identificação</td><td>Alta</td><td class="high-impact">-1,1%</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                ` : ''}
-
-                ${exportSections.includes('performance') ? `
-                  <div class="section">
-                    <h2>Histórico e Comparativo de Versões</h2>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Versão</th>
-                          <th>Status</th>
-                          <th>Conversão</th>
-                          <th>Tempo Médio</th>
-                          <th>Score BCI</th>
-                          <th>Receita Mensal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr><td>v2.5.0</td><td>Atual / Produção</td><td>18,42%</td><td>6m 12s</td><td>84/100</td><td>R$ 128.940,00</td></tr>
-                        <tr><td>v2.4.1</td><td>Anterior</td><td>16,98%</td><td>7m 03s</td><td>76/100</td><td>R$ 104.310,00</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                ` : ''}
-
-                ${exportSections.includes('activity') ? `
-                  <div class="section">
-                    <h2>Benchmarks e Auditoria</h2>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Checkout</th>
-                          <th>Score</th>
-                          <th>Conversão</th>
-                          <th>Posição</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr><td>Basileia Checkout Pro</td><td>88/100</td><td>19,21%</td><td>1º 👑</td></tr>
-                        <tr><td>Mercado Pago Checkout</td><td>84/100</td><td>18,42%</td><td>2º</td></tr>
-                        <tr><td>Loja Experiência</td><td>79/100</td><td>16,02%</td><td>3º</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                ` : ''}
-              </body>
-            </html>
-          `);
-          doc.close();
-          setTimeout(() => {
-            printWindow.contentWindow?.print();
-            document.body.removeChild(printWindow);
-            triggerToast("Download do PDF concluído com sucesso!");
-          }, 800);
+        if (exportSections.includes('friction')) {
+          doc.setFontSize(12);
+          doc.text('Fricções Detectadas pela IA', 14, startY);
+          autoTable(doc, {
+            startY: startY + 5,
+            head: [['Ponto de Fricção', 'Fase', 'Severidade', 'Impacto Estimado']],
+            body: realData.friction.length > 0 ? realData.friction.map((f: any) => [f.title, f.stage, f.severity, f.impact]) : [['Nenhum dado encontrado', '-', '-', '-']],
+            theme: 'grid',
+            headStyles: { fillColor: [250, 245, 255], textColor: [88, 28, 135] },
+            styles: { fontSize: 8 }
+          });
+          startY = (doc as any).lastAutoTable.finalY + 15;
         }
+
+        if (exportSections.includes('performance')) {
+          doc.setFontSize(12);
+          doc.text('Histórico e Comparativo de Versões', 14, startY);
+          autoTable(doc, {
+            startY: startY + 5,
+            head: [['Versão', 'Status', 'Conversão', 'Tempo Médio', 'Score BCI', 'Receita Mensal']],
+            body: realData.performance.length > 0 ? realData.performance.map((p: any) => [p.version, p.status, p.conversion, p.time, p.score, p.revenue]) : [['Nenhum dado encontrado', '-', '-', '-', '-', '-']],
+            theme: 'grid',
+            headStyles: { fillColor: [250, 245, 255], textColor: [88, 28, 135] },
+            styles: { fontSize: 8 }
+          });
+          startY = (doc as any).lastAutoTable.finalY + 15;
+        }
+
+        if (exportSections.includes('activity')) {
+          doc.setFontSize(12);
+          doc.text('Benchmarks e Auditoria', 14, startY);
+          autoTable(doc, {
+            startY: startY + 5,
+            head: [['Checkout', 'Score', 'Conversão', 'Posição']],
+            body: realData.activity.length > 0 ? realData.activity.map((a: any) => [a.name, a.score, a.conversion, a.position]) : [['Nenhum dado encontrado', '-', '-', '-']],
+            theme: 'grid',
+            headStyles: { fillColor: [250, 245, 255], textColor: [88, 28, 135] },
+            styles: { fontSize: 8 }
+          });
+        }
+
+        doc.save(`relatorio_bci_${filterPeriod}_${Date.now()}.pdf`);
+        triggerToast("Download do PDF concluído com sucesso!");
       } else {
         // Generate CSV or Excel (XLS)
         let fileContent = '\ufeff'; // UTF-8 BOM
@@ -192,25 +145,39 @@ export default function BciPage() {
         if (exportSections.includes('friction')) {
           fileContent += "SEÇÃO: FRICÇÕES E RECOMENDAÇÕES DA IA\r\n";
           fileContent += "Item de Fricção;Fase;Severidade;Impacto Estimado\r\n";
-          fileContent += "Campos excessivos na identif.;Identif.;Crítica;-3,2%\r\n";
-          fileContent += "PIX com baixa clareza na etapa;Pagam.;Alta;-2,1%\r\n";
-          fileContent += "CTA secundário competindo;Revisão;Média;-1,4%\r\n";
-          fileContent += "Latência alta no mobile;Identif.;Alta;-1,1%\r\n\r\n";
+          if (realData.friction.length > 0) {
+            realData.friction.forEach((f: any) => {
+              fileContent += `${f.title};${f.stage};${f.severity};${f.impact}\r\n`;
+            });
+          } else {
+            fileContent += "Nenhum dado encontrado;-;-;-\r\n";
+          }
+          fileContent += "\r\n";
         }
 
         if (exportSections.includes('performance')) {
           fileContent += "SEÇÃO: DESEMPENHO A/B E HISTÓRICO\r\n";
           fileContent += "Versão;Status;Conversão;Tempo Médio;Score BCI;Receita Mensal\r\n";
-          fileContent += "v2.5.0;Atual;18,42%;6m 12s;84/100;R$ 128.940,00\r\n";
-          fileContent += "v2.4.1;Anterior;16,98%;7m 03s;76/100;R$ 104.310,00\r\n\r\n";
+          if (realData.performance.length > 0) {
+            realData.performance.forEach((p: any) => {
+              fileContent += `${p.version};${p.status};${p.conversion};${p.time};${p.score};${p.revenue}\r\n`;
+            });
+          } else {
+            fileContent += "Nenhum dado encontrado;-;-;-;-;-\r\n";
+          }
+          fileContent += "\r\n";
         }
 
         if (exportSections.includes('activity')) {
           fileContent += "SEÇÃO: AUDITORIA E BENCHMARKS\r\n";
           fileContent += "Nome do Checkout;Score;Conversão;Posição\r\n";
-          fileContent += "Basileia Checkout Pro;88;19,21%;1º\r\n";
-          fileContent += "Mercado Pago Checkout;84;18,42%;2º\r\n";
-          fileContent += "Loja Experiência;79;16,02%;3º\r\n";
+          if (realData.activity.length > 0) {
+            realData.activity.forEach((a: any) => {
+              fileContent += `${a.name};${a.score};${a.conversion};${a.position}\r\n`;
+            });
+          } else {
+            fileContent += "Nenhum dado encontrado;-;-;-\r\n";
+          }
         }
 
         const mimeType = exportFormat === 'csv' ? 'text/csv;charset=utf-8;' : 'application/vnd.ms-excel;charset=utf-8;';
@@ -224,7 +191,12 @@ export default function BciPage() {
         document.body.removeChild(link);
         triggerToast(`Download do ${exportFormat.toUpperCase()} concluído com sucesso!`);
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Export error', error);
+      triggerToast('Erro ao exportar dados da API.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

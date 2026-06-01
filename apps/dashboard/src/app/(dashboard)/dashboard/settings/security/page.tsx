@@ -52,10 +52,10 @@ export default function SecuritySettingsPage() {
   const [activeTab, setActiveTab] = useState<SecurityTabValue>('users');
   
   // Data States
-  const [users, setUsers] = useState<SecurityUser[]>(MOCK_SECURITY_USERS);
-  const [sessions, setSessions] = useState<SecuritySession[]>(MOCK_SECURITY_SESSIONS);
-  const [ipRules, setIpRules] = useState<SecurityIpRule[]>(MOCK_SECURITY_IP_RULES);
-  const [events, setEvents] = useState<SecurityActivityEvent[]>(MOCK_SECURITY_ACTIVITY_EVENTS);
+  const [users, setUsers] = useState<SecurityUser[]>([]);
+  const [sessions, setSessions] = useState<SecuritySession[]>([]);
+  const [ipRules, setIpRules] = useState<SecurityIpRule[]>([]);
+  const [events, setEvents] = useState<SecurityActivityEvent[]>([]);
   const [policy, setPolicy] = useState<SecurityPolicy>(MOCK_SECURITY_POLICY);
 
   // LGPD Strict Mode States
@@ -120,7 +120,7 @@ export default function SecuritySettingsPage() {
   };
 
   // User Administration Handlers
-  const handleInviteUser = (newUser: Partial<SecurityUser>) => {
+  const handleInviteUser = async (newUser: Partial<SecurityUser>) => {
     const freshUser: SecurityUser = {
       id: `user_${Math.floor(Math.random() * 1000)}`,
       name: newUser.name || 'Convidado Novo',
@@ -132,7 +132,20 @@ export default function SecuritySettingsPage() {
       createdAt: new Date().toISOString()
     };
 
-    setUsers([...users, freshUser]);
+    setUsers((prev) => [...prev, freshUser]);
+
+    try {
+      await apiFetch('/api/v1/dashboard/security/users/invite', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: freshUser.email,
+          name: freshUser.name,
+          role: freshUser.role
+        })
+      });
+    } catch (err) {
+      console.error('Falha ao enviar e-mail de convite:', err);
+    }
 
     const newEvt: SecurityActivityEvent = {
       id: `evt_sec_${Math.floor(Math.random() * 10000)}`,
@@ -143,7 +156,8 @@ export default function SecuritySettingsPage() {
       result: "success",
       details: `Novo convite gerado para cargo ${freshUser.role}: ${freshUser.email}`
     };
-    setEvents([newEvt, ...events]);
+    setEvents((prev) => [newEvt, ...prev]);
+    triggerFeedback(`Convite enviado por e-mail para ${freshUser.email} com sucesso!`);
   };
 
   const handleUpdateUserRole = (id: string, newRole: SecurityRole) => {

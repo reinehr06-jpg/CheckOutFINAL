@@ -42,12 +42,12 @@ export default function TrustPage() {
         setLoading(false);
       }
     })();
-    setRules(MOCK_TRUST_RULES);
-    setEvents(MOCK_TRUST_EVENTS);
-    setSelectedEvent(MOCK_TRUST_EVENTS[0]);
+    setRules([]);
+    setEvents([]);
+    setSelectedEvent(null);
   }, []);
   
-  // Simulated UI states
+  // Motor States
   const [isMotorUnavailable, setIsMotorUnavailable] = useState(false);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [showRuleForm, setShowRuleForm] = useState(false);
@@ -141,38 +141,7 @@ export default function TrustPage() {
         isAdmin={isAdmin}
       />
 
-      {/* Simulator / Permissões / Indisponibilidade Panel */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200/60 rounded-[20px] p-3 text-left">
-        <div className="flex items-center gap-2">
-          <span className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider">Simulador de Status:</span>
-          
-          {/* Active simulated role toggle */}
-          <button 
-            onClick={() => setUserRole(userRole === 'owner' ? 'viewer' : 'owner')}
-            className={cn(
-              "text-[9px] font-black uppercase px-2 py-1 rounded-lg border transition-all cursor-pointer",
-              isAdmin ? "bg-violet-650 text-white border-violet-750 shadow-sm" : "bg-white text-slate-700 border-slate-350"
-            )}
-          >
-            Cargo: {isAdmin ? 'Owner (Completo)' : 'Auditor (Leitura)'}
-          </button>
-
-          {/* Motor Indisponibilidade checkbox toggle */}
-          <button 
-            onClick={() => setIsMotorUnavailable(!isMotorUnavailable)}
-            className={cn(
-              "text-[9px] font-black uppercase px-2 py-1 rounded-lg border transition-all cursor-pointer",
-              isMotorUnavailable ? "bg-red-600 text-white border-red-700 shadow-sm" : "bg-white text-slate-700 border-slate-350"
-            )}
-          >
-            Simular Indisponibilidade: {isMotorUnavailable ? 'ATIVO' : 'DESATIVADO'}
-          </button>
-        </div>
-
-        <span className="text-[9.5px] text-slate-400 font-bold">
-          Motor v2.4.1 | SLA Fila: 32 min
-        </span>
-      </div>
+      {/* Removed Simulator Panel */}
 
       {/* Motor Unavailable Banner */}
       {isMotorUnavailable && (
