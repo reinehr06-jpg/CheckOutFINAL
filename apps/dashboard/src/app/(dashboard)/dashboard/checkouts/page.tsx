@@ -58,6 +58,7 @@ export default function CheckoutsPage() {
   const [checkouts, setCheckouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   
   // Table view vs Gallery view toggle
   const [viewMode, setViewMode] = useState<'galeria' | 'lista'>('galeria');
@@ -128,6 +129,33 @@ export default function CheckoutsPage() {
     ));
     triggerSuccessAlert(`Checkout "${modalArchiveItem.name}" foi arquivado com sucesso!`);
     setModalArchiveItem(null);
+  };
+
+  const handleCreateCheckout = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    try {
+      const res = await apiFetch('/api/v1/checkouts', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Novo Checkout',
+          theme_color: '#8B5CF6',
+          allow_pix: true,
+          allow_card: true,
+          system_uuid: null,
+        }),
+      }) as any;
+
+      if (res && res.success && res.data) {
+        router.push(`/dashboard/checkouts/${res.data.id}/studio`);
+      } else {
+        triggerSuccessAlert('Erro ao criar rascunho de checkout');
+        setIsCreating(false);
+      }
+    } catch (err) {
+      triggerSuccessAlert('Erro de comunicação ao criar checkout');
+      setIsCreating(false);
+    }
   };
 
   const triggerSuccessAlert = (message: string) => {
@@ -206,11 +234,12 @@ export default function CheckoutsPage() {
           </button>
           
           <button 
-            onClick={() => router.push('/dashboard/checkouts/new')}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-brand text-white rounded-xl text-[10px] 2xl:text-[11px] font-black shadow-lg shadow-brand/10 hover:shadow-brand/35 hover:-translate-y-0.5 transition-all active:translate-y-0 uppercase tracking-tight h-[34px] 2xl:h-[36px]"
+            disabled={isCreating}
+            onClick={handleCreateCheckout}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-brand text-white rounded-xl text-[10px] 2xl:text-[11px] font-black shadow-lg shadow-brand/10 hover:shadow-brand/35 hover:-translate-y-0.5 transition-all active:translate-y-0 uppercase tracking-tight h-[34px] 2xl:h-[36px] disabled:opacity-70 disabled:hover:translate-y-0"
           >
-            <Plus className="w-3.5 h-3.5 text-white/80" />
-            Novo checkout
+            {isCreating ? <Loader2 className="w-3.5 h-3.5 text-white/80 animate-spin" /> : <Plus className="w-3.5 h-3.5 text-white/80" />}
+            {isCreating ? 'Criando...' : 'Novo checkout'}
           </button>
         </div>
       </header>
@@ -253,10 +282,12 @@ export default function CheckoutsPage() {
             </p>
           </div>
           <button 
-            onClick={() => router.push('/dashboard/checkouts/new')}
-            className="px-5 py-2.5 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all"
+            disabled={isCreating}
+            onClick={handleCreateCheckout}
+            className="px-5 py-2.5 bg-brand hover:bg-brand-deep text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider shadow-lg shadow-brand/15 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
           >
-            Criar primeiro checkout
+            {isCreating && <Loader2 className="w-4 h-4 text-white/80 animate-spin" />}
+            {isCreating ? 'Criando...' : 'Criar primeiro checkout'}
           </button>
         </div>
       )}
